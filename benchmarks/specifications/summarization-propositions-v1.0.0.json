@@ -1,0 +1,4979 @@
+{
+  "material_error_categories": [
+    "UNSUPPORTED_MATERIAL_CLAIM",
+    "CONTRADICTION",
+    "UNSUPPORTED_CAUSATION",
+    "ATTRIBUTION_ERROR",
+    "QUANTITY_OR_TIME_ERROR",
+    "CERTAINTY_DISTORTION"
+  ],
+  "material_error_contract": {
+    "categories": [
+      "UNSUPPORTED_MATERIAL_CLAIM",
+      "CONTRADICTION",
+      "UNSUPPORTED_CAUSATION",
+      "ATTRIBUTION_ERROR",
+      "QUANTITY_OR_TIME_ERROR",
+      "CERTAINTY_DISTORTION"
+    ],
+    "interpretive_policy": "Clearly supported characterizations are not errors; clearly unsupported substantive assertions are material errors; genuinely borderline interpretations are marked borderline and produce an AMBIGUOUS evaluation requiring review.",
+    "required_fields": [
+      "candidate_claim",
+      "source_evidence",
+      "category",
+      "materiality",
+      "reason"
+    ]
+  },
+  "source_benchmarks": [
+    "routellm-routing-benchmark-v1:1.1.0",
+    "routellm-foundation-v2:2.0.0",
+    "routellm-foundation-v3:3.0.0"
+  ],
+  "specification_version": "1.0.0",
+  "tasks": [
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-easy-001"
+      ],
+      "canonical_task_id": "summarization-easy-001",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Accurately state that testing found a timezone bug Tuesday.",
+        "Accurately state that the bug was fixed Wednesday.",
+        "Accurately state that the migration completed Thursday."
+      ],
+      "material_semantic_traps": [
+        "the migration failed"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that testing found a timezone bug Tuesday.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "tuesday",
+              "required_exactly": false,
+              "value": "Tuesday"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-001-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Tuesday testing found a timezone bug."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that the bug was fixed Wednesday.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "wednesday",
+              "required_exactly": false,
+              "value": "Wednesday"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-001-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Wednesday the bug was fixed, and Thursday the migration completed."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that the migration completed Thursday.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "thursday",
+              "required_exactly": false,
+              "value": "Thursday"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-001-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Wednesday the bug was fixed, and Thursday the migration completed."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "On Monday the team opened the migration. Tuesday testing found a timezone bug. Wednesday the bug was fixed, and Thursday the migration completed. A separate office lunch occurred Friday.",
+      "specification_id": "rb12-summarization-easy-001"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-easy-002"
+      ],
+      "canonical_task_id": "summarization-easy-002",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Accurately state that staff requested a missing diagram Monday.",
+        "Accurately state that the diagram arrived Wednesday.",
+        "Accurately state that the permit was approved Thursday."
+      ],
+      "material_semantic_traps": [
+        "the billing change delayed approval"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that staff requested a missing diagram Monday.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "monday",
+              "required_exactly": false,
+              "value": "Monday"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-002-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Staff requested a missing diagram Monday, received it Wednesday, and approved the permit Thursday."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that the diagram arrived Wednesday.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "wednesday",
+              "required_exactly": false,
+              "value": "Wednesday"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-002-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Staff requested a missing diagram Monday, received it Wednesday, and approved the permit Thursday."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that the permit was approved Thursday.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "thursday",
+              "required_exactly": false,
+              "value": "Thursday"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-002-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Staff requested a missing diagram Monday, received it Wednesday, and approved the permit Thursday."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "The permit request arrived Friday. Staff requested a missing diagram Monday, received it Wednesday, and approved the permit Thursday. A billing address changed Tuesday but did not affect review.",
+      "specification_id": "rb12-summarization-easy-002"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-easy-003"
+      ],
+      "canonical_task_id": "summarization-easy-003",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Accurately state that Maya drafted the policy.",
+        "Accurately state that Rafi reviewed the legal terms.",
+        "Accurately state that Chen approved the final version."
+      ],
+      "material_semantic_traps": [
+        "Inez approved the policy"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that Maya drafted the policy.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "may",
+              "required_exactly": false,
+              "value": "May"
+            },
+            {
+              "kind": "named_entity",
+              "normalized_value": "maya",
+              "required_exactly": false,
+              "value": "Maya"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-003-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Maya drafted the policy, Rafi reviewed its legal terms, and Chen approved the final version."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that Rafi reviewed the legal terms.",
+          "deterministic_anchors": [
+            {
+              "kind": "named_entity",
+              "normalized_value": "rafi",
+              "required_exactly": false,
+              "value": "Rafi"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-003-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Maya drafted the policy, Rafi reviewed its legal terms, and Chen approved the final version."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that Chen approved the final version.",
+          "deterministic_anchors": [
+            {
+              "kind": "named_entity",
+              "normalized_value": "chen",
+              "required_exactly": false,
+              "value": "Chen"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-003-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Maya drafted the policy, Rafi reviewed its legal terms, and Chen approved the final version."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "Maya drafted the policy, Rafi reviewed its legal terms, and Chen approved the final version. Inez attended the meeting but had no approval role.",
+      "specification_id": "rb12-summarization-easy-003"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-easy-004"
+      ],
+      "canonical_task_id": "summarization-easy-004",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Accurately state that Jordan collected customer feedback.",
+        "Accurately state that Priya wrote the requirements.",
+        "Accurately state that Luis authorized the release."
+      ],
+      "material_semantic_traps": [
+        "Morgan authorized the release"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that Jordan collected customer feedback.",
+          "deterministic_anchors": [
+            {
+              "kind": "named_entity",
+              "normalized_value": "jordan",
+              "required_exactly": false,
+              "value": "Jordan"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-004-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Jordan collected customer feedback, Priya converted it into requirements, and Luis authorized the release."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that Priya wrote the requirements.",
+          "deterministic_anchors": [
+            {
+              "kind": "named_entity",
+              "normalized_value": "priya",
+              "required_exactly": false,
+              "value": "Priya"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-004-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Jordan collected customer feedback, Priya converted it into requirements, and Luis authorized the release."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that Luis authorized the release.",
+          "deterministic_anchors": [
+            {
+              "kind": "named_entity",
+              "normalized_value": "luis",
+              "required_exactly": false,
+              "value": "Luis"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-004-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Jordan collected customer feedback, Priya converted it into requirements, and Luis authorized the release."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "Jordan collected customer feedback, Priya converted it into requirements, and Luis authorized the release. Morgan observed the review but cast no vote.",
+      "specification_id": "rb12-summarization-easy-004"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-easy-005"
+      ],
+      "canonical_task_id": "summarization-easy-005",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Accurately state that an expired certificate blocked logins.",
+        "Accurately state that operations renewed the certificate at 09:32.",
+        "Accurately state that access recovered by 09:36.",
+        "Accurately state that no customer data was lost."
+      ],
+      "material_semantic_traps": [
+        "customer data was lost"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that an expired certificate blocked logins.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-005-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "At 09:10 an expired certificate blocked logins."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that operations renewed the certificate at 09:32.",
+          "deterministic_anchors": [
+            {
+              "kind": "time",
+              "normalized_value": "09:32",
+              "required_exactly": false,
+              "value": "09:32"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "09",
+              "required_exactly": false,
+              "value": "09"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "32",
+              "required_exactly": false,
+              "value": "32"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-005-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Operations renewed it at 09:32, and access recovered by 09:36."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that access recovered by 09:36.",
+          "deterministic_anchors": [
+            {
+              "kind": "time",
+              "normalized_value": "09:36",
+              "required_exactly": false,
+              "value": "09:36"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "09",
+              "required_exactly": false,
+              "value": "09"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "36",
+              "required_exactly": false,
+              "value": "36"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-005-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Operations renewed it at 09:32, and access recovered by 09:36."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that no customer data was lost.",
+          "deterministic_anchors": [
+            {
+              "kind": "boolean_state",
+              "normalized_value": "semantic_boolean",
+              "required_exactly": false,
+              "value": "polarity/constraint"
+            }
+          ],
+          "legacy_requirement_index": 4,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-005-r04",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "No customer data was lost."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "At 09:10 an expired certificate blocked logins. Operations renewed it at 09:32, and access recovered by 09:36. No customer data was lost.",
+      "specification_id": "rb12-summarization-easy-005"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-medium-001"
+      ],
+      "canonical_task_id": "summarization-medium-001",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Accurately state that a routing rule sent checkout traffic to an unavailable service.",
+        "Accurately state that the rule was rolled back at 14:17.",
+        "Accurately state that checkout recovered at 14:20.",
+        "Accurately state that no payments were duplicated."
+      ],
+      "material_semantic_traps": [
+        "payments were duplicated"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that a routing rule sent checkout traffic to an unavailable service.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-001-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "A routing rule deployed at 14:05 sent checkout traffic to an unavailable service."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that the rule was rolled back at 14:17.",
+          "deterministic_anchors": [
+            {
+              "kind": "time",
+              "normalized_value": "14:17",
+              "required_exactly": false,
+              "value": "14:17"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "14",
+              "required_exactly": false,
+              "value": "14"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "17",
+              "required_exactly": false,
+              "value": "17"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-001-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The rule was rolled back at 14:17; checkout recovered at 14:20, and no payments were duplicated."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that checkout recovered at 14:20.",
+          "deterministic_anchors": [
+            {
+              "kind": "time",
+              "normalized_value": "14:20",
+              "required_exactly": false,
+              "value": "14:20"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "14",
+              "required_exactly": false,
+              "value": "14"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "20",
+              "required_exactly": false,
+              "value": "20"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-001-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The rule was rolled back at 14:17; checkout recovered at 14:20, and no payments were duplicated."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that no payments were duplicated.",
+          "deterministic_anchors": [
+            {
+              "kind": "boolean_state",
+              "normalized_value": "semantic_boolean",
+              "required_exactly": false,
+              "value": "polarity/constraint"
+            }
+          ],
+          "legacy_requirement_index": 4,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-001-r04",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The rule was rolled back at 14:17; checkout recovered at 14:20, and no payments were duplicated."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "A routing rule deployed at 14:05 sent checkout traffic to an unavailable service. The rule was rolled back at 14:17; checkout recovered at 14:20, and no payments were duplicated.",
+      "specification_id": "rb12-summarization-medium-001"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-medium-002"
+      ],
+      "canonical_task_id": "summarization-medium-002",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Accurately state that 12,400 people were reached.",
+        "Accurately state that 620 visits were generated.",
+        "Accurately state that 31 purchases resulted.",
+        "Accurately state that spend was $1,550."
+      ],
+      "material_semantic_traps": [
+        "the campaign made 620 purchases"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [
+            {
+              "alternative": "12,400 people = 12.4 thousand people",
+              "direction": "alternative_satisfies_proposition",
+              "preserves_information": "Decimal scale notation preserves the same absolute reach."
+            }
+          ],
+          "derivations": [
+            {
+              "derivation_id": "derive-rb12-summarization-medium-002-r01",
+              "expression": "12,400 people = 12.4 thousand people",
+              "policy": "ALLOWED",
+              "rationale": "Decimal scale notation preserves the same absolute reach.",
+              "requires_proposition_ids": []
+            }
+          ],
+          "description": "Accurately state that 12,400 people were reached.",
+          "deterministic_anchors": [
+            {
+              "kind": "number",
+              "normalized_value": "12400people",
+              "required_exactly": false,
+              "value": "12,400 people"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-002-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The campaign reached 12,400 people, generated 620 visits, and produced 31 purchases."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that 620 visits were generated.",
+          "deterministic_anchors": [
+            {
+              "kind": "number",
+              "normalized_value": "620",
+              "required_exactly": false,
+              "value": "620"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-002-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The campaign reached 12,400 people, generated 620 visits, and produced 31 purchases."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that 31 purchases resulted.",
+          "deterministic_anchors": [
+            {
+              "kind": "number",
+              "normalized_value": "31",
+              "required_exactly": false,
+              "value": "31"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-002-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The campaign reached 12,400 people, generated 620 visits, and produced 31 purchases."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [
+            {
+              "alternative": "$1,550 = $1.55 thousand",
+              "direction": "alternative_satisfies_proposition",
+              "preserves_information": "Currency scale notation preserves the same spend."
+            }
+          ],
+          "derivations": [
+            {
+              "derivation_id": "derive-rb12-summarization-medium-002-r04",
+              "expression": "$1,550 = $1.55 thousand",
+              "policy": "ALLOWED",
+              "rationale": "Currency scale notation preserves the same spend.",
+              "requires_proposition_ids": []
+            }
+          ],
+          "description": "Accurately state that spend was $1,550.",
+          "deterministic_anchors": [
+            {
+              "kind": "currency",
+              "normalized_value": "$1550",
+              "required_exactly": false,
+              "value": "$1,550"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "1550",
+              "required_exactly": false,
+              "value": "1,550"
+            }
+          ],
+          "legacy_requirement_index": 4,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-002-r04",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Spend was $1,550."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "The campaign reached 12,400 people, generated 620 visits, and produced 31 purchases. Spend was $1,550. The design team also tested three unused logos.",
+      "specification_id": "rb12-summarization-medium-002"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-medium-003"
+      ],
+      "canonical_task_id": "summarization-medium-003",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Accurately state that 480 people registered.",
+        "Accurately state that 360 attended.",
+        "Accurately state that 288 completed the lab.",
+        "Accurately state that 250 submitted feedback."
+      ],
+      "material_semantic_traps": [
+        "400 people attended"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that 480 people registered.",
+          "deterministic_anchors": [
+            {
+              "kind": "number",
+              "normalized_value": "480people",
+              "required_exactly": false,
+              "value": "480 people"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-003-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The workshop registered 480 people; 360 attended, 288 completed the lab, and 250 submitted feedback."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [
+            {
+              "derivation_id": "derive-rb12-summarization-medium-003-r02",
+              "expression": "360 of 480 = 75% attendance",
+              "policy": "CONDITIONAL",
+              "rationale": "The percentage preserves attendance only when the registration base is also entailed.",
+              "requires_proposition_ids": [
+                "rb12-summarization-medium-003-r01"
+              ]
+            }
+          ],
+          "description": "Accurately state that 360 attended.",
+          "deterministic_anchors": [
+            {
+              "kind": "number",
+              "normalized_value": "360",
+              "required_exactly": false,
+              "value": "360"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-003-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The workshop registered 480 people; 360 attended, 288 completed the lab, and 250 submitted feedback."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that 288 completed the lab.",
+          "deterministic_anchors": [
+            {
+              "kind": "number",
+              "normalized_value": "288",
+              "required_exactly": false,
+              "value": "288"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-003-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The workshop registered 480 people; 360 attended, 288 completed the lab, and 250 submitted feedback."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that 250 submitted feedback.",
+          "deterministic_anchors": [
+            {
+              "kind": "number",
+              "normalized_value": "250",
+              "required_exactly": false,
+              "value": "250"
+            }
+          ],
+          "legacy_requirement_index": 4,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-003-r04",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The workshop registered 480 people; 360 attended, 288 completed the lab, and 250 submitted feedback."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "The workshop registered 480 people; 360 attended, 288 completed the lab, and 250 submitted feedback. Catering prepared 400 lunches.",
+      "specification_id": "rb12-summarization-medium-003"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-medium-004"
+      ],
+      "canonical_task_id": "summarization-medium-004",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Accurately state that remote work is allowed two days per week.",
+        "Accurately state that new hires must be onsite for their first month.",
+        "Accurately state that accessibility accommodations can override the restriction."
+      ],
+      "material_semantic_traps": [
+        "new hires may always work remotely"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that remote work is allowed two days per week.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-004-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Employees may work remotely two days per week."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that new hires must be onsite for their first month.",
+          "deterministic_anchors": [
+            {
+              "kind": "boolean_state",
+              "normalized_value": "semantic_boolean",
+              "required_exactly": false,
+              "value": "polarity/constraint"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-004-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "New hires must work onsite during their first month, while documented accessibility accommodations can override that restriction."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that accessibility accommodations can override the restriction.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-004-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "New hires must work onsite during their first month, while documented accessibility accommodations can override that restriction."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "Employees may work remotely two days per week. New hires must work onsite during their first month, while documented accessibility accommodations can override that restriction.",
+      "specification_id": "rb12-summarization-medium-004"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-medium-005"
+      ],
+      "canonical_task_id": "summarization-medium-005",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Accurately state that expense reports are due within 20 days.",
+        "Accurately state that approved leave adds five days.",
+        "Accurately state that cash advances remain due within 10 days."
+      ],
+      "material_semantic_traps": [
+        "leave extends the cash-advance deadline"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that expense reports are due within 20 days.",
+          "deterministic_anchors": [
+            {
+              "kind": "number",
+              "normalized_value": "20days",
+              "required_exactly": false,
+              "value": "20 days"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-005-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Expense reports are due within 20 days."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [
+            {
+              "derivation_id": "derive-rb12-summarization-medium-005-r02",
+              "expression": "20 days + 5 days = a 25-day leave deadline",
+              "policy": "CONDITIONAL",
+              "rationale": "The derived deadline is valid only when the standard 20-day basis is preserved.",
+              "requires_proposition_ids": [
+                "rb12-summarization-medium-005-r01"
+              ]
+            }
+          ],
+          "description": "Accurately state that approved leave adds five days.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-005-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Employees on approved leave receive five extra days, but cash advances must always be reconciled within 10 days."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that cash advances remain due within 10 days.",
+          "deterministic_anchors": [
+            {
+              "kind": "number",
+              "normalized_value": "10days",
+              "required_exactly": false,
+              "value": "10 days"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-005-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Employees on approved leave receive five extra days, but cash advances must always be reconciled within 10 days."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "Expense reports are due within 20 days. Employees on approved leave receive five extra days, but cash advances must always be reconciled within 10 days.",
+      "specification_id": "rb12-summarization-medium-005"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-easy-006"
+      ],
+      "canonical_task_id": "summarization-easy-006",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Accurately state that the original date was May 4.",
+        "Accurately state that supplier delays moved it to May 18.",
+        "Accurately state that the final approved date is May 12."
+      ],
+      "material_semantic_traps": [
+        "the final date is May 18"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that the original date was May 4.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "may4",
+              "required_exactly": false,
+              "value": "May 4"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "4",
+              "required_exactly": false,
+              "value": "4"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-006-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The original launch date was May 4."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that supplier delays moved it to May 18.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "may18",
+              "required_exactly": false,
+              "value": "May 18"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "18",
+              "required_exactly": false,
+              "value": "18"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-006-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Supplier delays moved it to May 18."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that the final approved date is May 12.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "may12",
+              "required_exactly": false,
+              "value": "May 12"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "12",
+              "required_exactly": false,
+              "value": "12"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-006-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "After expedited shipping, the final approved date became May 12."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "The original launch date was May 4. Supplier delays moved it to May 18. After expedited shipping, the final approved date became May 12.",
+      "specification_id": "rb12-summarization-easy-006"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-medium-006"
+      ],
+      "canonical_task_id": "summarization-medium-006",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Accurately state that the target began at 80 TB.",
+        "Accurately state that acquisition raised it to 110 TB.",
+        "Accurately state that archival reduced the approved target to 95 TB."
+      ],
+      "material_semantic_traps": [
+        "the approved target is 110 TB"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that the target began at 80 TB.",
+          "deterministic_anchors": [
+            {
+              "kind": "number",
+              "normalized_value": "80tb",
+              "required_exactly": false,
+              "value": "80 TB"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-006-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The storage target began at 80 TB, increased to 110 TB after acquisition, and was reduced to 95 TB after archival."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [
+            {
+              "derivation_id": "derive-rb12-summarization-medium-006-r02",
+              "expression": "110 TB is a 30 TB increase from 80 TB",
+              "policy": "CONDITIONAL",
+              "rationale": "A relative increase requires the starting target.",
+              "requires_proposition_ids": [
+                "rb12-summarization-medium-006-r01"
+              ]
+            }
+          ],
+          "description": "Accurately state that acquisition raised it to 110 TB.",
+          "deterministic_anchors": [
+            {
+              "kind": "number",
+              "normalized_value": "110tb",
+              "required_exactly": false,
+              "value": "110 TB"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-006-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The storage target began at 80 TB, increased to 110 TB after acquisition, and was reduced to 95 TB after archival."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [
+            {
+              "derivation_id": "derive-rb12-summarization-medium-006-r03",
+              "expression": "95 TB is a 15 TB reduction from 110 TB",
+              "policy": "CONDITIONAL",
+              "rationale": "A relative reduction requires the preceding target.",
+              "requires_proposition_ids": [
+                "rb12-summarization-medium-006-r02"
+              ]
+            }
+          ],
+          "description": "Accurately state that archival reduced the approved target to 95 TB.",
+          "deterministic_anchors": [
+            {
+              "kind": "number",
+              "normalized_value": "95tb",
+              "required_exactly": false,
+              "value": "95 TB"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-006-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The storage target began at 80 TB, increased to 110 TB after acquisition, and was reduced to 95 TB after archival."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "The storage target began at 80 TB, increased to 110 TB after acquisition, and was reduced to 95 TB after archival. The approved capacity plan now uses 95 TB.",
+      "specification_id": "rb12-summarization-medium-006"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-easy-007"
+      ],
+      "canonical_task_id": "summarization-easy-007",
+      "composite_reviews": [
+        {
+          "decision": "split",
+          "legacy_requirement_index": 1,
+          "old_requirement": "Accurately state that a cooling fan failed and the server shut down.",
+          "rationale": "The components are independently meaningful; equal fractional weights preserve the old requirement's total weight.",
+          "resulting_proposition_ids": [
+            "rb12-summarization-easy-007-r01a",
+            "rb12-summarization-easy-007-r01b"
+          ]
+        }
+      ],
+      "legacy_requirements": [
+        "Accurately state that a cooling fan failed and the server shut down.",
+        "Accurately state that replacing the fan restored normal temperature.",
+        "Accurately state that the database required no repair."
+      ],
+      "material_semantic_traps": [
+        "the database caused the shutdown"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "A cooling fan failed.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-007-r01a",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "A cooling fan failed, causing the server to overheat and shut down."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "The fan failure caused the server to shut down.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-007-r01b",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "A cooling fan failed, causing the server to overheat and shut down."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that replacing the fan restored normal temperature.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-007-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Replacing the fan restored normal temperature; the database required no repair."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that the database required no repair.",
+          "deterministic_anchors": [
+            {
+              "kind": "boolean_state",
+              "normalized_value": "semantic_boolean",
+              "required_exactly": false,
+              "value": "polarity/constraint"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-007-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Replacing the fan restored normal temperature; the database required no repair."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "A cooling fan failed, causing the server to overheat and shut down. Replacing the fan restored normal temperature; the database required no repair.",
+      "specification_id": "rb12-summarization-easy-007"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-easy-008"
+      ],
+      "canonical_task_id": "summarization-easy-008",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Accurately state that a malformed catalog entry caused the batch rejection.",
+        "Accurately state that correcting the entry allowed the rerun to finish.",
+        "Accurately state that the importer code was unchanged."
+      ],
+      "material_semantic_traps": [
+        "an importer code defect caused the rejection"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that a malformed catalog entry caused the batch rejection.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-008-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "A malformed catalog entry caused the importer to reject the nightly batch."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that correcting the entry allowed the rerun to finish.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-008-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Correcting the entry allowed the rerun to finish; the importer code was unchanged."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that the importer code was unchanged.",
+          "deterministic_anchors": [
+            {
+              "kind": "boolean_state",
+              "normalized_value": "semantic_boolean",
+              "required_exactly": false,
+              "value": "polarity/constraint"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-easy-008-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Correcting the entry allowed the rerun to finish; the importer code was unchanged."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "A malformed catalog entry caused the importer to reject the nightly batch. Correcting the entry allowed the rerun to finish; the importer code was unchanged.",
+      "specification_id": "rb12-summarization-easy-008"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-hard-001"
+      ],
+      "canonical_task_id": "summarization-hard-001",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Accurately state that Asha favored retaining the vendor.",
+        "Accurately state that Bo favored a new bid.",
+        "Accurately state that Cy abstained due to a conflict.",
+        "Accurately state that the committee voted 4–2 for a new vendor search."
+      ],
+      "material_semantic_traps": [
+        "the vote retained the vendor"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that Asha favored retaining the vendor.",
+          "deterministic_anchors": [
+            {
+              "kind": "named_entity",
+              "normalized_value": "asha",
+              "required_exactly": false,
+              "value": "Asha"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-001-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Asha proposed retaining the vendor."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that Bo favored a new bid.",
+          "deterministic_anchors": [
+            {
+              "kind": "named_entity",
+              "normalized_value": "bo",
+              "required_exactly": false,
+              "value": "Bo"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-001-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Bo favored a new bid."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that Cy abstained due to a conflict.",
+          "deterministic_anchors": [
+            {
+              "kind": "named_entity",
+              "normalized_value": "cy",
+              "required_exactly": false,
+              "value": "Cy"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-001-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Cy abstained because of a conflict."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that the committee voted 4–2 for a new vendor search.",
+          "deterministic_anchors": [
+            {
+              "kind": "number",
+              "normalized_value": "4",
+              "required_exactly": false,
+              "value": "4"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "2",
+              "required_exactly": false,
+              "value": "2"
+            }
+          ],
+          "legacy_requirement_index": 4,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-001-r04",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The committee voted 4–2 to seek a new vendor."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "Asha proposed retaining the vendor. Bo favored a new bid. Cy abstained because of a conflict. The committee voted 4–2 to seek a new vendor.",
+      "specification_id": "rb12-summarization-hard-001"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-hard-002"
+      ],
+      "canonical_task_id": "summarization-hard-002",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Accurately state that Nora recommended extending the trial.",
+        "Accurately state that Omar preferred purchase.",
+        "Accurately state that Pia requested security evidence.",
+        "Accurately state that the board voted 5–1 to postpone purchase."
+      ],
+      "material_semantic_traps": [
+        "the board approved purchase"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that Nora recommended extending the trial.",
+          "deterministic_anchors": [
+            {
+              "kind": "named_entity",
+              "normalized_value": "nora",
+              "required_exactly": false,
+              "value": "Nora"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-002-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Nora recommended extending the trial, Omar preferred purchase, and Pia requested more security evidence."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that Omar preferred purchase.",
+          "deterministic_anchors": [
+            {
+              "kind": "named_entity",
+              "normalized_value": "omar",
+              "required_exactly": false,
+              "value": "Omar"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-002-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Nora recommended extending the trial, Omar preferred purchase, and Pia requested more security evidence."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that Pia requested security evidence.",
+          "deterministic_anchors": [
+            {
+              "kind": "named_entity",
+              "normalized_value": "pia",
+              "required_exactly": false,
+              "value": "Pia"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-002-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Nora recommended extending the trial, Omar preferred purchase, and Pia requested more security evidence."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that the board voted 5–1 to postpone purchase.",
+          "deterministic_anchors": [
+            {
+              "kind": "number",
+              "normalized_value": "5",
+              "required_exactly": false,
+              "value": "5"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "1",
+              "required_exactly": false,
+              "value": "1"
+            }
+          ],
+          "legacy_requirement_index": 4,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-002-r04",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The board postponed purchase 5–1 pending the security review."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "Nora recommended extending the trial, Omar preferred purchase, and Pia requested more security evidence. The board postponed purchase 5–1 pending the security review.",
+      "specification_id": "rb12-summarization-hard-002"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-medium-007"
+      ],
+      "canonical_task_id": "summarization-medium-007",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Accurately state that the analyst uploads the draft.",
+        "Accurately state that a reviewer resolves factual issues.",
+        "Accurately state that an editor approves formatting.",
+        "Accurately state that publication requires all stages to pass."
+      ],
+      "material_semantic_traps": [
+        "publication occurs before review"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that the analyst uploads the draft.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-007-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "To publish a report, an analyst uploads the draft, a reviewer resolves factual issues, and an editor approves formatting."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that a reviewer resolves factual issues.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-007-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "To publish a report, an analyst uploads the draft, a reviewer resolves factual issues, and an editor approves formatting."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that an editor approves formatting.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-007-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "To publish a report, an analyst uploads the draft, a reviewer resolves factual issues, and an editor approves formatting."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that publication requires all stages to pass.",
+          "deterministic_anchors": [
+            {
+              "kind": "boolean_state",
+              "normalized_value": "semantic_boolean",
+              "required_exactly": false,
+              "value": "polarity/constraint"
+            }
+          ],
+          "legacy_requirement_index": 4,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-007-r04",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Publication occurs only after all three stages pass."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "To publish a report, an analyst uploads the draft, a reviewer resolves factual issues, and an editor approves formatting. Publication occurs only after all three stages pass.",
+      "specification_id": "rb12-summarization-medium-007"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-hard-003"
+      ],
+      "canonical_task_id": "summarization-hard-003",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Accurately state that the request is matched to the original payment.",
+        "Accurately state that policy eligibility is checked.",
+        "Accurately state that Finance gives final approval.",
+        "Accurately state that funds require all three checks."
+      ],
+      "material_semantic_traps": [
+        "funds are released before Finance approval"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that the request is matched to the original payment.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-003-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "A refund request is first matched to the original payment, then checked for policy eligibility, and finally approved by Finance."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that policy eligibility is checked.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-003-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "A refund request is first matched to the original payment, then checked for policy eligibility, and finally approved by Finance."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that Finance gives final approval.",
+          "deterministic_anchors": [
+            {
+              "kind": "named_entity",
+              "normalized_value": "finance",
+              "required_exactly": false,
+              "value": "Finance"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-003-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "A refund request is first matched to the original payment, then checked for policy eligibility, and finally approved by Finance."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that funds require all three checks.",
+          "deterministic_anchors": [
+            {
+              "kind": "boolean_state",
+              "normalized_value": "semantic_boolean",
+              "required_exactly": false,
+              "value": "polarity/constraint"
+            }
+          ],
+          "legacy_requirement_index": 4,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-003-r04",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Funds are released only after all three checks succeed."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "A refund request is first matched to the original payment, then checked for policy eligibility, and finally approved by Finance. Funds are released only after all three checks succeed.",
+      "specification_id": "rb12-summarization-hard-003"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-medium-008"
+      ],
+      "canonical_task_id": "summarization-medium-008",
+      "composite_reviews": [
+        {
+          "decision": "split",
+          "legacy_requirement_index": 1,
+          "old_requirement": "Accurately state that North costs $18 and includes 20 GB.",
+          "rationale": "The components are independently meaningful; equal fractional weights preserve the old requirement's total weight.",
+          "resulting_proposition_ids": [
+            "rb12-summarization-medium-008-r01a",
+            "rb12-summarization-medium-008-r01b"
+          ]
+        },
+        {
+          "decision": "split",
+          "legacy_requirement_index": 2,
+          "old_requirement": "Accurately state that South costs $24 and includes 50 GB plus roaming.",
+          "rationale": "The components are independently meaningful; equal fractional weights preserve the old requirement's total weight.",
+          "resulting_proposition_ids": [
+            "rb12-summarization-medium-008-r02a",
+            "rb12-summarization-medium-008-r02b",
+            "rb12-summarization-medium-008-r02c"
+          ]
+        }
+      ],
+      "legacy_requirements": [
+        "Accurately state that North costs $18 and includes 20 GB.",
+        "Accurately state that South costs $24 and includes 50 GB plus roaming.",
+        "Accurately state that both include phone support."
+      ],
+      "material_semantic_traps": [
+        "North includes more data than South"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Plan North costs $18 monthly.",
+          "deterministic_anchors": [
+            {
+              "kind": "currency",
+              "normalized_value": "$18",
+              "required_exactly": false,
+              "value": "$18"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "18",
+              "required_exactly": false,
+              "value": "18"
+            },
+            {
+              "kind": "explicit_label",
+              "normalized_value": "plannorth",
+              "required_exactly": false,
+              "value": "Plan North"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-008-r01a",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Plan North costs $18 monthly and includes 20 GB."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Plan North includes 20 GB.",
+          "deterministic_anchors": [
+            {
+              "kind": "number",
+              "normalized_value": "20gb",
+              "required_exactly": false,
+              "value": "20 GB"
+            },
+            {
+              "kind": "explicit_label",
+              "normalized_value": "plannorth",
+              "required_exactly": false,
+              "value": "Plan North"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-008-r01b",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Plan North costs $18 monthly and includes 20 GB."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Plan South costs $24 monthly.",
+          "deterministic_anchors": [
+            {
+              "kind": "currency",
+              "normalized_value": "$24",
+              "required_exactly": false,
+              "value": "$24"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "24",
+              "required_exactly": false,
+              "value": "24"
+            },
+            {
+              "kind": "explicit_label",
+              "normalized_value": "plansouth",
+              "required_exactly": false,
+              "value": "Plan South"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-008-r02a",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Plan South costs $24 and includes 50 GB plus roaming."
+          },
+          "weight": {
+            "denominator": 3,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Plan South includes 50 GB.",
+          "deterministic_anchors": [
+            {
+              "kind": "number",
+              "normalized_value": "50gb",
+              "required_exactly": false,
+              "value": "50 GB"
+            },
+            {
+              "kind": "explicit_label",
+              "normalized_value": "plansouth",
+              "required_exactly": false,
+              "value": "Plan South"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-008-r02b",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Plan South costs $24 and includes 50 GB plus roaming."
+          },
+          "weight": {
+            "denominator": 3,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Plan South includes roaming.",
+          "deterministic_anchors": [
+            {
+              "kind": "explicit_label",
+              "normalized_value": "plansouth",
+              "required_exactly": false,
+              "value": "Plan South"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-008-r02c",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Plan South costs $24 and includes 50 GB plus roaming."
+          },
+          "weight": {
+            "denominator": 3,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that both include phone support.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-008-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Both include phone support."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "Plan North costs $18 monthly and includes 20 GB. Plan South costs $24 and includes 50 GB plus roaming. Both include phone support.",
+      "specification_id": "rb12-summarization-medium-008"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-medium-009"
+      ],
+      "canonical_task_id": "summarization-medium-009",
+      "composite_reviews": [
+        {
+          "decision": "split",
+          "legacy_requirement_index": 1,
+          "old_requirement": "Accurately state that Pine charges $900 setup and $80 monthly.",
+          "rationale": "The components are independently meaningful; equal fractional weights preserve the old requirement's total weight.",
+          "resulting_proposition_ids": [
+            "rb12-summarization-medium-009-r01a",
+            "rb12-summarization-medium-009-r01b"
+          ]
+        },
+        {
+          "decision": "split",
+          "legacy_requirement_index": 3,
+          "old_requirement": "Accurately state that Lake has no setup fee and costs $125 monthly.",
+          "rationale": "The components are independently meaningful; equal fractional weights preserve the old requirement's total weight.",
+          "resulting_proposition_ids": [
+            "rb12-summarization-medium-009-r03a",
+            "rb12-summarization-medium-009-r03b"
+          ]
+        }
+      ],
+      "legacy_requirements": [
+        "Accurately state that Pine charges $900 setup and $80 monthly.",
+        "Accurately state that Pine offers weekday support.",
+        "Accurately state that Lake has no setup fee and costs $125 monthly.",
+        "Accurately state that Lake includes 24/7 support."
+      ],
+      "material_semantic_traps": [
+        "Pine includes 24/7 support"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Vendor Pine charges a $900 setup fee.",
+          "deterministic_anchors": [
+            {
+              "kind": "currency",
+              "normalized_value": "$900",
+              "required_exactly": false,
+              "value": "$900"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "900",
+              "required_exactly": false,
+              "value": "900"
+            },
+            {
+              "kind": "explicit_label",
+              "normalized_value": "vendorpine",
+              "required_exactly": false,
+              "value": "Vendor Pine"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-009-r01a",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Vendor Pine charges $900 setup plus $80 monthly and offers weekday support."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Vendor Pine charges $80 monthly.",
+          "deterministic_anchors": [
+            {
+              "kind": "currency",
+              "normalized_value": "$80",
+              "required_exactly": false,
+              "value": "$80"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "80",
+              "required_exactly": false,
+              "value": "80"
+            },
+            {
+              "kind": "explicit_label",
+              "normalized_value": "vendorpine",
+              "required_exactly": false,
+              "value": "Vendor Pine"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-009-r01b",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Vendor Pine charges $900 setup plus $80 monthly and offers weekday support."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that Pine offers weekday support.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-009-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Vendor Pine charges $900 setup plus $80 monthly and offers weekday support."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Vendor Lake has no setup fee.",
+          "deterministic_anchors": [
+            {
+              "kind": "boolean_state",
+              "normalized_value": "semantic_boolean",
+              "required_exactly": false,
+              "value": "polarity/constraint"
+            },
+            {
+              "kind": "explicit_label",
+              "normalized_value": "vendorlake",
+              "required_exactly": false,
+              "value": "Vendor Lake"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-009-r03a",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Vendor Lake has no setup fee, charges $125 monthly, and includes 24/7 support."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Vendor Lake charges $125 monthly.",
+          "deterministic_anchors": [
+            {
+              "kind": "currency",
+              "normalized_value": "$125",
+              "required_exactly": false,
+              "value": "$125"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "125",
+              "required_exactly": false,
+              "value": "125"
+            },
+            {
+              "kind": "explicit_label",
+              "normalized_value": "vendorlake",
+              "required_exactly": false,
+              "value": "Vendor Lake"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-009-r03b",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Vendor Lake has no setup fee, charges $125 monthly, and includes 24/7 support."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that Lake includes 24/7 support.",
+          "deterministic_anchors": [
+            {
+              "kind": "number",
+              "normalized_value": "24",
+              "required_exactly": false,
+              "value": "24"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "7",
+              "required_exactly": false,
+              "value": "7"
+            }
+          ],
+          "legacy_requirement_index": 4,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-009-r04",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Vendor Lake has no setup fee, charges $125 monthly, and includes 24/7 support."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "Vendor Pine charges $900 setup plus $80 monthly and offers weekday support. Vendor Lake has no setup fee, charges $125 monthly, and includes 24/7 support.",
+      "specification_id": "rb12-summarization-medium-009"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-hard-004"
+      ],
+      "canonical_task_id": "summarization-hard-004",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Accurately state that preliminary demand may rise 8–12%.",
+        "Accurately state that the sample is small.",
+        "Accurately state that the estimate is not a forecast.",
+        "Accurately state that a larger survey begins next month."
+      ],
+      "material_semantic_traps": [
+        "demand will definitely rise 12%"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that preliminary demand may rise 8–12%.",
+          "deterministic_anchors": [
+            {
+              "kind": "percentage",
+              "normalized_value": "12%",
+              "required_exactly": false,
+              "value": "12%"
+            },
+            {
+              "kind": "date",
+              "normalized_value": "may",
+              "required_exactly": false,
+              "value": "may"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "8",
+              "required_exactly": false,
+              "value": "8"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "12",
+              "required_exactly": false,
+              "value": "12"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-004-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The preliminary survey suggests demand may rise by 8–12%, but the sample is small and the estimate is not a forecast."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that the sample is small.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-004-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The preliminary survey suggests demand may rise by 8–12%, but the sample is small and the estimate is not a forecast."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that the estimate is not a forecast.",
+          "deterministic_anchors": [
+            {
+              "kind": "boolean_state",
+              "normalized_value": "semantic_boolean",
+              "required_exactly": false,
+              "value": "polarity/constraint"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-004-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The preliminary survey suggests demand may rise by 8–12%, but the sample is small and the estimate is not a forecast."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that a larger survey begins next month.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 4,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-004-r04",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "A larger survey begins next month."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "The preliminary survey suggests demand may rise by 8–12%, but the sample is small and the estimate is not a forecast. A larger survey begins next month.",
+      "specification_id": "rb12-summarization-hard-004"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-hard-005"
+      ],
+      "canonical_task_id": "summarization-hard-005",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Accurately state that early analysis suggests a 4–7% reduction.",
+        "Accurately state that winter data is missing.",
+        "Accurately state that the result is not independently replicated.",
+        "Accurately state that the full-year study ends in December."
+      ],
+      "material_semantic_traps": [
+        "energy use will certainly fall 7%"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that early analysis suggests a 4–7% reduction.",
+          "deterministic_anchors": [
+            {
+              "kind": "percentage",
+              "normalized_value": "7%",
+              "required_exactly": false,
+              "value": "7%"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "4",
+              "required_exactly": false,
+              "value": "4"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "7",
+              "required_exactly": false,
+              "value": "7"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-005-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "An early sensor analysis indicates energy use could fall 4–7%, but winter data is missing and the result has not been independently replicated."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that winter data is missing.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-005-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "An early sensor analysis indicates energy use could fall 4–7%, but winter data is missing and the result has not been independently replicated."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that the result is not independently replicated.",
+          "deterministic_anchors": [
+            {
+              "kind": "boolean_state",
+              "normalized_value": "semantic_boolean",
+              "required_exactly": false,
+              "value": "polarity/constraint"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-005-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "An early sensor analysis indicates energy use could fall 4–7%, but winter data is missing and the result has not been independently replicated."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that the full-year study ends in December.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "december",
+              "required_exactly": false,
+              "value": "December"
+            }
+          ],
+          "legacy_requirement_index": 4,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-005-r04",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "A full-year study ends in December."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "An early sensor analysis indicates energy use could fall 4–7%, but winter data is missing and the result has not been independently replicated. A full-year study ends in December.",
+      "specification_id": "rb12-summarization-hard-005"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-hard-006"
+      ],
+      "canonical_task_id": "summarization-hard-006",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Accurately state that standard refunds require a receipt within 30 days.",
+        "Accurately state that gifts may use an order number.",
+        "Accurately state that clearance items require a defect to be refundable."
+      ],
+      "material_semantic_traps": [
+        "all clearance items are refundable"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that standard refunds require a receipt within 30 days.",
+          "deterministic_anchors": [
+            {
+              "kind": "number",
+              "normalized_value": "30days",
+              "required_exactly": false,
+              "value": "30 days"
+            },
+            {
+              "kind": "boolean_state",
+              "normalized_value": "semantic_boolean",
+              "required_exactly": false,
+              "value": "polarity/constraint"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-006-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Standard refunds require a receipt within 30 days."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that gifts may use an order number.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "may",
+              "required_exactly": false,
+              "value": "may"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-006-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Gifts may use an order number instead."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that clearance items require a defect to be refundable.",
+          "deterministic_anchors": [
+            {
+              "kind": "boolean_state",
+              "normalized_value": "semantic_boolean",
+              "required_exactly": false,
+              "value": "polarity/constraint"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-006-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Clearance items are never refundable unless defective."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "Standard refunds require a receipt within 30 days. Gifts may use an order number instead. Clearance items are never refundable unless defective.",
+      "specification_id": "rb12-summarization-hard-006"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-hard-007"
+      ],
+      "canonical_task_id": "summarization-hard-007",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Accurately state that standard reservations are free to change until noon the prior day.",
+        "Accurately state that flexible fares may change until departure.",
+        "Accurately state that group bookings require coordinator approval."
+      ],
+      "material_semantic_traps": [
+        "group bookings never require approval"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that standard reservations are free to change until noon the prior day.",
+          "deterministic_anchors": [
+            {
+              "kind": "time",
+              "normalized_value": "noon",
+              "required_exactly": false,
+              "value": "noon"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-007-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Reservations can be changed without charge until noon the prior day."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that flexible fares may change until departure.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "may",
+              "required_exactly": false,
+              "value": "may"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-007-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Flexible fares may change until departure, while group bookings always require coordinator approval."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that group bookings require coordinator approval.",
+          "deterministic_anchors": [
+            {
+              "kind": "boolean_state",
+              "normalized_value": "semantic_boolean",
+              "required_exactly": false,
+              "value": "polarity/constraint"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-007-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Flexible fares may change until departure, while group bookings always require coordinator approval."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "Reservations can be changed without charge until noon the prior day. Flexible fares may change until departure, while group bookings always require coordinator approval.",
+      "specification_id": "rb12-summarization-hard-007"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-medium-010"
+      ],
+      "canonical_task_id": "summarization-medium-010",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Accurately state that safety review passed in January.",
+        "Accurately state that funding was approved in March.",
+        "Accurately state that construction began in June.",
+        "Accurately state that completion is scheduled for November."
+      ],
+      "material_semantic_traps": [
+        "construction finished in June"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that safety review passed in January.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "january",
+              "required_exactly": false,
+              "value": "January"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-010-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The bridge design passed safety review in January."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that funding was approved in March.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "march",
+              "required_exactly": false,
+              "value": "March"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-010-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Funding was approved in March."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that construction began in June.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "june",
+              "required_exactly": false,
+              "value": "June"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-010-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Construction began in June and is scheduled to finish in November."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that completion is scheduled for November.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "november",
+              "required_exactly": false,
+              "value": "November"
+            }
+          ],
+          "legacy_requirement_index": 4,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-010-r04",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Construction began in June and is scheduled to finish in November."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "The bridge design passed safety review in January. Funding was approved in March. Construction began in June and is scheduled to finish in November.",
+      "specification_id": "rb12-summarization-medium-010"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-hard-008"
+      ],
+      "canonical_task_id": "summarization-hard-008",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Accurately state that the lease was signed in February.",
+        "Accurately state that renovation passed inspection in April.",
+        "Accurately state that staff training finished in May.",
+        "Accurately state that opening is planned for July."
+      ],
+      "material_semantic_traps": [
+        "the clinic opened in May"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that the lease was signed in February.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "february",
+              "required_exactly": false,
+              "value": "February"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-008-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The clinic lease was signed in February, renovation passed inspection in April, staff training finished in May, and opening is planned for July."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that renovation passed inspection in April.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "april",
+              "required_exactly": false,
+              "value": "April"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-008-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The clinic lease was signed in February, renovation passed inspection in April, staff training finished in May, and opening is planned for July."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that staff training finished in May.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "may",
+              "required_exactly": false,
+              "value": "May"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-008-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The clinic lease was signed in February, renovation passed inspection in April, staff training finished in May, and opening is planned for July."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that opening is planned for July.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "july",
+              "required_exactly": false,
+              "value": "July"
+            }
+          ],
+          "legacy_requirement_index": 4,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-008-r04",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The clinic lease was signed in February, renovation passed inspection in April, staff training finished in May, and opening is planned for July."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "The clinic lease was signed in February, renovation passed inspection in April, staff training finished in May, and opening is planned for July.",
+      "specification_id": "rb12-summarization-hard-008"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-medium-011"
+      ],
+      "canonical_task_id": "summarization-medium-011",
+      "composite_reviews": [
+        {
+          "decision": "split",
+          "legacy_requirement_index": 1,
+          "old_requirement": "Accurately state that A cuts latency 30% but raises cost 15%.",
+          "rationale": "The components are independently meaningful; equal fractional weights preserve the old requirement's total weight.",
+          "resulting_proposition_ids": [
+            "rb12-summarization-medium-011-r01a",
+            "rb12-summarization-medium-011-r01b"
+          ]
+        },
+        {
+          "decision": "split",
+          "legacy_requirement_index": 2,
+          "old_requirement": "Accurately state that B keeps cost flat and cuts latency 10%.",
+          "rationale": "The components are independently meaningful; equal fractional weights preserve the old requirement's total weight.",
+          "resulting_proposition_ids": [
+            "rb12-summarization-medium-011-r02a",
+            "rb12-summarization-medium-011-r02b"
+          ]
+        }
+      ],
+      "legacy_requirements": [
+        "Accurately state that A cuts latency 30% but raises cost 15%.",
+        "Accurately state that B keeps cost flat and cuts latency 10%.",
+        "Accurately state that the team selected B because the budget is fixed."
+      ],
+      "material_semantic_traps": [
+        "the team selected A"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Option A cuts latency by 30%.",
+          "deterministic_anchors": [
+            {
+              "kind": "percentage",
+              "normalized_value": "30%",
+              "required_exactly": false,
+              "value": "30%"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "30",
+              "required_exactly": false,
+              "value": "30"
+            },
+            {
+              "kind": "explicit_label",
+              "normalized_value": "optiona",
+              "required_exactly": false,
+              "value": "Option A"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-011-r01a",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Option A cuts latency by 30% but raises cost by 15%."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Option A raises cost by 15%.",
+          "deterministic_anchors": [
+            {
+              "kind": "percentage",
+              "normalized_value": "15%",
+              "required_exactly": false,
+              "value": "15%"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "15",
+              "required_exactly": false,
+              "value": "15"
+            },
+            {
+              "kind": "explicit_label",
+              "normalized_value": "optiona",
+              "required_exactly": false,
+              "value": "Option A"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-011-r01b",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Option A cuts latency by 30% but raises cost by 15%."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Option B keeps cost flat.",
+          "deterministic_anchors": [
+            {
+              "kind": "explicit_label",
+              "normalized_value": "optionb",
+              "required_exactly": false,
+              "value": "Option B"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-011-r02a",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Option B keeps cost flat and cuts latency by 10%."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Option B cuts latency by 10%.",
+          "deterministic_anchors": [
+            {
+              "kind": "percentage",
+              "normalized_value": "10%",
+              "required_exactly": false,
+              "value": "10%"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "10",
+              "required_exactly": false,
+              "value": "10"
+            },
+            {
+              "kind": "explicit_label",
+              "normalized_value": "optionb",
+              "required_exactly": false,
+              "value": "Option B"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-011-r02b",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Option B keeps cost flat and cuts latency by 10%."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that the team selected B because the budget is fixed.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-011-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The team selected B because the budget is fixed."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "Option A cuts latency by 30% but raises cost by 15%. Option B keeps cost flat and cuts latency by 10%. The team selected B because the budget is fixed.",
+      "specification_id": "rb12-summarization-medium-011"
+    },
+    {
+      "ambiguity_resolutions": [
+        {
+          "ambiguity": "The old wording named only the 35-minute endpoint although the source also made the 10-minute baseline material.",
+          "new_proposition_ids": [
+            "rb12-summarization-hard-009-r02a",
+            "rb12-summarization-hard-009-r02b"
+          ],
+          "old_requirement": "Accurately state that X increases recovery time to 35 minutes.",
+          "rationale": "The resolution makes the benchmark-owned information boundary explicit.",
+          "resolution": "Represent the baseline and new recovery time separately with half of the old weight each."
+        }
+      ],
+      "applies_to": [
+        "routing-v1.2:summarization-hard-009"
+      ],
+      "canonical_task_id": "summarization-hard-009",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Accurately state that X cuts storage cost 20%.",
+        "Accurately state that X increases recovery time to 35 minutes.",
+        "Accurately state that Y preserves current cost and recovery time.",
+        "Accurately state that the team retained Y for recovery speed."
+      ],
+      "material_semantic_traps": [
+        "the team selected X"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that X cuts storage cost 20%.",
+          "deterministic_anchors": [
+            {
+              "kind": "percentage",
+              "normalized_value": "20%",
+              "required_exactly": false,
+              "value": "20%"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "20",
+              "required_exactly": false,
+              "value": "20"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-009-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Database X cuts storage cost 20% but increases recovery time from 10 to 35 minutes."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Database X has a current recovery time of 10 minutes.",
+          "deterministic_anchors": [
+            {
+              "kind": "number",
+              "normalized_value": "10minutes",
+              "required_exactly": false,
+              "value": "10 minutes"
+            },
+            {
+              "kind": "explicit_label",
+              "normalized_value": "databasex",
+              "required_exactly": false,
+              "value": "Database X"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-009-r02a",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Database X cuts storage cost 20% but increases recovery time from 10 to 35 minutes."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [
+            {
+              "derivation_id": "derive-rb12-summarization-hard-009-r02b",
+              "expression": "35 minutes is a 25-minute increase from 10 minutes",
+              "policy": "CONDITIONAL",
+              "rationale": "The delta preserves the endpoint only when the baseline is also entailed.",
+              "requires_proposition_ids": [
+                "rb12-summarization-hard-009-r02a"
+              ]
+            }
+          ],
+          "description": "Database X would increase recovery time to 35 minutes.",
+          "deterministic_anchors": [
+            {
+              "kind": "number",
+              "normalized_value": "35minutes",
+              "required_exactly": false,
+              "value": "35 minutes"
+            },
+            {
+              "kind": "explicit_label",
+              "normalized_value": "databasex",
+              "required_exactly": false,
+              "value": "Database X"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-009-r02b",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Database X cuts storage cost 20% but increases recovery time from 10 to 35 minutes."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that Y preserves current cost and recovery time.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-009-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Database Y keeps current cost and recovery time."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that the team retained Y for recovery speed.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 4,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-009-r04",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The team retained Y because recovery speed is mandatory."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "Database X cuts storage cost 20% but increases recovery time from 10 to 35 minutes. Database Y keeps current cost and recovery time. The team retained Y because recovery speed is mandatory.",
+      "specification_id": "rb12-summarization-hard-009"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-medium-012"
+      ],
+      "canonical_task_id": "summarization-medium-012",
+      "composite_reviews": [
+        {
+          "decision": "split",
+          "legacy_requirement_index": 1,
+          "old_requirement": "Accurately state that support reproduced the defect and sent logs.",
+          "rationale": "The components are independently meaningful; equal fractional weights preserve the old requirement's total weight.",
+          "resulting_proposition_ids": [
+            "rb12-summarization-medium-012-r01a",
+            "rb12-summarization-medium-012-r01b"
+          ]
+        },
+        {
+          "decision": "split",
+          "legacy_requirement_index": 2,
+          "old_requirement": "Accurately state that engineering found a parser bug and supplied a patch.",
+          "rationale": "The components are independently meaningful; equal fractional weights preserve the old requirement's total weight.",
+          "resulting_proposition_ids": [
+            "rb12-summarization-medium-012-r02a",
+            "rb12-summarization-medium-012-r02b"
+          ]
+        }
+      ],
+      "legacy_requirements": [
+        "Accurately state that support reproduced the defect and sent logs.",
+        "Accurately state that engineering found a parser bug and supplied a patch.",
+        "Accurately state that release management scheduled Tuesday."
+      ],
+      "material_semantic_traps": [
+        "support supplied the patch"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Support reproduced the defect.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-012-r01a",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Support reproduced the defect and sent logs to Engineering."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Support sent logs to Engineering.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-012-r01b",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Support reproduced the defect and sent logs to Engineering."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Engineering identified a parser bug.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-012-r02a",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Engineering identified a parser bug and supplied a patch."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Engineering supplied a patch.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-012-r02b",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Engineering identified a parser bug and supplied a patch."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that release management scheduled Tuesday.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "tuesday",
+              "required_exactly": false,
+              "value": "Tuesday"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-012-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Release Management scheduled the patch for Tuesday."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "Support reproduced the defect and sent logs to Engineering. Engineering identified a parser bug and supplied a patch. Release Management scheduled the patch for Tuesday.",
+      "specification_id": "rb12-summarization-medium-012"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-medium-013"
+      ],
+      "canonical_task_id": "summarization-medium-013",
+      "composite_reviews": [
+        {
+          "decision": "split",
+          "legacy_requirement_index": 1,
+          "old_requirement": "Accurately state that Sales documented the exception and contacted Legal.",
+          "rationale": "The components are independently meaningful; equal fractional weights preserve the old requirement's total weight.",
+          "resulting_proposition_ids": [
+            "rb12-summarization-medium-013-r01a",
+            "rb12-summarization-medium-013-r01b"
+          ]
+        }
+      ],
+      "legacy_requirements": [
+        "Accurately state that Sales documented the exception and contacted Legal.",
+        "Accurately state that Legal approved revised language.",
+        "Accurately state that Operations added it to the Friday renewal package."
+      ],
+      "material_semantic_traps": [
+        "Sales approved the legal language"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Sales documented the contract exception.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-013-r01a",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Sales documented the contract exception and asked Legal for review."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Sales asked Legal for review.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-013-r01b",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Sales documented the contract exception and asked Legal for review."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that Legal approved revised language.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-013-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Legal approved revised language, then Operations added it to the renewal package due Friday."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that Operations added it to the Friday renewal package.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "friday",
+              "required_exactly": false,
+              "value": "Friday"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-medium-013-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Legal approved revised language, then Operations added it to the renewal package due Friday."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "Sales documented the contract exception and asked Legal for review. Legal approved revised language, then Operations added it to the renewal package due Friday.",
+      "specification_id": "rb12-summarization-medium-013"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "routing-v1.2:summarization-hard-010"
+      ],
+      "canonical_task_id": "summarization-hard-010",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Accurately state that revenue rose 6%.",
+        "Accurately state that customer count rose 9%.",
+        "Accurately state that average order value fell 3%.",
+        "Accurately state that management attributed growth to new customers."
+      ],
+      "material_semantic_traps": [
+        "larger purchases drove growth"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that revenue rose 6%.",
+          "deterministic_anchors": [
+            {
+              "kind": "percentage",
+              "normalized_value": "6%",
+              "required_exactly": false,
+              "value": "6%"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "6",
+              "required_exactly": false,
+              "value": "6"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-010-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Revenue rose 6% and customer count rose 9%, while average order value fell 3%."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that customer count rose 9%.",
+          "deterministic_anchors": [
+            {
+              "kind": "percentage",
+              "normalized_value": "9%",
+              "required_exactly": false,
+              "value": "9%"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "9",
+              "required_exactly": false,
+              "value": "9"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-010-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Revenue rose 6% and customer count rose 9%, while average order value fell 3%."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that average order value fell 3%.",
+          "deterministic_anchors": [
+            {
+              "kind": "percentage",
+              "normalized_value": "3%",
+              "required_exactly": false,
+              "value": "3%"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "3",
+              "required_exactly": false,
+              "value": "3"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-010-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Revenue rose 6% and customer count rose 9%, while average order value fell 3%."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that management attributed growth to new customers.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 4,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-010-r04",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Management attributed growth to new customers, not larger purchases."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "Revenue rose 6% and customer count rose 9%, while average order value fell 3%. Management attributed growth to new customers, not larger purchases.",
+      "specification_id": "rb12-summarization-hard-010"
+    },
+    {
+      "ambiguity_resolutions": [
+        {
+          "ambiguity": "The old requirement combined an attribution about speed with a separate review of return causes.",
+          "new_proposition_ids": [
+            "rb12-summarization-hard-011-r04a",
+            "rb12-summarization-hard-011-r04b"
+          ],
+          "old_requirement": "Accurately state that leaders credited automation for speed and are reviewing returns.",
+          "rationale": "The resolution makes the benchmark-owned information boundary explicit.",
+          "resolution": "Represent the attribution and review as independent half-weight propositions."
+        }
+      ],
+      "applies_to": [
+        "routing-v1.2:summarization-hard-011"
+      ],
+      "canonical_task_id": "summarization-hard-011",
+      "composite_reviews": [
+        {
+          "decision": "split",
+          "legacy_requirement_index": 4,
+          "old_requirement": "Accurately state that leaders credited automation for speed and are reviewing returns.",
+          "rationale": "The components are independently meaningful; equal fractional weights preserve the old requirement's total weight.",
+          "resulting_proposition_ids": [
+            "rb12-summarization-hard-011-r04a",
+            "rb12-summarization-hard-011-r04b"
+          ]
+        }
+      ],
+      "legacy_requirements": [
+        "Accurately state that orders grew 11%.",
+        "Accurately state that delivery time improved 8%.",
+        "Accurately state that returns rose from 4% to 6%.",
+        "Accurately state that leaders credited automation for speed and are reviewing returns."
+      ],
+      "material_semantic_traps": [
+        "automation was proven to cause the higher return rate"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that orders grew 11%.",
+          "deterministic_anchors": [
+            {
+              "kind": "percentage",
+              "normalized_value": "11%",
+              "required_exactly": false,
+              "value": "11%"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "11",
+              "required_exactly": false,
+              "value": "11"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-011-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Orders grew 11% and delivery time improved 8%, but returns rose from 4% to 6%."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Accurately state that delivery time improved 8%.",
+          "deterministic_anchors": [
+            {
+              "kind": "percentage",
+              "normalized_value": "8%",
+              "required_exactly": false,
+              "value": "8%"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "8",
+              "required_exactly": false,
+              "value": "8"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-011-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Orders grew 11% and delivery time improved 8%, but returns rose from 4% to 6%."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [
+            {
+              "derivation_id": "derive-rb12-summarization-hard-011-r03",
+              "expression": "returns rising from 4% to 6% = a 2-point increase",
+              "policy": "NOT_ALLOWED",
+              "rationale": "The delta alone loses both return-rate endpoints.",
+              "requires_proposition_ids": []
+            }
+          ],
+          "description": "Accurately state that returns rose from 4% to 6%.",
+          "deterministic_anchors": [
+            {
+              "kind": "percentage",
+              "normalized_value": "4%",
+              "required_exactly": false,
+              "value": "4%"
+            },
+            {
+              "kind": "percentage",
+              "normalized_value": "6%",
+              "required_exactly": false,
+              "value": "6%"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "4",
+              "required_exactly": false,
+              "value": "4"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "6",
+              "required_exactly": false,
+              "value": "6"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-011-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Orders grew 11% and delivery time improved 8%, but returns rose from 4% to 6%."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Leaders credited warehouse automation for improved delivery speed.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 4,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-011-r04a",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Leaders credited warehouse automation for speed while opening a review of return causes."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Leaders opened a review of the causes of increased returns.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 4,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "rb12-summarization-hard-011-r04b",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Leaders credited warehouse automation for speed while opening a review of return causes."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "Orders grew 11% and delivery time improved 8%, but returns rose from 4% to 6%. Leaders credited warehouse automation for speed while opening a review of return causes.",
+      "specification_id": "rb12-summarization-hard-011"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "foundation-v2:summarization-easy-01",
+        "foundation-v3:summarization-easy-01"
+      ],
+      "canonical_task_id": "summarization-easy-01",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "Friday opening is delayed by two hours",
+        "electrical maintenance is the cause",
+        "emergency services remain available"
+      ],
+      "material_semantic_traps": [],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Friday opening is delayed by two hours.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "friday",
+              "required_exactly": false,
+              "value": "Friday"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-easy-01-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The North Clinic will open two hours late on Friday because of electrical maintenance."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "electrical maintenance is the cause.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-easy-01-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The North Clinic will open two hours late on Friday because of electrical maintenance."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "emergency services remain available.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-easy-01-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Emergency services remain available."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "The North Clinic will open two hours late on Friday because of electrical maintenance. Emergency services remain available.",
+      "specification_id": "foundation-shared-summarization-easy-01"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "foundation-v2:summarization-easy-02",
+        "foundation-v3:summarization-easy-02"
+      ],
+      "canonical_task_id": "summarization-easy-02",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "workshop moved from Room 2 to Room 5",
+        "start remains 3 p.m."
+      ],
+      "material_semantic_traps": [],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "workshop moved from Room 2 to Room 5.",
+          "deterministic_anchors": [
+            {
+              "kind": "number",
+              "normalized_value": "2",
+              "required_exactly": false,
+              "value": "2"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "5",
+              "required_exactly": false,
+              "value": "5"
+            },
+            {
+              "kind": "explicit_label",
+              "normalized_value": "room2",
+              "required_exactly": false,
+              "value": "Room 2"
+            },
+            {
+              "kind": "explicit_label",
+              "normalized_value": "room5",
+              "required_exactly": false,
+              "value": "Room 5"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-easy-02-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The garden workshop moved from Room 2 to Room 5."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "start remains 3 p.m.",
+          "deterministic_anchors": [
+            {
+              "kind": "time",
+              "normalized_value": "3p.m.",
+              "required_exactly": false,
+              "value": "3 p.m."
+            },
+            {
+              "kind": "number",
+              "normalized_value": "3",
+              "required_exactly": false,
+              "value": "3"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-easy-02-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Its 3 p.m."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "The garden workshop moved from Room 2 to Room 5. Its 3 p.m. start time is unchanged.",
+      "specification_id": "foundation-shared-summarization-easy-02"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "foundation-v2:summarization-medium-01",
+        "foundation-v3:summarization-medium-01"
+      ],
+      "canonical_task_id": "summarization-medium-01",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "river buses pause Monday morning",
+        "service resumes at noon",
+        "rail service is unaffected"
+      ],
+      "material_semantic_traps": [
+        "cafe closure"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "river buses pause Monday morning.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "monday",
+              "required_exactly": false,
+              "value": "Monday"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-medium-01-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "River buses pause Monday morning for inspection and resume at noon."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "service resumes at noon.",
+          "deterministic_anchors": [
+            {
+              "kind": "time",
+              "normalized_value": "noon",
+              "required_exactly": false,
+              "value": "noon"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-medium-01-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "River buses pause Monday morning for inspection and resume at noon."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "rail service is unaffected.",
+          "deterministic_anchors": [
+            {
+              "kind": "boolean_state",
+              "normalized_value": "semantic_boolean",
+              "required_exactly": false,
+              "value": "polarity/constraint"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-medium-01-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Rail service is unaffected."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "River buses pause Monday morning for inspection and resume at noon. Rail service is unaffected. The cafe opens normally; yesterday's rain total was 8 mm.",
+      "specification_id": "foundation-shared-summarization-medium-01"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "foundation-v2:summarization-medium-02",
+        "foundation-v3:summarization-medium-02"
+      ],
+      "canonical_task_id": "summarization-medium-02",
+      "composite_reviews": [
+        {
+          "decision": "split",
+          "legacy_requirement_index": 1,
+          "old_requirement": "40 enrolled and 36 completed",
+          "rationale": "The components are independently meaningful; equal fractional weights preserve the old requirement's total weight.",
+          "resulting_proposition_ids": [
+            "foundation-shared-summarization-medium-02-r01a",
+            "foundation-shared-summarization-medium-02-r01b"
+          ]
+        }
+      ],
+      "legacy_requirements": [
+        "40 enrolled and 36 completed",
+        "wait time fell from 12 to 8 minutes"
+      ],
+      "material_semantic_traps": [],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "The trial enrolled 40 volunteers.",
+          "deterministic_anchors": [
+            {
+              "kind": "number",
+              "normalized_value": "40",
+              "required_exactly": false,
+              "value": "40"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-medium-02-r01a",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The trial enrolled 40 volunteers."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Thirty-six volunteers completed the trial.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-medium-02-r01b",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Thirty-six completed it."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [
+            {
+              "derivation_id": "derive-foundation-shared-summarization-medium-02-r02",
+              "expression": "12 to 8 minutes = a 4-minute decrease",
+              "policy": "NOT_ALLOWED",
+              "rationale": "A delta alone loses both endpoint measurements, which are benchmark material.",
+              "requires_proposition_ids": []
+            }
+          ],
+          "description": "wait time fell from 12 to 8 minutes.",
+          "deterministic_anchors": [
+            {
+              "kind": "number",
+              "normalized_value": "12",
+              "required_exactly": false,
+              "value": "12"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "8minutes",
+              "required_exactly": false,
+              "value": "8 minutes"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-medium-02-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Reported wait time fell from 12 to 8 minutes."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "The trial enrolled 40 volunteers. Thirty-six completed it. Reported wait time fell from 12 to 8 minutes. The office wallpaper was replaced in June.",
+      "specification_id": "foundation-shared-summarization-medium-02"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "foundation-v2:summarization-medium-03",
+        "foundation-v3:summarization-medium-03"
+      ],
+      "canonical_task_id": "summarization-medium-03",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "morning bus added to Route 3",
+        "starts September 4",
+        "afternoon schedule and fares unchanged"
+      ],
+      "material_semantic_traps": [],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "morning bus added to Route 3.",
+          "deterministic_anchors": [
+            {
+              "kind": "number",
+              "normalized_value": "3",
+              "required_exactly": false,
+              "value": "3"
+            },
+            {
+              "kind": "explicit_label",
+              "normalized_value": "route3",
+              "required_exactly": false,
+              "value": "Route 3"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-medium-03-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Cedar School adds a morning bus on Route 3 from September 4; the afternoon schedule and fares remain unchanged."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "starts September 4.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "september4",
+              "required_exactly": false,
+              "value": "September 4"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "4",
+              "required_exactly": false,
+              "value": "4"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-medium-03-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Cedar School adds a morning bus on Route 3 from September 4; the afternoon schedule and fares remain unchanged."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "afternoon schedule and fares unchanged.",
+          "deterministic_anchors": [
+            {
+              "kind": "boolean_state",
+              "normalized_value": "semantic_boolean",
+              "required_exactly": false,
+              "value": "polarity/constraint"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-medium-03-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Cedar School adds a morning bus on Route 3 from September 4; the afternoon schedule and fares remain unchanged."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "Cedar School adds a morning bus on Route 3 from September 4; the afternoon schedule and fares remain unchanged.",
+      "specification_id": "foundation-shared-summarization-medium-03"
+    },
+    {
+      "ambiguity_resolutions": [
+        {
+          "ambiguity": "The old wording did not identify which causal relationship was unestablished.",
+          "new_proposition_ids": [
+            "foundation-shared-summarization-hard-01-r03"
+          ],
+          "old_requirement": "causation is not established",
+          "rationale": "The resolution makes the benchmark-owned information boundary explicit.",
+          "resolution": "State explicitly that the report does not establish that smart meters caused the 9% decline."
+        }
+      ],
+      "applies_to": [
+        "foundation-v2:summarization-hard-01",
+        "foundation-v3:summarization-hard-01"
+      ],
+      "canonical_task_id": "summarization-hard-01",
+      "composite_reviews": [
+        {
+          "decision": "split",
+          "legacy_requirement_index": 1,
+          "old_requirement": "120 homes participated and 108 supplied complete data",
+          "rationale": "The components are independently meaningful; equal fractional weights preserve the old requirement's total weight.",
+          "resulting_proposition_ids": [
+            "foundation-shared-summarization-hard-01-r01a",
+            "foundation-shared-summarization-hard-01-r01b"
+          ]
+        }
+      ],
+      "legacy_requirements": [
+        "120 homes participated and 108 supplied complete data",
+        "average use fell 9%",
+        "causation is not established",
+        "installation cost exceeded plan by 4%"
+      ],
+      "material_semantic_traps": [
+        "proved the meters caused"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "The pilot included 120 homes.",
+          "deterministic_anchors": [
+            {
+              "kind": "number",
+              "normalized_value": "120homes",
+              "required_exactly": false,
+              "value": "120 homes"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-hard-01-r01a",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "A six-month pilot gave 120 homes smart meters; 108 supplied complete data."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [
+            {
+              "derivation_id": "derive-foundation-shared-summarization-hard-01-r01b",
+              "expression": "108 of 120 homes = 90% complete data",
+              "policy": "CONDITIONAL",
+              "rationale": "The ratio preserves the completion count only when the 120-home base is entailed.",
+              "requires_proposition_ids": [
+                "foundation-shared-summarization-hard-01-r01a"
+              ]
+            }
+          ],
+          "description": "One hundred eight homes supplied complete data.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-hard-01-r01b",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "A six-month pilot gave 120 homes smart meters; 108 supplied complete data."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "average use fell 9%.",
+          "deterministic_anchors": [
+            {
+              "kind": "percentage",
+              "normalized_value": "9%",
+              "required_exactly": false,
+              "value": "9%"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "9",
+              "required_exactly": false,
+              "value": "9"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-hard-01-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Average electricity use fell 9%, but the report cannot attribute causation."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "The report does not establish that smart meters caused the 9% decline in electricity use.",
+          "deterministic_anchors": [
+            {
+              "kind": "percentage",
+              "normalized_value": "9%",
+              "required_exactly": false,
+              "value": "9%"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "9",
+              "required_exactly": false,
+              "value": "9"
+            },
+            {
+              "kind": "boolean_state",
+              "normalized_value": "semantic_boolean",
+              "required_exactly": false,
+              "value": "polarity/constraint"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-hard-01-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Average electricity use fell 9%, but the report cannot attribute causation."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "installation cost exceeded plan by 4%.",
+          "deterministic_anchors": [
+            {
+              "kind": "percentage",
+              "normalized_value": "4%",
+              "required_exactly": false,
+              "value": "4%"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "4",
+              "required_exactly": false,
+              "value": "4"
+            }
+          ],
+          "legacy_requirement_index": 4,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-hard-01-r04",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Installation cost exceeded plan by 4%."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "A six-month pilot gave 120 homes smart meters; 108 supplied complete data. Average electricity use fell 9%, but the report cannot attribute causation. Installation cost exceeded plan by 4%. A separate survey covered paint colors.",
+      "specification_id": "foundation-shared-summarization-hard-01"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "foundation-v2:summarization-hard-02",
+        "foundation-v3:summarization-hard-02"
+      ],
+      "canonical_task_id": "summarization-hard-02",
+      "composite_reviews": [
+        {
+          "decision": "retain",
+          "legacy_requirement_index": 1,
+          "old_requirement": "H21 and H22 recalled after sensor fault",
+          "rationale": "The affected lots and sensor-fault context form one recall event.",
+          "resulting_proposition_ids": [
+            "foundation-shared-summarization-hard-02-r01"
+          ]
+        },
+        {
+          "decision": "split",
+          "legacy_requirement_index": 4,
+          "old_requirement": "replacement begins May 6 with hospitals prioritized",
+          "rationale": "The components are independently meaningful; equal fractional weights preserve the old requirement's total weight.",
+          "resulting_proposition_ids": [
+            "foundation-shared-summarization-hard-02-r04a",
+            "foundation-shared-summarization-hard-02-r04b"
+          ]
+        }
+      ],
+      "legacy_requirements": [
+        "H21 and H22 recalled after sensor fault",
+        "H20 passed retesting",
+        "no injuries",
+        "replacement begins May 6 with hospitals prioritized"
+      ],
+      "material_semantic_traps": [
+        "H20 recalled"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "H21 and H22 recalled after sensor fault.",
+          "deterministic_anchors": [
+            {
+              "kind": "explicit_label",
+              "normalized_value": "h21",
+              "required_exactly": false,
+              "value": "H21"
+            },
+            {
+              "kind": "explicit_label",
+              "normalized_value": "h22",
+              "required_exactly": false,
+              "value": "H22"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-hard-02-r01",
+          "requirement_type": "cohesive_composite",
+          "source_evidence": {
+            "quote": "After a sensor fault, Harbor Plant recalled lots H21 and H22."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "H20 passed retesting.",
+          "deterministic_anchors": [
+            {
+              "kind": "explicit_label",
+              "normalized_value": "h20",
+              "required_exactly": false,
+              "value": "H20"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-hard-02-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Lot H20 passed retesting."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "no injuries.",
+          "deterministic_anchors": [
+            {
+              "kind": "boolean_state",
+              "normalized_value": "semantic_boolean",
+              "required_exactly": false,
+              "value": "polarity/constraint"
+            }
+          ],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-hard-02-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "No injuries were reported."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Replacement shipments begin May 6.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "may6",
+              "required_exactly": false,
+              "value": "May 6"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "6",
+              "required_exactly": false,
+              "value": "6"
+            }
+          ],
+          "legacy_requirement_index": 4,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-hard-02-r04a",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Replacement shipments begin May 6, prioritizing hospitals."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "Hospitals receive replacement priority.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 4,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-hard-02-r04b",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Replacement shipments begin May 6, prioritizing hospitals."
+          },
+          "weight": {
+            "denominator": 2,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "After a sensor fault, Harbor Plant recalled lots H21 and H22. Lot H20 passed retesting. No injuries were reported. Replacement shipments begin May 6, prioritizing hospitals. Quarterly sales rose 2%, an unrelated fact.",
+      "specification_id": "foundation-shared-summarization-hard-02"
+    },
+    {
+      "ambiguity_resolutions": [],
+      "applies_to": [
+        "foundation-v2:summarization-hard-03",
+        "foundation-v3:summarization-hard-03"
+      ],
+      "canonical_task_id": "summarization-hard-03",
+      "composite_reviews": [],
+      "legacy_requirements": [
+        "night repairs July 8-11",
+        "one lane closed 10 p.m.-5 a.m.",
+        "buses remain on schedule",
+        "emergency vehicles have priority",
+        "daytime closure rejected"
+      ],
+      "material_semantic_traps": [
+        "daytime closure approved"
+      ],
+      "propositions": [
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "night repairs July 8-11.",
+          "deterministic_anchors": [
+            {
+              "kind": "date",
+              "normalized_value": "july8-11",
+              "required_exactly": false,
+              "value": "July 8-11"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "8",
+              "required_exactly": false,
+              "value": "8"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "11",
+              "required_exactly": false,
+              "value": "11"
+            }
+          ],
+          "legacy_requirement_index": 1,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-hard-03-r01",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The council approved night repairs on Bridge K from July 8-11, closing one lane from 10 p.m."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "one lane closed 10 p.m.-5 a.m.",
+          "deterministic_anchors": [
+            {
+              "kind": "time",
+              "normalized_value": "10p.m.",
+              "required_exactly": false,
+              "value": "10 p.m."
+            },
+            {
+              "kind": "time",
+              "normalized_value": "5a.m.",
+              "required_exactly": false,
+              "value": "5 a.m."
+            },
+            {
+              "kind": "number",
+              "normalized_value": "10",
+              "required_exactly": false,
+              "value": "10"
+            },
+            {
+              "kind": "number",
+              "normalized_value": "5",
+              "required_exactly": false,
+              "value": "5"
+            }
+          ],
+          "legacy_requirement_index": 2,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-hard-03-r02",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "The council approved night repairs on Bridge K from July 8-11, closing one lane from 10 p.m."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "buses remain on schedule.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 3,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-hard-03-r03",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Buses remain on schedule."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "emergency vehicles have priority.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 4,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-hard-03-r04",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "Emergency vehicles get priority."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        },
+        {
+          "accepted_equivalences": [],
+          "derivations": [],
+          "description": "daytime closure rejected.",
+          "deterministic_anchors": [],
+          "legacy_requirement_index": 5,
+          "notes": "Interpretive wording should return AMBIGUOUS when support and materiality cannot be determined from this evidence.",
+          "proposition_id": "foundation-shared-summarization-hard-03-r05",
+          "requirement_type": "atomic",
+          "source_evidence": {
+            "quote": "A proposed daytime closure was rejected."
+          },
+          "weight": {
+            "denominator": 1,
+            "numerator": 1
+          }
+        }
+      ],
+      "source_text": "The council approved night repairs on Bridge K from July 8-11, closing one lane from 10 p.m. to 5 a.m. Buses remain on schedule. Emergency vehicles get priority. A proposed daytime closure was rejected.",
+      "specification_id": "foundation-shared-summarization-hard-03"
+    }
+  ]
+}

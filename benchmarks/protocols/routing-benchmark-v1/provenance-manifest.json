@@ -1,0 +1,816 @@
+{
+  "benchmark": "routellm-routing-benchmark-v1",
+  "build_version": "1.1.0",
+  "candidate_outputs_used": false,
+  "construction": "controlled_programmatic_construction",
+  "difficulty_criteria": {
+    "classification": "rule interactions, precedence, distractors, and boundary burden",
+    "coding": "algorithmic structure, edge cases, state, and fixture burden",
+    "extraction": "layout variation, linkage, distractors, nesting, and selection rules",
+    "qa": "relevant-fact count, synthesis depth, distractors, and answer constraints",
+    "reasoning": "constraint interactions, search depth, state transitions, and uniqueness burden",
+    "structured_json": "schema depth, transformations, cross-field constraints, and ordering",
+    "summarization": "required facts, attribution, chronology, exceptions, and compression pressure"
+  },
+  "display_name": "RouteLLM Routing Benchmark v1",
+  "external_llm_generation": false,
+  "families": [
+    {
+      "task_family_id": "rbv1-classification-01-direct-material",
+      "task_ids": [
+        "classification-easy-001",
+        "classification-easy-002"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-classification-02-numeric-band",
+      "task_ids": [
+        "classification-easy-003",
+        "classification-easy-004"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-classification-03-document-routing",
+      "task_ids": [
+        "classification-easy-005",
+        "classification-easy-006"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-classification-04-priority-precedence",
+      "task_ids": [
+        "classification-medium-001",
+        "classification-medium-002"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-classification-05-refund-exception",
+      "task_ids": [
+        "classification-medium-003",
+        "classification-medium-004"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-classification-06-risk-matrix",
+      "task_ids": [
+        "classification-medium-005",
+        "classification-medium-006"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-classification-07-inventory-state",
+      "task_ids": [
+        "classification-easy-007",
+        "classification-easy-008"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-classification-08-access-policy",
+      "task_ids": [
+        "classification-hard-001",
+        "classification-medium-007"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-classification-09-sla-clock",
+      "task_ids": [
+        "classification-medium-008",
+        "classification-medium-009"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-classification-10-travel-policy",
+      "task_ids": [
+        "classification-hard-002",
+        "classification-hard-003"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-classification-11-retention-rule",
+      "task_ids": [
+        "classification-medium-010",
+        "classification-medium-011"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-classification-12-subscription-eligibility",
+      "task_ids": [
+        "classification-hard-004",
+        "classification-hard-005"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-classification-13-incident-cause",
+      "task_ids": [
+        "classification-hard-006",
+        "classification-hard-007"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-classification-14-shipping-service",
+      "task_ids": [
+        "classification-medium-012",
+        "classification-medium-013"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-classification-15-support-escalation",
+      "task_ids": [
+        "classification-hard-008",
+        "classification-hard-009"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-classification-16-compliance-hierarchy",
+      "task_ids": [
+        "classification-hard-010",
+        "classification-hard-011"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-coding-01-clamp-sequence",
+      "task_ids": [
+        "coding-easy-001",
+        "coding-easy-002"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-coding-02-collapse-whitespace",
+      "task_ids": [
+        "coding-easy-003",
+        "coding-easy-004"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-coding-03-initial-histogram",
+      "task_ids": [
+        "coding-easy-005",
+        "coding-medium-001"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-coding-04-key-value-parser",
+      "task_ids": [
+        "coding-medium-002",
+        "coding-medium-003"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-coding-05-cyclic-rotation",
+      "task_ids": [
+        "coding-medium-004",
+        "coding-medium-005"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-coding-06-stable-score-ranking",
+      "task_ids": [
+        "coding-easy-006",
+        "coding-medium-006"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-coding-07-merge-adjacent-intervals",
+      "task_ids": [
+        "coding-hard-001",
+        "coding-hard-002"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-coding-08-balanced-delimiters",
+      "task_ids": [
+        "coding-hard-003",
+        "coding-medium-007"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-coding-09-unweighted-shortest-path",
+      "task_ids": [
+        "coding-hard-004",
+        "coding-hard-005"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-coding-10-nested-group-total",
+      "task_ids": [
+        "coding-easy-007",
+        "coding-easy-008"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-coding-11-longest-nondecreasing",
+      "task_ids": [
+        "coding-hard-006",
+        "coding-hard-007"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-coding-12-slug-validation",
+      "task_ids": [
+        "coding-hard-008",
+        "coding-medium-008"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-coding-13-run-length-encoding",
+      "task_ids": [
+        "coding-medium-009",
+        "coding-medium-010"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-coding-14-rolling-window-sums",
+      "task_ids": [
+        "coding-medium-011",
+        "coding-medium-012"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-coding-15-transaction-state",
+      "task_ids": [
+        "coding-hard-009",
+        "coding-medium-013"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-coding-16-dependency-readiness",
+      "task_ids": [
+        "coding-hard-010",
+        "coding-hard-011"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-extraction-01-contact-prose",
+      "task_ids": [
+        "extraction-easy-001",
+        "extraction-easy-002"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-extraction-02-invoice-header",
+      "task_ids": [
+        "extraction-easy-003",
+        "extraction-easy-004"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-extraction-03-latest-error-log",
+      "task_ids": [
+        "extraction-easy-005",
+        "extraction-easy-006"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-extraction-04-text-table-filter",
+      "task_ids": [
+        "extraction-medium-001",
+        "extraction-medium-002"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-extraction-05-optional-field",
+      "task_ids": [
+        "extraction-easy-007",
+        "extraction-easy-008"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-extraction-06-repeated-entity-total",
+      "task_ids": [
+        "extraction-medium-003",
+        "extraction-medium-004"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-extraction-07-nested-shipment",
+      "task_ids": [
+        "extraction-medium-005",
+        "extraction-medium-006"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-extraction-08-section-precedence",
+      "task_ids": [
+        "extraction-hard-001",
+        "extraction-hard-002"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-extraction-09-unit-bearing-measurement",
+      "task_ids": [
+        "extraction-medium-007",
+        "extraction-medium-008"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-extraction-10-multi-party-action",
+      "task_ids": [
+        "extraction-hard-003",
+        "extraction-hard-004"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-extraction-11-keyed-list-order",
+      "task_ids": [
+        "extraction-medium-009",
+        "extraction-medium-010"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-extraction-12-event-window",
+      "task_ids": [
+        "extraction-hard-005",
+        "extraction-medium-011"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-extraction-13-cross-line-record",
+      "task_ids": [
+        "extraction-medium-012",
+        "extraction-medium-013"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-extraction-14-conditional-record-selection",
+      "task_ids": [
+        "extraction-hard-006",
+        "extraction-hard-007"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-extraction-15-paired-source-join",
+      "task_ids": [
+        "extraction-hard-008",
+        "extraction-hard-009"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-extraction-16-exception-aware-roles",
+      "task_ids": [
+        "extraction-hard-010",
+        "extraction-hard-011"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-json-01-flat-profile",
+      "task_ids": [
+        "json-easy-001",
+        "json-easy-002"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-json-02-filter-array",
+      "task_ids": [
+        "json-easy-003",
+        "json-easy-004"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-json-03-nested-address",
+      "task_ids": [
+        "json-easy-005",
+        "json-easy-006"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-json-04-enum-mapping",
+      "task_ids": [
+        "json-medium-001",
+        "json-medium-002"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-json-05-nullable-field",
+      "task_ids": [
+        "json-easy-007",
+        "json-easy-008"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-json-06-sorted-ranking",
+      "task_ids": [
+        "json-medium-003",
+        "json-medium-004"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-json-07-grouped-counts",
+      "task_ids": [
+        "json-medium-005",
+        "json-medium-006"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-json-08-conditional-field",
+      "task_ids": [
+        "json-medium-007",
+        "json-medium-008"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-json-09-deduplicated-array",
+      "task_ids": [
+        "json-medium-009",
+        "json-medium-010"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-json-10-joined-records",
+      "task_ids": [
+        "json-hard-001",
+        "json-hard-002"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-json-11-cross-field-status",
+      "task_ids": [
+        "json-medium-011",
+        "json-medium-012"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-json-12-hierarchy-tree",
+      "task_ids": [
+        "json-hard-003",
+        "json-hard-004"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-json-13-schedule-slots",
+      "task_ids": [
+        "json-hard-005",
+        "json-hard-006"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-json-14-invoice-aggregation",
+      "task_ids": [
+        "json-hard-007",
+        "json-medium-013"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-json-15-permission-matrix",
+      "task_ids": [
+        "json-hard-008",
+        "json-hard-009"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-json-16-rule-derived-summary",
+      "task_ids": [
+        "json-hard-010",
+        "json-hard-011"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-qa-01-direct-location",
+      "task_ids": [
+        "qa-easy-001",
+        "qa-easy-002"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-qa-02-attribute-lookup",
+      "task_ids": [
+        "qa-easy-003",
+        "qa-easy-004"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-qa-03-two-fact-sum",
+      "task_ids": [
+        "qa-easy-005",
+        "qa-easy-006"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-qa-04-temporal-latest",
+      "task_ids": [
+        "qa-medium-001",
+        "qa-medium-002"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-qa-05-difference-comparison",
+      "task_ids": [
+        "qa-easy-007",
+        "qa-easy-008"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-qa-06-exception-owner",
+      "task_ids": [
+        "qa-hard-001",
+        "qa-hard-002"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-qa-07-multi-passage-link",
+      "task_ids": [
+        "qa-medium-003",
+        "qa-medium-004"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-qa-08-schedule-intersection",
+      "task_ids": [
+        "qa-hard-003",
+        "qa-hard-004"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-qa-09-conditional-count",
+      "task_ids": [
+        "qa-medium-005",
+        "qa-medium-006"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-qa-10-state-after-updates",
+      "task_ids": [
+        "qa-medium-007",
+        "qa-medium-008"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-qa-11-rank-with-tie-rule",
+      "task_ids": [
+        "qa-medium-009",
+        "qa-medium-010"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-qa-12-dependency-question",
+      "task_ids": [
+        "qa-hard-005",
+        "qa-hard-006"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-qa-13-policy-date-window",
+      "task_ids": [
+        "qa-hard-007",
+        "qa-medium-011"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-qa-14-multi-step-rate",
+      "task_ids": [
+        "qa-medium-012",
+        "qa-medium-013"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-qa-15-role-chain",
+      "task_ids": [
+        "qa-hard-008",
+        "qa-hard-009"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-qa-16-rule-and-fact-synthesis",
+      "task_ids": [
+        "qa-hard-010",
+        "qa-hard-011"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-reasoning-01-net-change",
+      "task_ids": [
+        "reasoning-easy-001",
+        "reasoning-easy-002"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-reasoning-02-weighted-total",
+      "task_ids": [
+        "reasoning-easy-003",
+        "reasoning-easy-004"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-reasoning-03-ordered-middle",
+      "task_ids": [
+        "reasoning-easy-005",
+        "reasoning-easy-006"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-reasoning-04-set-intersection",
+      "task_ids": [
+        "reasoning-medium-001",
+        "reasoning-medium-002"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-reasoning-05-state-machine",
+      "task_ids": [
+        "reasoning-hard-001",
+        "reasoning-medium-003"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-reasoning-06-conditional-elimination",
+      "task_ids": [
+        "reasoning-hard-002",
+        "reasoning-hard-003"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-reasoning-07-capacity-allocation",
+      "task_ids": [
+        "reasoning-medium-004",
+        "reasoning-medium-005"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-reasoning-08-cyclic-schedule",
+      "task_ids": [
+        "reasoning-easy-007",
+        "reasoning-easy-008"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-reasoning-09-transitive-implication",
+      "task_ids": [
+        "reasoning-medium-006",
+        "reasoning-medium-007"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-reasoning-10-meeting-slot",
+      "task_ids": [
+        "reasoning-medium-008",
+        "reasoning-medium-009"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-reasoning-11-assignment-enumeration",
+      "task_ids": [
+        "reasoning-medium-010",
+        "reasoning-medium-011"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-reasoning-12-multi-rate-time",
+      "task_ids": [
+        "reasoning-medium-012",
+        "reasoning-medium-013"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-reasoning-13-exclusive-rules",
+      "task_ids": [
+        "reasoning-hard-004",
+        "reasoning-hard-005"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-reasoning-14-bounded-path",
+      "task_ids": [
+        "reasoning-hard-006",
+        "reasoning-hard-007"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-reasoning-15-constraint-ordering",
+      "task_ids": [
+        "reasoning-hard-008",
+        "reasoning-hard-009"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-reasoning-16-resource-sequence",
+      "task_ids": [
+        "reasoning-hard-010",
+        "reasoning-hard-011"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-summarization-01-chronology",
+      "task_ids": [
+        "summarization-easy-001",
+        "summarization-easy-002"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-summarization-02-ownership",
+      "task_ids": [
+        "summarization-easy-003",
+        "summarization-easy-004"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-summarization-03-incident",
+      "task_ids": [
+        "summarization-easy-005",
+        "summarization-medium-001"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-summarization-04-quantitative",
+      "task_ids": [
+        "summarization-medium-002",
+        "summarization-medium-003"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-summarization-05-policy-exception",
+      "task_ids": [
+        "summarization-medium-004",
+        "summarization-medium-005"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-summarization-06-change-over-time",
+      "task_ids": [
+        "summarization-easy-006",
+        "summarization-medium-006"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-summarization-07-causal",
+      "task_ids": [
+        "summarization-easy-007",
+        "summarization-easy-008"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-summarization-08-multi-party-decision",
+      "task_ids": [
+        "summarization-hard-001",
+        "summarization-hard-002"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-summarization-09-process",
+      "task_ids": [
+        "summarization-hard-003",
+        "summarization-medium-007"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-summarization-10-comparison",
+      "task_ids": [
+        "summarization-medium-008",
+        "summarization-medium-009"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-summarization-11-uncertainty",
+      "task_ids": [
+        "summarization-hard-004",
+        "summarization-hard-005"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-summarization-12-nested-exception",
+      "task_ids": [
+        "summarization-hard-006",
+        "summarization-hard-007"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-summarization-13-milestones",
+      "task_ids": [
+        "summarization-hard-008",
+        "summarization-medium-010"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-summarization-14-tradeoff",
+      "task_ids": [
+        "summarization-hard-009",
+        "summarization-medium-011"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-summarization-15-handoff",
+      "task_ids": [
+        "summarization-medium-012",
+        "summarization-medium-013"
+      ]
+    },
+    {
+      "task_family_id": "rbv1-summarization-16-mixed-signal",
+      "task_ids": [
+        "summarization-hard-010",
+        "summarization-hard-011"
+      ]
+    }
+  ],
+  "family_policy": {
+    "approved_overrides": [],
+    "default_max_tasks_per_family": 2,
+    "minimum_per_category": 16
+  },
+  "generation_seed": 20260926,
+  "historical_role": {
+    "development": false,
+    "final_test": false,
+    "foundation_v3": "historical_training_only_after_future_family_annotation",
+    "pristine": false
+  },
+  "version": "1.1.0"
+}

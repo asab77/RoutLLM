@@ -778,6 +778,45 @@ Full-fit runtime behavior is integration behavior, while Phase 7 and Phase 8C-0 
 results remain the generalization evidence. Phase 8F adds no response validation,
 escalation, second-model retry, or routing-specific telemetry persistence.
 
+## Phase 8G probability calibration and policy analysis
+
+Phase 8G evaluates the accepted `INTERACTION_NO_PROVIDER_PIN` formulation using its
+224 grouped OOF predictions, never the final full-data deployment fit. It reproduces
+216 valid and eight missing labels across 56 independent request groups with log loss
+`0.407420`, Brier score `0.129855`, ROC-AUC `0.888299`, average precision `0.900570`,
+top-1 acceptable rate `79.63%`, and pairwise ranking accuracy `91.27%`.
+
+Global calibration is promising but not strong enough for literal probability
+guarantees: 10-bin ECE is `3.23%` with equal-width bins and `5.65%` with quantile
+bins; corresponding MCE values are `15.89%` and `17.33%`. The descriptive calibration
+intercept is `-0.0403` and slope is `1.1727`. Candidate-level ECE ranges from about
+`7.5%` to `9.7%`, and category estimates have only eight independent requests each.
+Strong ranking therefore does not establish stable probability calibration.
+
+Across the analysis-only threshold grid, observed acceptable selection rates range
+from `69.09%` to `79.63%`, while average projected cost ranges from approximately
+`$0.000277` to `$0.001310` per request and fallback counts range from 6 to 41 of 56.
+Request-level bootstrap intervals overlap materially. Adjacent-threshold sensitivity
+flags `0.50→0.55`, `0.65→0.70`, and `0.85→0.90` as brittle under the documented
+descriptive rule. Missing selected labels continue to count for routing and cost but
+are excluded from observed-quality denominators.
+
+An exploratory group-isolated Platt comparison worsens log loss, Brier score, and
+both ECE estimates. Isotonic calibration is skipped because 56 request groups do not
+support a flexible calibrator with credible grouped evaluation. No production
+calibrator is installed.
+
+The policy conclusion is `MORE_DATA_REQUIRED_BEFORE_POLICY_FREEZE`. The adaptive API
+continues to require an explicit caller threshold; no default or quality modes are
+added. The deterministic ignored report is generated with:
+
+```sh
+python -m adaptive_llm_gateway.routing.calibration_analysis
+```
+
+Output is written to `artifacts/routing-analysis/phase-8g-calibration.json` without
+prompts, responses, reasoning, or provider payloads.
+
 ### Offline and paid test commands
 
 ```sh

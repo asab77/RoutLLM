@@ -1,0 +1,7 @@
+{
+  "cost_estimate_sha256": "7a52aaec422f3449550e12719cced53e5cb0bf73bc5cabf968db44dbef3270e9",
+  "dataset_sha256": "1a9cadc2d557eacb4a7dce450100cdb495a2659c2862845ce9894cf0a7791005",
+  "evaluator_manifest_sha256": "7dfb5c29426520edcb2c64491c1d5f62fddfc3bdbb3869599378da781f35d413",
+  "protocol_sha256": "f132c1eec6b1a231f6ce5ea50702b59a03e76af7d44359ba614fa0ed4ae6e565",
+  "specification_sha256": "b5568b26d7fdce018e3cfef9020780645e12e02f488ab495b14a1e621dd62c1e"
+}

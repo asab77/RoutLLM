@@ -36,6 +36,7 @@ class GatewayErrorCategory(StrEnum):
     MALFORMED_RESPONSE = "gateway_malformed_response"
     MISSING_USAGE = "gateway_missing_usage"
     EMPTY_RESPONSE = "gateway_empty_response"
+    OUTPUT_BUDGET_EXHAUSTION = "output_budget_exhaustion"
 
 
 class GatewayError(ProviderFailureError):

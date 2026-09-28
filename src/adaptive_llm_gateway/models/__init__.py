@@ -2,12 +2,14 @@
 
 from .schemas import (
     CategoryOutputTokenAllowance, InferenceRequest, InferenceResponse,
-    ModelCapabilities, ModelConfig, OutputTokenPolicy, ReasoningBehavior,
-    ReasoningEffort,
+    ModelCapabilities, ModelConfig, OutputTokenAccounting, OutputTokenPolicy,
+    ReasoningBehavior, ReasoningControlMechanism, ReasoningEffort, TerminationReason,
 )
 
 __all__ = [
     "CategoryOutputTokenAllowance", "InferenceRequest", "InferenceResponse",
     "ModelCapabilities", "ModelConfig", "OutputTokenPolicy",
-    "ReasoningBehavior", "ReasoningEffort",
+    "OutputTokenAccounting", "ReasoningBehavior", "ReasoningEffort",
+    "ReasoningControlMechanism",
+    "TerminationReason",
 ]

@@ -1,0 +1,1801 @@
+{
+  "assignment_seed": 20260926,
+  "benchmark": "routellm-routing-benchmark-v1",
+  "entries": [
+    {
+      "category": "classification",
+      "difficulty": "easy",
+      "internal_category": "classification",
+      "split": "train",
+      "task_family_id": "rbv1-classification-01-direct-material",
+      "task_id": "classification-easy-001"
+    },
+    {
+      "category": "classification",
+      "difficulty": "easy",
+      "internal_category": "classification",
+      "split": "train",
+      "task_family_id": "rbv1-classification-01-direct-material",
+      "task_id": "classification-easy-002"
+    },
+    {
+      "category": "classification",
+      "difficulty": "easy",
+      "internal_category": "classification",
+      "split": "train",
+      "task_family_id": "rbv1-classification-02-numeric-band",
+      "task_id": "classification-easy-003"
+    },
+    {
+      "category": "classification",
+      "difficulty": "easy",
+      "internal_category": "classification",
+      "split": "train",
+      "task_family_id": "rbv1-classification-02-numeric-band",
+      "task_id": "classification-easy-004"
+    },
+    {
+      "category": "classification",
+      "difficulty": "easy",
+      "internal_category": "classification",
+      "split": "train",
+      "task_family_id": "rbv1-classification-03-document-routing",
+      "task_id": "classification-easy-005"
+    },
+    {
+      "category": "classification",
+      "difficulty": "easy",
+      "internal_category": "classification",
+      "split": "train",
+      "task_family_id": "rbv1-classification-03-document-routing",
+      "task_id": "classification-easy-006"
+    },
+    {
+      "category": "classification",
+      "difficulty": "medium",
+      "internal_category": "classification",
+      "split": "train",
+      "task_family_id": "rbv1-classification-04-priority-precedence",
+      "task_id": "classification-medium-001"
+    },
+    {
+      "category": "classification",
+      "difficulty": "medium",
+      "internal_category": "classification",
+      "split": "train",
+      "task_family_id": "rbv1-classification-04-priority-precedence",
+      "task_id": "classification-medium-002"
+    },
+    {
+      "category": "classification",
+      "difficulty": "medium",
+      "internal_category": "classification",
+      "split": "train",
+      "task_family_id": "rbv1-classification-05-refund-exception",
+      "task_id": "classification-medium-003"
+    },
+    {
+      "category": "classification",
+      "difficulty": "medium",
+      "internal_category": "classification",
+      "split": "train",
+      "task_family_id": "rbv1-classification-05-refund-exception",
+      "task_id": "classification-medium-004"
+    },
+    {
+      "category": "classification",
+      "difficulty": "medium",
+      "internal_category": "classification",
+      "split": "train",
+      "task_family_id": "rbv1-classification-06-risk-matrix",
+      "task_id": "classification-medium-005"
+    },
+    {
+      "category": "classification",
+      "difficulty": "medium",
+      "internal_category": "classification",
+      "split": "train",
+      "task_family_id": "rbv1-classification-06-risk-matrix",
+      "task_id": "classification-medium-006"
+    },
+    {
+      "category": "classification",
+      "difficulty": "easy",
+      "internal_category": "classification",
+      "split": "train",
+      "task_family_id": "rbv1-classification-07-inventory-state",
+      "task_id": "classification-easy-007"
+    },
+    {
+      "category": "classification",
+      "difficulty": "easy",
+      "internal_category": "classification",
+      "split": "train",
+      "task_family_id": "rbv1-classification-07-inventory-state",
+      "task_id": "classification-easy-008"
+    },
+    {
+      "category": "classification",
+      "difficulty": "medium",
+      "internal_category": "classification",
+      "split": "train",
+      "task_family_id": "rbv1-classification-08-access-policy",
+      "task_id": "classification-medium-007"
+    },
+    {
+      "category": "classification",
+      "difficulty": "hard",
+      "internal_category": "classification",
+      "split": "train",
+      "task_family_id": "rbv1-classification-08-access-policy",
+      "task_id": "classification-hard-001"
+    },
+    {
+      "category": "classification",
+      "difficulty": "medium",
+      "internal_category": "classification",
+      "split": "train",
+      "task_family_id": "rbv1-classification-09-sla-clock",
+      "task_id": "classification-medium-008"
+    },
+    {
+      "category": "classification",
+      "difficulty": "medium",
+      "internal_category": "classification",
+      "split": "train",
+      "task_family_id": "rbv1-classification-09-sla-clock",
+      "task_id": "classification-medium-009"
+    },
+    {
+      "category": "classification",
+      "difficulty": "hard",
+      "internal_category": "classification",
+      "split": "train",
+      "task_family_id": "rbv1-classification-10-travel-policy",
+      "task_id": "classification-hard-002"
+    },
+    {
+      "category": "classification",
+      "difficulty": "hard",
+      "internal_category": "classification",
+      "split": "train",
+      "task_family_id": "rbv1-classification-10-travel-policy",
+      "task_id": "classification-hard-003"
+    },
+    {
+      "category": "classification",
+      "difficulty": "medium",
+      "internal_category": "classification",
+      "split": "development",
+      "task_family_id": "rbv1-classification-11-retention-rule",
+      "task_id": "classification-medium-010"
+    },
+    {
+      "category": "classification",
+      "difficulty": "medium",
+      "internal_category": "classification",
+      "split": "development",
+      "task_family_id": "rbv1-classification-11-retention-rule",
+      "task_id": "classification-medium-011"
+    },
+    {
+      "category": "classification",
+      "difficulty": "hard",
+      "internal_category": "classification",
+      "split": "development",
+      "task_family_id": "rbv1-classification-12-subscription-eligibility",
+      "task_id": "classification-hard-004"
+    },
+    {
+      "category": "classification",
+      "difficulty": "hard",
+      "internal_category": "classification",
+      "split": "development",
+      "task_family_id": "rbv1-classification-12-subscription-eligibility",
+      "task_id": "classification-hard-005"
+    },
+    {
+      "category": "classification",
+      "difficulty": "hard",
+      "internal_category": "classification",
+      "split": "development",
+      "task_family_id": "rbv1-classification-13-incident-cause",
+      "task_id": "classification-hard-006"
+    },
+    {
+      "category": "classification",
+      "difficulty": "hard",
+      "internal_category": "classification",
+      "split": "development",
+      "task_family_id": "rbv1-classification-13-incident-cause",
+      "task_id": "classification-hard-007"
+    },
+    {
+      "category": "classification",
+      "difficulty": "medium",
+      "internal_category": "classification",
+      "split": "final",
+      "task_family_id": "rbv1-classification-14-shipping-service",
+      "task_id": "classification-medium-012"
+    },
+    {
+      "category": "classification",
+      "difficulty": "medium",
+      "internal_category": "classification",
+      "split": "final",
+      "task_family_id": "rbv1-classification-14-shipping-service",
+      "task_id": "classification-medium-013"
+    },
+    {
+      "category": "classification",
+      "difficulty": "hard",
+      "internal_category": "classification",
+      "split": "final",
+      "task_family_id": "rbv1-classification-15-support-escalation",
+      "task_id": "classification-hard-008"
+    },
+    {
+      "category": "classification",
+      "difficulty": "hard",
+      "internal_category": "classification",
+      "split": "final",
+      "task_family_id": "rbv1-classification-15-support-escalation",
+      "task_id": "classification-hard-009"
+    },
+    {
+      "category": "classification",
+      "difficulty": "hard",
+      "internal_category": "classification",
+      "split": "final",
+      "task_family_id": "rbv1-classification-16-compliance-hierarchy",
+      "task_id": "classification-hard-010"
+    },
+    {
+      "category": "classification",
+      "difficulty": "hard",
+      "internal_category": "classification",
+      "split": "final",
+      "task_family_id": "rbv1-classification-16-compliance-hierarchy",
+      "task_id": "classification-hard-011"
+    },
+    {
+      "category": "coding",
+      "difficulty": "easy",
+      "internal_category": "coding",
+      "split": "train",
+      "task_family_id": "rbv1-coding-01-clamp-sequence",
+      "task_id": "coding-easy-001"
+    },
+    {
+      "category": "coding",
+      "difficulty": "easy",
+      "internal_category": "coding",
+      "split": "train",
+      "task_family_id": "rbv1-coding-01-clamp-sequence",
+      "task_id": "coding-easy-002"
+    },
+    {
+      "category": "coding",
+      "difficulty": "easy",
+      "internal_category": "coding",
+      "split": "train",
+      "task_family_id": "rbv1-coding-02-collapse-whitespace",
+      "task_id": "coding-easy-003"
+    },
+    {
+      "category": "coding",
+      "difficulty": "easy",
+      "internal_category": "coding",
+      "split": "train",
+      "task_family_id": "rbv1-coding-02-collapse-whitespace",
+      "task_id": "coding-easy-004"
+    },
+    {
+      "category": "coding",
+      "difficulty": "easy",
+      "internal_category": "coding",
+      "split": "train",
+      "task_family_id": "rbv1-coding-03-initial-histogram",
+      "task_id": "coding-easy-005"
+    },
+    {
+      "category": "coding",
+      "difficulty": "medium",
+      "internal_category": "coding",
+      "split": "train",
+      "task_family_id": "rbv1-coding-03-initial-histogram",
+      "task_id": "coding-medium-001"
+    },
+    {
+      "category": "coding",
+      "difficulty": "medium",
+      "internal_category": "coding",
+      "split": "train",
+      "task_family_id": "rbv1-coding-04-key-value-parser",
+      "task_id": "coding-medium-002"
+    },
+    {
+      "category": "coding",
+      "difficulty": "medium",
+      "internal_category": "coding",
+      "split": "train",
+      "task_family_id": "rbv1-coding-04-key-value-parser",
+      "task_id": "coding-medium-003"
+    },
+    {
+      "category": "coding",
+      "difficulty": "medium",
+      "internal_category": "coding",
+      "split": "train",
+      "task_family_id": "rbv1-coding-05-cyclic-rotation",
+      "task_id": "coding-medium-004"
+    },
+    {
+      "category": "coding",
+      "difficulty": "medium",
+      "internal_category": "coding",
+      "split": "train",
+      "task_family_id": "rbv1-coding-05-cyclic-rotation",
+      "task_id": "coding-medium-005"
+    },
+    {
+      "category": "coding",
+      "difficulty": "easy",
+      "internal_category": "coding",
+      "split": "train",
+      "task_family_id": "rbv1-coding-06-stable-score-ranking",
+      "task_id": "coding-easy-006"
+    },
+    {
+      "category": "coding",
+      "difficulty": "medium",
+      "internal_category": "coding",
+      "split": "train",
+      "task_family_id": "rbv1-coding-06-stable-score-ranking",
+      "task_id": "coding-medium-006"
+    },
+    {
+      "category": "coding",
+      "difficulty": "hard",
+      "internal_category": "coding",
+      "split": "train",
+      "task_family_id": "rbv1-coding-07-merge-adjacent-intervals",
+      "task_id": "coding-hard-001"
+    },
+    {
+      "category": "coding",
+      "difficulty": "hard",
+      "internal_category": "coding",
+      "split": "train",
+      "task_family_id": "rbv1-coding-07-merge-adjacent-intervals",
+      "task_id": "coding-hard-002"
+    },
+    {
+      "category": "coding",
+      "difficulty": "medium",
+      "internal_category": "coding",
+      "split": "train",
+      "task_family_id": "rbv1-coding-08-balanced-delimiters",
+      "task_id": "coding-medium-007"
+    },
+    {
+      "category": "coding",
+      "difficulty": "hard",
+      "internal_category": "coding",
+      "split": "train",
+      "task_family_id": "rbv1-coding-08-balanced-delimiters",
+      "task_id": "coding-hard-003"
+    },
+    {
+      "category": "coding",
+      "difficulty": "hard",
+      "internal_category": "coding",
+      "split": "train",
+      "task_family_id": "rbv1-coding-09-unweighted-shortest-path",
+      "task_id": "coding-hard-004"
+    },
+    {
+      "category": "coding",
+      "difficulty": "hard",
+      "internal_category": "coding",
+      "split": "train",
+      "task_family_id": "rbv1-coding-09-unweighted-shortest-path",
+      "task_id": "coding-hard-005"
+    },
+    {
+      "category": "coding",
+      "difficulty": "easy",
+      "internal_category": "coding",
+      "split": "train",
+      "task_family_id": "rbv1-coding-10-nested-group-total",
+      "task_id": "coding-easy-007"
+    },
+    {
+      "category": "coding",
+      "difficulty": "easy",
+      "internal_category": "coding",
+      "split": "train",
+      "task_family_id": "rbv1-coding-10-nested-group-total",
+      "task_id": "coding-easy-008"
+    },
+    {
+      "category": "coding",
+      "difficulty": "hard",
+      "internal_category": "coding",
+      "split": "development",
+      "task_family_id": "rbv1-coding-11-longest-nondecreasing",
+      "task_id": "coding-hard-006"
+    },
+    {
+      "category": "coding",
+      "difficulty": "hard",
+      "internal_category": "coding",
+      "split": "development",
+      "task_family_id": "rbv1-coding-11-longest-nondecreasing",
+      "task_id": "coding-hard-007"
+    },
+    {
+      "category": "coding",
+      "difficulty": "medium",
+      "internal_category": "coding",
+      "split": "development",
+      "task_family_id": "rbv1-coding-12-slug-validation",
+      "task_id": "coding-medium-008"
+    },
+    {
+      "category": "coding",
+      "difficulty": "hard",
+      "internal_category": "coding",
+      "split": "development",
+      "task_family_id": "rbv1-coding-12-slug-validation",
+      "task_id": "coding-hard-008"
+    },
+    {
+      "category": "coding",
+      "difficulty": "medium",
+      "internal_category": "coding",
+      "split": "development",
+      "task_family_id": "rbv1-coding-13-run-length-encoding",
+      "task_id": "coding-medium-009"
+    },
+    {
+      "category": "coding",
+      "difficulty": "medium",
+      "internal_category": "coding",
+      "split": "development",
+      "task_family_id": "rbv1-coding-13-run-length-encoding",
+      "task_id": "coding-medium-010"
+    },
+    {
+      "category": "coding",
+      "difficulty": "medium",
+      "internal_category": "coding",
+      "split": "final",
+      "task_family_id": "rbv1-coding-14-rolling-window-sums",
+      "task_id": "coding-medium-011"
+    },
+    {
+      "category": "coding",
+      "difficulty": "medium",
+      "internal_category": "coding",
+      "split": "final",
+      "task_family_id": "rbv1-coding-14-rolling-window-sums",
+      "task_id": "coding-medium-012"
+    },
+    {
+      "category": "coding",
+      "difficulty": "medium",
+      "internal_category": "coding",
+      "split": "final",
+      "task_family_id": "rbv1-coding-15-transaction-state",
+      "task_id": "coding-medium-013"
+    },
+    {
+      "category": "coding",
+      "difficulty": "hard",
+      "internal_category": "coding",
+      "split": "final",
+      "task_family_id": "rbv1-coding-15-transaction-state",
+      "task_id": "coding-hard-009"
+    },
+    {
+      "category": "coding",
+      "difficulty": "hard",
+      "internal_category": "coding",
+      "split": "final",
+      "task_family_id": "rbv1-coding-16-dependency-readiness",
+      "task_id": "coding-hard-010"
+    },
+    {
+      "category": "coding",
+      "difficulty": "hard",
+      "internal_category": "coding",
+      "split": "final",
+      "task_family_id": "rbv1-coding-16-dependency-readiness",
+      "task_id": "coding-hard-011"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "easy",
+      "internal_category": "extraction",
+      "split": "train",
+      "task_family_id": "rbv1-extraction-01-contact-prose",
+      "task_id": "extraction-easy-001"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "easy",
+      "internal_category": "extraction",
+      "split": "train",
+      "task_family_id": "rbv1-extraction-01-contact-prose",
+      "task_id": "extraction-easy-002"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "easy",
+      "internal_category": "extraction",
+      "split": "train",
+      "task_family_id": "rbv1-extraction-02-invoice-header",
+      "task_id": "extraction-easy-003"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "easy",
+      "internal_category": "extraction",
+      "split": "train",
+      "task_family_id": "rbv1-extraction-02-invoice-header",
+      "task_id": "extraction-easy-004"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "easy",
+      "internal_category": "extraction",
+      "split": "train",
+      "task_family_id": "rbv1-extraction-03-latest-error-log",
+      "task_id": "extraction-easy-005"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "easy",
+      "internal_category": "extraction",
+      "split": "train",
+      "task_family_id": "rbv1-extraction-03-latest-error-log",
+      "task_id": "extraction-easy-006"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "medium",
+      "internal_category": "extraction",
+      "split": "train",
+      "task_family_id": "rbv1-extraction-04-text-table-filter",
+      "task_id": "extraction-medium-001"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "medium",
+      "internal_category": "extraction",
+      "split": "train",
+      "task_family_id": "rbv1-extraction-04-text-table-filter",
+      "task_id": "extraction-medium-002"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "easy",
+      "internal_category": "extraction",
+      "split": "train",
+      "task_family_id": "rbv1-extraction-05-optional-field",
+      "task_id": "extraction-easy-007"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "easy",
+      "internal_category": "extraction",
+      "split": "train",
+      "task_family_id": "rbv1-extraction-05-optional-field",
+      "task_id": "extraction-easy-008"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "medium",
+      "internal_category": "extraction",
+      "split": "train",
+      "task_family_id": "rbv1-extraction-06-repeated-entity-total",
+      "task_id": "extraction-medium-003"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "medium",
+      "internal_category": "extraction",
+      "split": "train",
+      "task_family_id": "rbv1-extraction-06-repeated-entity-total",
+      "task_id": "extraction-medium-004"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "medium",
+      "internal_category": "extraction",
+      "split": "train",
+      "task_family_id": "rbv1-extraction-07-nested-shipment",
+      "task_id": "extraction-medium-005"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "medium",
+      "internal_category": "extraction",
+      "split": "train",
+      "task_family_id": "rbv1-extraction-07-nested-shipment",
+      "task_id": "extraction-medium-006"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "hard",
+      "internal_category": "extraction",
+      "split": "train",
+      "task_family_id": "rbv1-extraction-08-section-precedence",
+      "task_id": "extraction-hard-001"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "hard",
+      "internal_category": "extraction",
+      "split": "train",
+      "task_family_id": "rbv1-extraction-08-section-precedence",
+      "task_id": "extraction-hard-002"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "medium",
+      "internal_category": "extraction",
+      "split": "train",
+      "task_family_id": "rbv1-extraction-09-unit-bearing-measurement",
+      "task_id": "extraction-medium-007"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "medium",
+      "internal_category": "extraction",
+      "split": "train",
+      "task_family_id": "rbv1-extraction-09-unit-bearing-measurement",
+      "task_id": "extraction-medium-008"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "hard",
+      "internal_category": "extraction",
+      "split": "train",
+      "task_family_id": "rbv1-extraction-10-multi-party-action",
+      "task_id": "extraction-hard-003"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "hard",
+      "internal_category": "extraction",
+      "split": "train",
+      "task_family_id": "rbv1-extraction-10-multi-party-action",
+      "task_id": "extraction-hard-004"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "medium",
+      "internal_category": "extraction",
+      "split": "development",
+      "task_family_id": "rbv1-extraction-11-keyed-list-order",
+      "task_id": "extraction-medium-009"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "medium",
+      "internal_category": "extraction",
+      "split": "development",
+      "task_family_id": "rbv1-extraction-11-keyed-list-order",
+      "task_id": "extraction-medium-010"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "medium",
+      "internal_category": "extraction",
+      "split": "development",
+      "task_family_id": "rbv1-extraction-12-event-window",
+      "task_id": "extraction-medium-011"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "hard",
+      "internal_category": "extraction",
+      "split": "development",
+      "task_family_id": "rbv1-extraction-12-event-window",
+      "task_id": "extraction-hard-005"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "medium",
+      "internal_category": "extraction",
+      "split": "development",
+      "task_family_id": "rbv1-extraction-13-cross-line-record",
+      "task_id": "extraction-medium-012"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "medium",
+      "internal_category": "extraction",
+      "split": "development",
+      "task_family_id": "rbv1-extraction-13-cross-line-record",
+      "task_id": "extraction-medium-013"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "hard",
+      "internal_category": "extraction",
+      "split": "final",
+      "task_family_id": "rbv1-extraction-14-conditional-record-selection",
+      "task_id": "extraction-hard-006"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "hard",
+      "internal_category": "extraction",
+      "split": "final",
+      "task_family_id": "rbv1-extraction-14-conditional-record-selection",
+      "task_id": "extraction-hard-007"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "hard",
+      "internal_category": "extraction",
+      "split": "final",
+      "task_family_id": "rbv1-extraction-15-paired-source-join",
+      "task_id": "extraction-hard-008"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "hard",
+      "internal_category": "extraction",
+      "split": "final",
+      "task_family_id": "rbv1-extraction-15-paired-source-join",
+      "task_id": "extraction-hard-009"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "hard",
+      "internal_category": "extraction",
+      "split": "final",
+      "task_family_id": "rbv1-extraction-16-exception-aware-roles",
+      "task_id": "extraction-hard-010"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "hard",
+      "internal_category": "extraction",
+      "split": "final",
+      "task_family_id": "rbv1-extraction-16-exception-aware-roles",
+      "task_id": "extraction-hard-011"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "easy",
+      "internal_category": "json",
+      "split": "train",
+      "task_family_id": "rbv1-json-01-flat-profile",
+      "task_id": "json-easy-001"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "easy",
+      "internal_category": "json",
+      "split": "train",
+      "task_family_id": "rbv1-json-01-flat-profile",
+      "task_id": "json-easy-002"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "easy",
+      "internal_category": "json",
+      "split": "train",
+      "task_family_id": "rbv1-json-02-filter-array",
+      "task_id": "json-easy-003"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "easy",
+      "internal_category": "json",
+      "split": "train",
+      "task_family_id": "rbv1-json-02-filter-array",
+      "task_id": "json-easy-004"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "easy",
+      "internal_category": "json",
+      "split": "train",
+      "task_family_id": "rbv1-json-03-nested-address",
+      "task_id": "json-easy-005"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "easy",
+      "internal_category": "json",
+      "split": "train",
+      "task_family_id": "rbv1-json-03-nested-address",
+      "task_id": "json-easy-006"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "medium",
+      "internal_category": "json",
+      "split": "train",
+      "task_family_id": "rbv1-json-04-enum-mapping",
+      "task_id": "json-medium-001"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "medium",
+      "internal_category": "json",
+      "split": "train",
+      "task_family_id": "rbv1-json-04-enum-mapping",
+      "task_id": "json-medium-002"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "easy",
+      "internal_category": "json",
+      "split": "train",
+      "task_family_id": "rbv1-json-05-nullable-field",
+      "task_id": "json-easy-007"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "easy",
+      "internal_category": "json",
+      "split": "train",
+      "task_family_id": "rbv1-json-05-nullable-field",
+      "task_id": "json-easy-008"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "medium",
+      "internal_category": "json",
+      "split": "train",
+      "task_family_id": "rbv1-json-06-sorted-ranking",
+      "task_id": "json-medium-003"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "medium",
+      "internal_category": "json",
+      "split": "train",
+      "task_family_id": "rbv1-json-06-sorted-ranking",
+      "task_id": "json-medium-004"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "medium",
+      "internal_category": "json",
+      "split": "train",
+      "task_family_id": "rbv1-json-07-grouped-counts",
+      "task_id": "json-medium-005"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "medium",
+      "internal_category": "json",
+      "split": "train",
+      "task_family_id": "rbv1-json-07-grouped-counts",
+      "task_id": "json-medium-006"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "medium",
+      "internal_category": "json",
+      "split": "train",
+      "task_family_id": "rbv1-json-08-conditional-field",
+      "task_id": "json-medium-007"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "medium",
+      "internal_category": "json",
+      "split": "train",
+      "task_family_id": "rbv1-json-08-conditional-field",
+      "task_id": "json-medium-008"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "medium",
+      "internal_category": "json",
+      "split": "train",
+      "task_family_id": "rbv1-json-09-deduplicated-array",
+      "task_id": "json-medium-009"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "medium",
+      "internal_category": "json",
+      "split": "train",
+      "task_family_id": "rbv1-json-09-deduplicated-array",
+      "task_id": "json-medium-010"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "hard",
+      "internal_category": "json",
+      "split": "train",
+      "task_family_id": "rbv1-json-10-joined-records",
+      "task_id": "json-hard-001"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "hard",
+      "internal_category": "json",
+      "split": "train",
+      "task_family_id": "rbv1-json-10-joined-records",
+      "task_id": "json-hard-002"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "medium",
+      "internal_category": "json",
+      "split": "development",
+      "task_family_id": "rbv1-json-11-cross-field-status",
+      "task_id": "json-medium-011"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "medium",
+      "internal_category": "json",
+      "split": "development",
+      "task_family_id": "rbv1-json-11-cross-field-status",
+      "task_id": "json-medium-012"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "hard",
+      "internal_category": "json",
+      "split": "development",
+      "task_family_id": "rbv1-json-12-hierarchy-tree",
+      "task_id": "json-hard-003"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "hard",
+      "internal_category": "json",
+      "split": "development",
+      "task_family_id": "rbv1-json-12-hierarchy-tree",
+      "task_id": "json-hard-004"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "hard",
+      "internal_category": "json",
+      "split": "development",
+      "task_family_id": "rbv1-json-13-schedule-slots",
+      "task_id": "json-hard-005"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "hard",
+      "internal_category": "json",
+      "split": "development",
+      "task_family_id": "rbv1-json-13-schedule-slots",
+      "task_id": "json-hard-006"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "medium",
+      "internal_category": "json",
+      "split": "final",
+      "task_family_id": "rbv1-json-14-invoice-aggregation",
+      "task_id": "json-medium-013"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "hard",
+      "internal_category": "json",
+      "split": "final",
+      "task_family_id": "rbv1-json-14-invoice-aggregation",
+      "task_id": "json-hard-007"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "hard",
+      "internal_category": "json",
+      "split": "final",
+      "task_family_id": "rbv1-json-15-permission-matrix",
+      "task_id": "json-hard-008"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "hard",
+      "internal_category": "json",
+      "split": "final",
+      "task_family_id": "rbv1-json-15-permission-matrix",
+      "task_id": "json-hard-009"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "hard",
+      "internal_category": "json",
+      "split": "final",
+      "task_family_id": "rbv1-json-16-rule-derived-summary",
+      "task_id": "json-hard-010"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "hard",
+      "internal_category": "json",
+      "split": "final",
+      "task_family_id": "rbv1-json-16-rule-derived-summary",
+      "task_id": "json-hard-011"
+    },
+    {
+      "category": "qa",
+      "difficulty": "easy",
+      "internal_category": "qa",
+      "split": "train",
+      "task_family_id": "rbv1-qa-01-direct-location",
+      "task_id": "qa-easy-001"
+    },
+    {
+      "category": "qa",
+      "difficulty": "easy",
+      "internal_category": "qa",
+      "split": "train",
+      "task_family_id": "rbv1-qa-01-direct-location",
+      "task_id": "qa-easy-002"
+    },
+    {
+      "category": "qa",
+      "difficulty": "easy",
+      "internal_category": "qa",
+      "split": "train",
+      "task_family_id": "rbv1-qa-02-attribute-lookup",
+      "task_id": "qa-easy-003"
+    },
+    {
+      "category": "qa",
+      "difficulty": "easy",
+      "internal_category": "qa",
+      "split": "train",
+      "task_family_id": "rbv1-qa-02-attribute-lookup",
+      "task_id": "qa-easy-004"
+    },
+    {
+      "category": "qa",
+      "difficulty": "easy",
+      "internal_category": "qa",
+      "split": "train",
+      "task_family_id": "rbv1-qa-03-two-fact-sum",
+      "task_id": "qa-easy-005"
+    },
+    {
+      "category": "qa",
+      "difficulty": "easy",
+      "internal_category": "qa",
+      "split": "train",
+      "task_family_id": "rbv1-qa-03-two-fact-sum",
+      "task_id": "qa-easy-006"
+    },
+    {
+      "category": "qa",
+      "difficulty": "medium",
+      "internal_category": "qa",
+      "split": "train",
+      "task_family_id": "rbv1-qa-04-temporal-latest",
+      "task_id": "qa-medium-001"
+    },
+    {
+      "category": "qa",
+      "difficulty": "medium",
+      "internal_category": "qa",
+      "split": "train",
+      "task_family_id": "rbv1-qa-04-temporal-latest",
+      "task_id": "qa-medium-002"
+    },
+    {
+      "category": "qa",
+      "difficulty": "easy",
+      "internal_category": "qa",
+      "split": "train",
+      "task_family_id": "rbv1-qa-05-difference-comparison",
+      "task_id": "qa-easy-007"
+    },
+    {
+      "category": "qa",
+      "difficulty": "easy",
+      "internal_category": "qa",
+      "split": "train",
+      "task_family_id": "rbv1-qa-05-difference-comparison",
+      "task_id": "qa-easy-008"
+    },
+    {
+      "category": "qa",
+      "difficulty": "hard",
+      "internal_category": "qa",
+      "split": "train",
+      "task_family_id": "rbv1-qa-06-exception-owner",
+      "task_id": "qa-hard-001"
+    },
+    {
+      "category": "qa",
+      "difficulty": "hard",
+      "internal_category": "qa",
+      "split": "train",
+      "task_family_id": "rbv1-qa-06-exception-owner",
+      "task_id": "qa-hard-002"
+    },
+    {
+      "category": "qa",
+      "difficulty": "medium",
+      "internal_category": "qa",
+      "split": "train",
+      "task_family_id": "rbv1-qa-07-multi-passage-link",
+      "task_id": "qa-medium-003"
+    },
+    {
+      "category": "qa",
+      "difficulty": "medium",
+      "internal_category": "qa",
+      "split": "train",
+      "task_family_id": "rbv1-qa-07-multi-passage-link",
+      "task_id": "qa-medium-004"
+    },
+    {
+      "category": "qa",
+      "difficulty": "hard",
+      "internal_category": "qa",
+      "split": "train",
+      "task_family_id": "rbv1-qa-08-schedule-intersection",
+      "task_id": "qa-hard-003"
+    },
+    {
+      "category": "qa",
+      "difficulty": "hard",
+      "internal_category": "qa",
+      "split": "train",
+      "task_family_id": "rbv1-qa-08-schedule-intersection",
+      "task_id": "qa-hard-004"
+    },
+    {
+      "category": "qa",
+      "difficulty": "medium",
+      "internal_category": "qa",
+      "split": "train",
+      "task_family_id": "rbv1-qa-09-conditional-count",
+      "task_id": "qa-medium-005"
+    },
+    {
+      "category": "qa",
+      "difficulty": "medium",
+      "internal_category": "qa",
+      "split": "train",
+      "task_family_id": "rbv1-qa-09-conditional-count",
+      "task_id": "qa-medium-006"
+    },
+    {
+      "category": "qa",
+      "difficulty": "medium",
+      "internal_category": "qa",
+      "split": "train",
+      "task_family_id": "rbv1-qa-10-state-after-updates",
+      "task_id": "qa-medium-007"
+    },
+    {
+      "category": "qa",
+      "difficulty": "medium",
+      "internal_category": "qa",
+      "split": "train",
+      "task_family_id": "rbv1-qa-10-state-after-updates",
+      "task_id": "qa-medium-008"
+    },
+    {
+      "category": "qa",
+      "difficulty": "medium",
+      "internal_category": "qa",
+      "split": "development",
+      "task_family_id": "rbv1-qa-11-rank-with-tie-rule",
+      "task_id": "qa-medium-009"
+    },
+    {
+      "category": "qa",
+      "difficulty": "medium",
+      "internal_category": "qa",
+      "split": "development",
+      "task_family_id": "rbv1-qa-11-rank-with-tie-rule",
+      "task_id": "qa-medium-010"
+    },
+    {
+      "category": "qa",
+      "difficulty": "hard",
+      "internal_category": "qa",
+      "split": "development",
+      "task_family_id": "rbv1-qa-12-dependency-question",
+      "task_id": "qa-hard-005"
+    },
+    {
+      "category": "qa",
+      "difficulty": "hard",
+      "internal_category": "qa",
+      "split": "development",
+      "task_family_id": "rbv1-qa-12-dependency-question",
+      "task_id": "qa-hard-006"
+    },
+    {
+      "category": "qa",
+      "difficulty": "medium",
+      "internal_category": "qa",
+      "split": "development",
+      "task_family_id": "rbv1-qa-13-policy-date-window",
+      "task_id": "qa-medium-011"
+    },
+    {
+      "category": "qa",
+      "difficulty": "hard",
+      "internal_category": "qa",
+      "split": "development",
+      "task_family_id": "rbv1-qa-13-policy-date-window",
+      "task_id": "qa-hard-007"
+    },
+    {
+      "category": "qa",
+      "difficulty": "medium",
+      "internal_category": "qa",
+      "split": "final",
+      "task_family_id": "rbv1-qa-14-multi-step-rate",
+      "task_id": "qa-medium-012"
+    },
+    {
+      "category": "qa",
+      "difficulty": "medium",
+      "internal_category": "qa",
+      "split": "final",
+      "task_family_id": "rbv1-qa-14-multi-step-rate",
+      "task_id": "qa-medium-013"
+    },
+    {
+      "category": "qa",
+      "difficulty": "hard",
+      "internal_category": "qa",
+      "split": "final",
+      "task_family_id": "rbv1-qa-15-role-chain",
+      "task_id": "qa-hard-008"
+    },
+    {
+      "category": "qa",
+      "difficulty": "hard",
+      "internal_category": "qa",
+      "split": "final",
+      "task_family_id": "rbv1-qa-15-role-chain",
+      "task_id": "qa-hard-009"
+    },
+    {
+      "category": "qa",
+      "difficulty": "hard",
+      "internal_category": "qa",
+      "split": "final",
+      "task_family_id": "rbv1-qa-16-rule-and-fact-synthesis",
+      "task_id": "qa-hard-010"
+    },
+    {
+      "category": "qa",
+      "difficulty": "hard",
+      "internal_category": "qa",
+      "split": "final",
+      "task_family_id": "rbv1-qa-16-rule-and-fact-synthesis",
+      "task_id": "qa-hard-011"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "easy",
+      "internal_category": "reasoning",
+      "split": "train",
+      "task_family_id": "rbv1-reasoning-01-net-change",
+      "task_id": "reasoning-easy-001"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "easy",
+      "internal_category": "reasoning",
+      "split": "train",
+      "task_family_id": "rbv1-reasoning-01-net-change",
+      "task_id": "reasoning-easy-002"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "easy",
+      "internal_category": "reasoning",
+      "split": "train",
+      "task_family_id": "rbv1-reasoning-02-weighted-total",
+      "task_id": "reasoning-easy-003"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "easy",
+      "internal_category": "reasoning",
+      "split": "train",
+      "task_family_id": "rbv1-reasoning-02-weighted-total",
+      "task_id": "reasoning-easy-004"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "easy",
+      "internal_category": "reasoning",
+      "split": "train",
+      "task_family_id": "rbv1-reasoning-03-ordered-middle",
+      "task_id": "reasoning-easy-005"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "easy",
+      "internal_category": "reasoning",
+      "split": "train",
+      "task_family_id": "rbv1-reasoning-03-ordered-middle",
+      "task_id": "reasoning-easy-006"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "medium",
+      "internal_category": "reasoning",
+      "split": "train",
+      "task_family_id": "rbv1-reasoning-04-set-intersection",
+      "task_id": "reasoning-medium-001"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "medium",
+      "internal_category": "reasoning",
+      "split": "train",
+      "task_family_id": "rbv1-reasoning-04-set-intersection",
+      "task_id": "reasoning-medium-002"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "medium",
+      "internal_category": "reasoning",
+      "split": "train",
+      "task_family_id": "rbv1-reasoning-05-state-machine",
+      "task_id": "reasoning-medium-003"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "hard",
+      "internal_category": "reasoning",
+      "split": "train",
+      "task_family_id": "rbv1-reasoning-05-state-machine",
+      "task_id": "reasoning-hard-001"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "hard",
+      "internal_category": "reasoning",
+      "split": "train",
+      "task_family_id": "rbv1-reasoning-06-conditional-elimination",
+      "task_id": "reasoning-hard-002"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "hard",
+      "internal_category": "reasoning",
+      "split": "train",
+      "task_family_id": "rbv1-reasoning-06-conditional-elimination",
+      "task_id": "reasoning-hard-003"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "medium",
+      "internal_category": "reasoning",
+      "split": "train",
+      "task_family_id": "rbv1-reasoning-07-capacity-allocation",
+      "task_id": "reasoning-medium-004"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "medium",
+      "internal_category": "reasoning",
+      "split": "train",
+      "task_family_id": "rbv1-reasoning-07-capacity-allocation",
+      "task_id": "reasoning-medium-005"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "easy",
+      "internal_category": "reasoning",
+      "split": "train",
+      "task_family_id": "rbv1-reasoning-08-cyclic-schedule",
+      "task_id": "reasoning-easy-007"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "easy",
+      "internal_category": "reasoning",
+      "split": "train",
+      "task_family_id": "rbv1-reasoning-08-cyclic-schedule",
+      "task_id": "reasoning-easy-008"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "medium",
+      "internal_category": "reasoning",
+      "split": "train",
+      "task_family_id": "rbv1-reasoning-09-transitive-implication",
+      "task_id": "reasoning-medium-006"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "medium",
+      "internal_category": "reasoning",
+      "split": "train",
+      "task_family_id": "rbv1-reasoning-09-transitive-implication",
+      "task_id": "reasoning-medium-007"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "medium",
+      "internal_category": "reasoning",
+      "split": "train",
+      "task_family_id": "rbv1-reasoning-10-meeting-slot",
+      "task_id": "reasoning-medium-008"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "medium",
+      "internal_category": "reasoning",
+      "split": "train",
+      "task_family_id": "rbv1-reasoning-10-meeting-slot",
+      "task_id": "reasoning-medium-009"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "medium",
+      "internal_category": "reasoning",
+      "split": "development",
+      "task_family_id": "rbv1-reasoning-11-assignment-enumeration",
+      "task_id": "reasoning-medium-010"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "medium",
+      "internal_category": "reasoning",
+      "split": "development",
+      "task_family_id": "rbv1-reasoning-11-assignment-enumeration",
+      "task_id": "reasoning-medium-011"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "medium",
+      "internal_category": "reasoning",
+      "split": "development",
+      "task_family_id": "rbv1-reasoning-12-multi-rate-time",
+      "task_id": "reasoning-medium-012"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "medium",
+      "internal_category": "reasoning",
+      "split": "development",
+      "task_family_id": "rbv1-reasoning-12-multi-rate-time",
+      "task_id": "reasoning-medium-013"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "hard",
+      "internal_category": "reasoning",
+      "split": "development",
+      "task_family_id": "rbv1-reasoning-13-exclusive-rules",
+      "task_id": "reasoning-hard-004"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "hard",
+      "internal_category": "reasoning",
+      "split": "development",
+      "task_family_id": "rbv1-reasoning-13-exclusive-rules",
+      "task_id": "reasoning-hard-005"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "hard",
+      "internal_category": "reasoning",
+      "split": "final",
+      "task_family_id": "rbv1-reasoning-14-bounded-path",
+      "task_id": "reasoning-hard-006"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "hard",
+      "internal_category": "reasoning",
+      "split": "final",
+      "task_family_id": "rbv1-reasoning-14-bounded-path",
+      "task_id": "reasoning-hard-007"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "hard",
+      "internal_category": "reasoning",
+      "split": "final",
+      "task_family_id": "rbv1-reasoning-15-constraint-ordering",
+      "task_id": "reasoning-hard-008"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "hard",
+      "internal_category": "reasoning",
+      "split": "final",
+      "task_family_id": "rbv1-reasoning-15-constraint-ordering",
+      "task_id": "reasoning-hard-009"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "hard",
+      "internal_category": "reasoning",
+      "split": "final",
+      "task_family_id": "rbv1-reasoning-16-resource-sequence",
+      "task_id": "reasoning-hard-010"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "hard",
+      "internal_category": "reasoning",
+      "split": "final",
+      "task_family_id": "rbv1-reasoning-16-resource-sequence",
+      "task_id": "reasoning-hard-011"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "easy",
+      "internal_category": "summarization",
+      "split": "train",
+      "task_family_id": "rbv1-summarization-01-chronology",
+      "task_id": "summarization-easy-001"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "easy",
+      "internal_category": "summarization",
+      "split": "train",
+      "task_family_id": "rbv1-summarization-01-chronology",
+      "task_id": "summarization-easy-002"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "easy",
+      "internal_category": "summarization",
+      "split": "train",
+      "task_family_id": "rbv1-summarization-02-ownership",
+      "task_id": "summarization-easy-003"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "easy",
+      "internal_category": "summarization",
+      "split": "train",
+      "task_family_id": "rbv1-summarization-02-ownership",
+      "task_id": "summarization-easy-004"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "easy",
+      "internal_category": "summarization",
+      "split": "train",
+      "task_family_id": "rbv1-summarization-03-incident",
+      "task_id": "summarization-easy-005"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "medium",
+      "internal_category": "summarization",
+      "split": "train",
+      "task_family_id": "rbv1-summarization-03-incident",
+      "task_id": "summarization-medium-001"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "medium",
+      "internal_category": "summarization",
+      "split": "train",
+      "task_family_id": "rbv1-summarization-04-quantitative",
+      "task_id": "summarization-medium-002"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "medium",
+      "internal_category": "summarization",
+      "split": "train",
+      "task_family_id": "rbv1-summarization-04-quantitative",
+      "task_id": "summarization-medium-003"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "medium",
+      "internal_category": "summarization",
+      "split": "train",
+      "task_family_id": "rbv1-summarization-05-policy-exception",
+      "task_id": "summarization-medium-004"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "medium",
+      "internal_category": "summarization",
+      "split": "train",
+      "task_family_id": "rbv1-summarization-05-policy-exception",
+      "task_id": "summarization-medium-005"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "easy",
+      "internal_category": "summarization",
+      "split": "train",
+      "task_family_id": "rbv1-summarization-06-change-over-time",
+      "task_id": "summarization-easy-006"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "medium",
+      "internal_category": "summarization",
+      "split": "train",
+      "task_family_id": "rbv1-summarization-06-change-over-time",
+      "task_id": "summarization-medium-006"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "easy",
+      "internal_category": "summarization",
+      "split": "train",
+      "task_family_id": "rbv1-summarization-07-causal",
+      "task_id": "summarization-easy-007"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "easy",
+      "internal_category": "summarization",
+      "split": "train",
+      "task_family_id": "rbv1-summarization-07-causal",
+      "task_id": "summarization-easy-008"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "hard",
+      "internal_category": "summarization",
+      "split": "train",
+      "task_family_id": "rbv1-summarization-08-multi-party-decision",
+      "task_id": "summarization-hard-001"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "hard",
+      "internal_category": "summarization",
+      "split": "train",
+      "task_family_id": "rbv1-summarization-08-multi-party-decision",
+      "task_id": "summarization-hard-002"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "medium",
+      "internal_category": "summarization",
+      "split": "train",
+      "task_family_id": "rbv1-summarization-09-process",
+      "task_id": "summarization-medium-007"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "hard",
+      "internal_category": "summarization",
+      "split": "train",
+      "task_family_id": "rbv1-summarization-09-process",
+      "task_id": "summarization-hard-003"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "medium",
+      "internal_category": "summarization",
+      "split": "train",
+      "task_family_id": "rbv1-summarization-10-comparison",
+      "task_id": "summarization-medium-008"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "medium",
+      "internal_category": "summarization",
+      "split": "train",
+      "task_family_id": "rbv1-summarization-10-comparison",
+      "task_id": "summarization-medium-009"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "hard",
+      "internal_category": "summarization",
+      "split": "development",
+      "task_family_id": "rbv1-summarization-11-uncertainty",
+      "task_id": "summarization-hard-004"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "hard",
+      "internal_category": "summarization",
+      "split": "development",
+      "task_family_id": "rbv1-summarization-11-uncertainty",
+      "task_id": "summarization-hard-005"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "hard",
+      "internal_category": "summarization",
+      "split": "development",
+      "task_family_id": "rbv1-summarization-12-nested-exception",
+      "task_id": "summarization-hard-006"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "hard",
+      "internal_category": "summarization",
+      "split": "development",
+      "task_family_id": "rbv1-summarization-12-nested-exception",
+      "task_id": "summarization-hard-007"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "medium",
+      "internal_category": "summarization",
+      "split": "development",
+      "task_family_id": "rbv1-summarization-13-milestones",
+      "task_id": "summarization-medium-010"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "hard",
+      "internal_category": "summarization",
+      "split": "development",
+      "task_family_id": "rbv1-summarization-13-milestones",
+      "task_id": "summarization-hard-008"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "medium",
+      "internal_category": "summarization",
+      "split": "final",
+      "task_family_id": "rbv1-summarization-14-tradeoff",
+      "task_id": "summarization-medium-011"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "hard",
+      "internal_category": "summarization",
+      "split": "final",
+      "task_family_id": "rbv1-summarization-14-tradeoff",
+      "task_id": "summarization-hard-009"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "medium",
+      "internal_category": "summarization",
+      "split": "final",
+      "task_family_id": "rbv1-summarization-15-handoff",
+      "task_id": "summarization-medium-012"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "medium",
+      "internal_category": "summarization",
+      "split": "final",
+      "task_family_id": "rbv1-summarization-15-handoff",
+      "task_id": "summarization-medium-013"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "hard",
+      "internal_category": "summarization",
+      "split": "final",
+      "task_family_id": "rbv1-summarization-16-mixed-signal",
+      "task_id": "summarization-hard-010"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "hard",
+      "internal_category": "summarization",
+      "split": "final",
+      "task_family_id": "rbv1-summarization-16-mixed-signal",
+      "task_id": "summarization-hard-011"
+    }
+  ],
+  "grouping_key": "task_family_id",
+  "outcome_features_used": false,
+  "version": "1.1.0"
+}

@@ -1,0 +1,125 @@
+{
+  "expected_labels": {
+    "prop-live-01": {
+      "expected_verdict": "ENTAILED",
+      "phenomenon": "DIRECT_ENTAILMENT",
+      "rationale": "Frozen human-authored boundary decision for proposition-level validation."
+    },
+    "prop-live-02": {
+      "expected_verdict": "ENTAILED",
+      "phenomenon": "DIRECT_ENTAILMENT",
+      "rationale": "Frozen human-authored boundary decision for proposition-level validation."
+    },
+    "prop-live-03": {
+      "expected_verdict": "ENTAILED",
+      "phenomenon": "LEXICAL_PARAPHRASE",
+      "rationale": "Frozen human-authored boundary decision for proposition-level validation."
+    },
+    "prop-live-04": {
+      "expected_verdict": "ENTAILED",
+      "phenomenon": "LEXICAL_PARAPHRASE",
+      "rationale": "Frozen human-authored boundary decision for proposition-level validation."
+    },
+    "prop-live-05": {
+      "expected_verdict": "ENTAILED",
+      "phenomenon": "SEMANTIC_COMPRESSION",
+      "rationale": "Frozen human-authored boundary decision for proposition-level validation."
+    },
+    "prop-live-06": {
+      "expected_verdict": "ENTAILED",
+      "phenomenon": "SEMANTIC_COMPRESSION",
+      "rationale": "Frozen human-authored boundary decision for proposition-level validation."
+    },
+    "prop-live-07": {
+      "expected_verdict": "ENTAILED",
+      "phenomenon": "SEMANTIC_COMPRESSION",
+      "rationale": "Frozen human-authored boundary decision for proposition-level validation."
+    },
+    "prop-live-08": {
+      "expected_verdict": "ENTAILED",
+      "phenomenon": "VALID_DERIVATION",
+      "rationale": "Frozen human-authored boundary decision for proposition-level validation."
+    },
+    "prop-live-09": {
+      "expected_verdict": "ENTAILED",
+      "phenomenon": "VALID_DERIVATION",
+      "rationale": "Frozen human-authored boundary decision for proposition-level validation."
+    },
+    "prop-live-10": {
+      "expected_verdict": "ENTAILED",
+      "phenomenon": "VALID_DERIVATION",
+      "rationale": "Frozen human-authored boundary decision for proposition-level validation."
+    },
+    "prop-live-11": {
+      "expected_verdict": "NOT_ENTAILED",
+      "phenomenon": "INVALID_DERIVATION",
+      "rationale": "Frozen human-authored boundary decision for proposition-level validation."
+    },
+    "prop-live-12": {
+      "expected_verdict": "NOT_ENTAILED",
+      "phenomenon": "INVALID_DERIVATION",
+      "rationale": "Frozen human-authored boundary decision for proposition-level validation."
+    },
+    "prop-live-13": {
+      "expected_verdict": "NOT_ENTAILED",
+      "phenomenon": "INVALID_DERIVATION",
+      "rationale": "Frozen human-authored boundary decision for proposition-level validation."
+    },
+    "prop-live-14": {
+      "expected_verdict": "NOT_ENTAILED",
+      "phenomenon": "MISSING_FACT",
+      "rationale": "Frozen human-authored boundary decision for proposition-level validation."
+    },
+    "prop-live-15": {
+      "expected_verdict": "NOT_ENTAILED",
+      "phenomenon": "MISSING_FACT",
+      "rationale": "Frozen human-authored boundary decision for proposition-level validation."
+    },
+    "prop-live-16": {
+      "expected_verdict": "NOT_ENTAILED",
+      "phenomenon": "CONTRADICTION",
+      "rationale": "Frozen human-authored boundary decision for proposition-level validation."
+    },
+    "prop-live-17": {
+      "expected_verdict": "NOT_ENTAILED",
+      "phenomenon": "CONTRADICTION",
+      "rationale": "Frozen human-authored boundary decision for proposition-level validation."
+    },
+    "prop-live-18": {
+      "expected_verdict": "NOT_ENTAILED",
+      "phenomenon": "UNSUPPORTED_CAUSATION",
+      "rationale": "Frozen human-authored boundary decision for proposition-level validation."
+    },
+    "prop-live-19": {
+      "expected_verdict": "NOT_ENTAILED",
+      "phenomenon": "UNSUPPORTED_CAUSATION",
+      "rationale": "Frozen human-authored boundary decision for proposition-level validation."
+    },
+    "prop-live-20": {
+      "expected_verdict": "AMBIGUOUS",
+      "phenomenon": "UNSUPPORTED_CAUSATION",
+      "rationale": "Frozen human-authored boundary decision for proposition-level validation."
+    },
+    "prop-live-21": {
+      "expected_verdict": "NOT_ENTAILED",
+      "phenomenon": "ATTRIBUTION_CHANGE",
+      "rationale": "Frozen human-authored boundary decision for proposition-level validation."
+    },
+    "prop-live-22": {
+      "expected_verdict": "AMBIGUOUS",
+      "phenomenon": "ATTRIBUTION_CHANGE",
+      "rationale": "Frozen human-authored boundary decision for proposition-level validation."
+    },
+    "prop-live-23": {
+      "expected_verdict": "NOT_ENTAILED",
+      "phenomenon": "CERTAINTY_CHANGE",
+      "rationale": "Frozen human-authored boundary decision for proposition-level validation."
+    },
+    "prop-live-24": {
+      "expected_verdict": "AMBIGUOUS",
+      "phenomenon": "CERTAINTY_CHANGE",
+      "rationale": "Frozen human-authored boundary decision for proposition-level validation."
+    }
+  },
+  "validation_set_version": "1.0.0"
+}

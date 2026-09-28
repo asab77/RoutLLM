@@ -225,6 +225,8 @@ async def test_empty_visible_response_is_failure_with_safe_reasoning_diagnostics
         'http_status': 200,
         'vercel_request_id': 'iad1::abc-123',
         'finish_reason': 'length',
+        'termination_reason': 'length',
+        'provider_termination_reason': 'length',
         'content_empty': True,
         'output_token_limit': 8,
         'input_tokens': 21,

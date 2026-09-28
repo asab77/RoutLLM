@@ -32,3 +32,5 @@ docker/postgres/data/
 benchmark-results/
 artifacts/routing-quality/
 artifacts/routing-validation/
+artifacts/routing-analysis/
+artifacts/routing-benchmark-v1/

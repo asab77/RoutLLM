@@ -1,0 +1,35 @@
+{
+  "five_case_confirmation": {
+    "calls": 5,
+    "expected_cost_usd": "0.00486650",
+    "expected_output_tokens": 1557,
+    "input_tokens": 391,
+    "worst_case_cost_usd": "0.00835550",
+    "worst_case_output_tokens": 2720
+  },
+  "full_train": {
+    "astra_calls": 80,
+    "astra_expected_cost_usd": "2.13816",
+    "astra_worst_case_cost_usd": "3.98616",
+    "candidate_calls": 560,
+    "candidate_expected_cost_usd": "0.24955000",
+    "candidate_expected_output_tokens": 68260,
+    "candidate_input_tokens": 22540,
+    "candidate_worst_case_cost_usd": "0.59150875",
+    "candidate_worst_case_output_tokens": 156160,
+    "tasks": 140,
+    "total_expected_cost_usd": "2.38771000",
+    "total_worst_case_cost_usd": "4.57766875"
+  },
+  "method": {
+    "astra": "Evaluator 1.3 frozen estimate: exact blind request approximation, 96 + 56 tokens per proposition expected, 768 output tokens worst case",
+    "candidate_expected_output": "Protocol 1.5 conservative expectation retained unchanged for minimal-reasoning confirmation: max(canonical response estimate, 35% of visible requirement) plus configured expected reasoning tokens, bounded by allowance",
+    "candidate_input": "stored authoritative input tokens for confirmation; ceil(request UTF-8 bytes/4) for TRAIN",
+    "candidate_worst_output": "full provider allowance",
+    "contingency": "none; expected and worst-case totals are direct component sums"
+  },
+  "pricing_status": "READY_FOR_PAID_EXECUTION",
+  "protocol_sha256": "10ca97aafd313c29778103fe0f6f7145243a3e8795d745e1b51a9b0a582c42b3",
+  "protocol_version": "1.6.0",
+  "version": "1.1.0"
+}

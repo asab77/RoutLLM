@@ -259,3 +259,36 @@ no routing fields or migration. Provider failure triggers no second candidate.
 Category inference, a production threshold default, response validation, quality
 escalation, and quality-based retry remain unimplemented. Phase 7 and Phase 8C-0 OOF
 results remain distinct from full-fit artifact and runtime integration behavior.
+
+## Grouped OOF calibration evidence
+
+Phase 8G uses only the accepted no-provider-pin grouped OOF predictions. It validates
+the frozen dataset, protocol, Phase 7 design, stored prediction provenance, 56-group
+fold isolation, and deterministic probability regeneration before analysis. The
+final full-data Phase 8C artifact is explicitly excluded as generalization evidence.
+
+Ranking, calibration, and routing answer different questions. Ranking measures
+whether candidates are ordered correctly within a request. Calibration measures
+whether a predicted probability corresponds to observed frequency. Routing combines
+those predictions with projected cost and a caller threshold. Strong AUC and pairwise
+ranking do not prove that `0.80` guarantees 80% answer quality or an 80% request-level
+success rate.
+
+The 216 valid OOF labels produce equal-width/quantile ECE values of `3.23%`/`5.65%`
+and MCE values of `15.89%`/`17.33%`. Candidate diagnostics are less stable, category
+diagnostics contain only eight independent requests each, and request-level bootstrap
+intervals around routing outcomes overlap materially. A group-isolated exploratory
+Platt transformation worsens proper losses and both ECE estimates. Isotonic
+calibration is not attempted because the effective sample size is inadequate.
+
+Threshold tables retain missing labels honestly: every selected request contributes
+to projected cost, while missing labels do not enter the acceptable-rate denominator.
+The canonical Phase 8A policy and frozen projected-cost values are reused. Frontier
+dominance is evaluated only among points with equal valid-label coverage, and no
+Pareto point is automatically designated a winner. Oracle results are retrospective
+and not deployable.
+
+The current conclusion is `MORE_DATA_REQUIRED_BEFORE_POLICY_FREEZE`. No threshold,
+calibrator, or quality mode is installed. The API continues to require an explicit
+caller threshold. More independent request groups and external-domain coverage are
+needed before one global default or coarse mode boundaries can be defended.

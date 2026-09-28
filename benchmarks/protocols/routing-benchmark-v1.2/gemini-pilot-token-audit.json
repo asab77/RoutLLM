@@ -1,0 +1,242 @@
+{
+  "attempts": 21,
+  "candidate_id": "candidate-gemini-3-flash",
+  "current_reasoning_reserve_tokens": 256,
+  "output_budget_exhaustion": 5,
+  "rows": [
+    {
+      "authoritative_output_tokens": 146,
+      "category": "classification",
+      "configured_provider_allowance": 288,
+      "current_failure_classification": "COMPLETE",
+      "difficulty": "easy",
+      "distance_from_allowance": 142,
+      "task_id": "classification-easy-001",
+      "visible_output_requirement": 32,
+      "visible_response_appears_complete": true
+    },
+    {
+      "authoritative_output_tokens": 276,
+      "category": "classification",
+      "configured_provider_allowance": 288,
+      "current_failure_classification": "COMPLETE",
+      "difficulty": "hard",
+      "distance_from_allowance": 12,
+      "task_id": "classification-hard-001",
+      "visible_output_requirement": 32,
+      "visible_response_appears_complete": true
+    },
+    {
+      "authoritative_output_tokens": 279,
+      "category": "classification",
+      "configured_provider_allowance": 288,
+      "current_failure_classification": "COMPLETE",
+      "difficulty": "medium",
+      "distance_from_allowance": 9,
+      "task_id": "classification-medium-001",
+      "visible_output_requirement": 32,
+      "visible_response_appears_complete": true
+    },
+    {
+      "authoritative_output_tokens": 380,
+      "category": "coding",
+      "configured_provider_allowance": 384,
+      "current_failure_classification": "OUTPUT_BUDGET_EXHAUSTION",
+      "difficulty": "easy",
+      "distance_from_allowance": 4,
+      "task_id": "coding-easy-001",
+      "visible_output_requirement": 128,
+      "visible_response_appears_complete": false
+    },
+    {
+      "authoritative_output_tokens": 508,
+      "category": "coding",
+      "configured_provider_allowance": 512,
+      "current_failure_classification": "OUTPUT_BUDGET_EXHAUSTION",
+      "difficulty": "hard",
+      "distance_from_allowance": 4,
+      "task_id": "coding-hard-001",
+      "visible_output_requirement": 256,
+      "visible_response_appears_complete": false
+    },
+    {
+      "authoritative_output_tokens": 443,
+      "category": "coding",
+      "configured_provider_allowance": 448,
+      "current_failure_classification": "OUTPUT_BUDGET_EXHAUSTION",
+      "difficulty": "medium",
+      "distance_from_allowance": 5,
+      "task_id": "coding-medium-001",
+      "visible_output_requirement": 192,
+      "visible_response_appears_complete": false
+    },
+    {
+      "authoritative_output_tokens": 185,
+      "category": "extraction",
+      "configured_provider_allowance": 320,
+      "current_failure_classification": "COMPLETE",
+      "difficulty": "easy",
+      "distance_from_allowance": 135,
+      "task_id": "extraction-easy-001",
+      "visible_output_requirement": 64,
+      "visible_response_appears_complete": true
+    },
+    {
+      "authoritative_output_tokens": 177,
+      "category": "extraction",
+      "configured_provider_allowance": 448,
+      "current_failure_classification": "COMPLETE",
+      "difficulty": "hard",
+      "distance_from_allowance": 271,
+      "task_id": "extraction-hard-001",
+      "visible_output_requirement": 192,
+      "visible_response_appears_complete": true
+    },
+    {
+      "authoritative_output_tokens": 245,
+      "category": "extraction",
+      "configured_provider_allowance": 384,
+      "current_failure_classification": "COMPLETE",
+      "difficulty": "medium",
+      "distance_from_allowance": 139,
+      "task_id": "extraction-medium-001",
+      "visible_output_requirement": 128,
+      "visible_response_appears_complete": true
+    },
+    {
+      "authoritative_output_tokens": 27,
+      "category": "json",
+      "configured_provider_allowance": 320,
+      "current_failure_classification": "COMPLETE",
+      "difficulty": "easy",
+      "distance_from_allowance": 293,
+      "task_id": "json-easy-001",
+      "visible_output_requirement": 64,
+      "visible_response_appears_complete": true
+    },
+    {
+      "authoritative_output_tokens": 370,
+      "category": "json",
+      "configured_provider_allowance": 448,
+      "current_failure_classification": "COMPLETE",
+      "difficulty": "hard",
+      "distance_from_allowance": 78,
+      "task_id": "json-hard-001",
+      "visible_output_requirement": 192,
+      "visible_response_appears_complete": true
+    },
+    {
+      "authoritative_output_tokens": 116,
+      "category": "json",
+      "configured_provider_allowance": 384,
+      "current_failure_classification": "COMPLETE",
+      "difficulty": "medium",
+      "distance_from_allowance": 268,
+      "task_id": "json-medium-001",
+      "visible_output_requirement": 128,
+      "visible_response_appears_complete": true
+    },
+    {
+      "authoritative_output_tokens": 135,
+      "category": "qa",
+      "configured_provider_allowance": 320,
+      "current_failure_classification": "COMPLETE",
+      "difficulty": "easy",
+      "distance_from_allowance": 185,
+      "task_id": "qa-easy-001",
+      "visible_output_requirement": 64,
+      "visible_response_appears_complete": true
+    },
+    {
+      "authoritative_output_tokens": 110,
+      "category": "qa",
+      "configured_provider_allowance": 416,
+      "current_failure_classification": "COMPLETE",
+      "difficulty": "hard",
+      "distance_from_allowance": 306,
+      "task_id": "qa-hard-001",
+      "visible_output_requirement": 160,
+      "visible_response_appears_complete": true
+    },
+    {
+      "authoritative_output_tokens": 102,
+      "category": "qa",
+      "configured_provider_allowance": 384,
+      "current_failure_classification": "COMPLETE",
+      "difficulty": "medium",
+      "distance_from_allowance": 282,
+      "task_id": "qa-medium-001",
+      "visible_output_requirement": 128,
+      "visible_response_appears_complete": true
+    },
+    {
+      "authoritative_output_tokens": 83,
+      "category": "reasoning",
+      "configured_provider_allowance": 416,
+      "current_failure_classification": "COMPLETE",
+      "difficulty": "easy",
+      "distance_from_allowance": 333,
+      "task_id": "reasoning-easy-001",
+      "visible_output_requirement": 160,
+      "visible_response_appears_complete": true
+    },
+    {
+      "authoritative_output_tokens": 180,
+      "category": "reasoning",
+      "configured_provider_allowance": 416,
+      "current_failure_classification": "COMPLETE",
+      "difficulty": "hard",
+      "distance_from_allowance": 236,
+      "task_id": "reasoning-hard-001",
+      "visible_output_requirement": 160,
+      "visible_response_appears_complete": true
+    },
+    {
+      "authoritative_output_tokens": 106,
+      "category": "reasoning",
+      "configured_provider_allowance": 416,
+      "current_failure_classification": "COMPLETE",
+      "difficulty": "medium",
+      "distance_from_allowance": 310,
+      "task_id": "reasoning-medium-001",
+      "visible_output_requirement": 160,
+      "visible_response_appears_complete": true
+    },
+    {
+      "authoritative_output_tokens": 348,
+      "category": "summarization",
+      "configured_provider_allowance": 352,
+      "current_failure_classification": "OUTPUT_BUDGET_EXHAUSTION",
+      "difficulty": "easy",
+      "distance_from_allowance": 4,
+      "task_id": "summarization-easy-001",
+      "visible_output_requirement": 96,
+      "visible_response_appears_complete": false
+    },
+    {
+      "authoritative_output_tokens": 420,
+      "category": "summarization",
+      "configured_provider_allowance": 448,
+      "current_failure_classification": "COMPLETE",
+      "difficulty": "hard",
+      "distance_from_allowance": 28,
+      "task_id": "summarization-hard-001",
+      "visible_output_requirement": 192,
+      "visible_response_appears_complete": true
+    },
+    {
+      "authoritative_output_tokens": 379,
+      "category": "summarization",
+      "configured_provider_allowance": 384,
+      "current_failure_classification": "OUTPUT_BUDGET_EXHAUSTION",
+      "difficulty": "medium",
+      "distance_from_allowance": 5,
+      "task_id": "summarization-medium-001",
+      "visible_output_requirement": 128,
+      "visible_response_appears_complete": false
+    }
+  ],
+  "source_run_id": "c30b1f7c-c90e-4209-841b-7437abf9f93b",
+  "usable_responses": 16,
+  "version": "1.0.0"
+}

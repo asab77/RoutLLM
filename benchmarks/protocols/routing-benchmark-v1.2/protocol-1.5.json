@@ -1,0 +1,138 @@
+{
+  "candidates": [
+    {
+      "candidate_id": "candidate-nemotron-3.5-lightning",
+      "capabilities": {
+        "output_token_accounting": "visible_only",
+        "reasoning": "provider_default",
+        "supports_structured_output": true,
+        "supports_temperature": true
+      },
+      "context_window": 262144,
+      "input_cost_per_1m_tokens": "0.05",
+      "output_cost_per_1m_tokens": "0.15",
+      "output_token_policy": {
+        "category_overrides": [],
+        "expected_reasoning_tokens": 0,
+        "reasoning_headroom_tokens": 0
+      },
+      "provider": "vercel",
+      "reasoning_effort": "none",
+      "temperature": 0,
+      "upstream_model_slug": "nvidia/nemotron-3.5-lightning",
+      "upstream_provider_pin": "runinfra"
+    },
+    {
+      "candidate_id": "candidate-gpt-6-luna",
+      "capabilities": {
+        "output_token_accounting": "reasoning_and_visible",
+        "reasoning": "provider_default",
+        "supports_structured_output": true,
+        "supports_temperature": true
+      },
+      "context_window": 1050000,
+      "input_cost_per_1m_tokens": "0.10",
+      "output_cost_per_1m_tokens": "0.50",
+      "output_token_policy": {
+        "category_overrides": [],
+        "expected_reasoning_tokens": 32,
+        "reasoning_headroom_tokens": 128
+      },
+      "provider": "vercel",
+      "reasoning_effort": "low",
+      "temperature": 0,
+      "upstream_model_slug": "openai/gpt-6-luna",
+      "upstream_provider_pin": "openai"
+    },
+    {
+      "candidate_id": "candidate-gemini-3-flash",
+      "capabilities": {
+        "output_token_accounting": "reasoning_and_visible",
+        "reasoning": "provider_default",
+        "supports_structured_output": true,
+        "supports_temperature": true
+      },
+      "context_window": 1000000,
+      "input_cost_per_1m_tokens": "0.50",
+      "output_cost_per_1m_tokens": "3.00",
+      "output_token_policy": {
+        "category_overrides": [],
+        "expected_reasoning_tokens": 256,
+        "reasoning_headroom_tokens": 384
+      },
+      "provider": "vercel",
+      "reasoning_effort": "low",
+      "temperature": 0,
+      "upstream_model_slug": "google/gemini-3-flash",
+      "upstream_provider_pin": "google"
+    },
+    {
+      "candidate_id": "candidate-claude-sonnet-5",
+      "capabilities": {
+        "output_token_accounting": "reasoning_and_visible",
+        "reasoning": "provider_default",
+        "supports_structured_output": true,
+        "supports_temperature": false
+      },
+      "context_window": 1000000,
+      "input_cost_per_1m_tokens": "2.00",
+      "output_cost_per_1m_tokens": "10.00",
+      "output_token_policy": {
+        "category_overrides": [],
+        "expected_reasoning_tokens": 32,
+        "reasoning_headroom_tokens": 128
+      },
+      "provider": "vercel",
+      "reasoning_effort": "low",
+      "temperature": "omitted",
+      "upstream_model_slug": "anthropic/claude-sonnet-5",
+      "upstream_provider_pin": "anthropic"
+    }
+  ],
+  "dataset_sha256": "1a9cadc2d557eacb4a7dce450100cdb495a2659c2862845ce9894cf0a7791005",
+  "dataset_version": "1.2.0",
+  "evaluator_manifest_sha256": "7dfb5c29426520edcb2c64491c1d5f62fddfc3bdbb3869599378da781f35d413",
+  "execution": "sequential-task-then-model",
+  "final_evaluation_gate": {
+    "explicit_flag_required": true,
+    "policy_sha256_required": true,
+    "predictor_sha256_required": true,
+    "pristine_status_consumed_on_inspection": true
+  },
+  "output_allowance_semantics": {
+    "candidate_slug_branching": false,
+    "provider_max_output_tokens": "visible requirement plus typed bounded reasoning headroom when upstream counts reasoning and visible tokens together",
+    "task_max_output_tokens": "canonical visible-output requirement"
+  },
+  "paid_execution_authorized": false,
+  "pricing": {
+    "catalog_verified_at": "2026-09-24T03:06:54Z",
+    "local_source": "https://ai-gateway.vercel.sh/v1/models",
+    "locally_verified_date": "2026-09-24",
+    "requirement": "reverify catalog availability and prices before any paid pilot",
+    "status": "REQUIRES_REVERIFICATION"
+  },
+  "protocol": "routellm-routing-benchmark-v1.2",
+  "protocol_bump_reason": "Gemini pilot output-budget exhaustion requires a fixed 384-token combined-accounting reserve; canonical visible-output requirements, candidates, dataset, split, specification, and evaluator remain unchanged.",
+  "provenance_manifest_sha256": "08878535e7be42b1a59a6981adf84486d498128c53c7fd545fa4e9ee9f7fe6b7",
+  "service_tier": "standard",
+  "split_manifest_sha256": "98c639be29da4e11fdf48073d74e83805f16fdfb72b0102b5f5543213ab4960b",
+  "status": "PROPOSED_AWAITING_GEMINI_CONFIRMATION",
+  "summarization_specification_sha256": "b5568b26d7fdce018e3cfef9020780645e12e02f488ab495b14a1e621dd62c1e",
+  "summarization_specification_version": "1.0.0",
+  "termination_metadata": {
+    "fallback_when_provider_value_absent": "near-allowance plus conservative visible-truncation evidence",
+    "length_is_output_budget_exhaustion": true,
+    "normalized_categories": [
+      "complete",
+      "length",
+      "tool_call",
+      "content_filter",
+      "other",
+      "unknown"
+    ],
+    "sanitized_provider_value": true,
+    "schema_version": "1.0.0"
+  },
+  "version": "1.5.0"
+}

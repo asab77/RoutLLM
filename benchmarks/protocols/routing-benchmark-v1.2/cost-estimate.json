@@ -1,0 +1,44 @@
+{
+  "corrected_pilot": {
+    "calls": 12,
+    "candidate_cost_usd": "0.03213190",
+    "estimated_input_tokens": 12783,
+    "expected_cost_usd": "0.30863",
+    "expected_output_tokens": 3616,
+    "expected_total_cost_usd": "0.3748380900",
+    "worst_case_cost_usd": "0.58863",
+    "worst_case_output_tokens": 9216
+  },
+  "full_benchmark": {
+    "calls": 128,
+    "candidate_cost_usd": "0.34830600",
+    "estimated_input_tokens": 147512,
+    "expected_cost_usd": "3.48952",
+    "expected_output_tokens": 40288,
+    "expected_total_cost_usd": "4.2216086000",
+    "worst_case_cost_usd": "6.39032",
+    "worst_case_output_tokens": 98304
+  },
+  "method": {
+    "candidate_costs": "unchanged frozen routing cost estimate v1.1.0",
+    "expected_output_tokens": "96 + 56 * proposition_count",
+    "full_candidate_placeholder": "40 words per stored task source",
+    "input_token_approximation": "ceil((system prompt + exact request prompt) UTF-8 bytes / 4)",
+    "total_contingency_fraction": "0.10",
+    "worst_case_output_tokens_per_call": 768
+  },
+  "pricing_status": "FROZEN_REPOSITORY_ASSUMPTION_REQUIRES_LIVE_REVERIFICATION",
+  "pricing_usd_per_million_tokens": {
+    "astra_input": "10",
+    "astra_output": "50"
+  },
+  "validation": {
+    "calls": 24,
+    "estimated_input_tokens": 16802,
+    "expected_cost_usd": "0.35042",
+    "expected_output_tokens": 3648,
+    "worst_case_cost_usd": "1.08962",
+    "worst_case_output_tokens": 18432
+  },
+  "version": "1.3.0"
+}

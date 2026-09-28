@@ -1,0 +1,81 @@
+{
+  "astra_calls": 0,
+  "candidate_id": "candidate-gemini-3-flash",
+  "candidate_retries": 0,
+  "cases": [
+    {
+      "category": "coding",
+      "difficulty": "easy",
+      "provider_output_allowance": 512,
+      "source_failure_classification": "OUTPUT_BUDGET_EXHAUSTION",
+      "task_id": "coding-easy-001",
+      "visible_output_requirement": 128
+    },
+    {
+      "category": "coding",
+      "difficulty": "medium",
+      "provider_output_allowance": 576,
+      "source_failure_classification": "OUTPUT_BUDGET_EXHAUSTION",
+      "task_id": "coding-medium-001",
+      "visible_output_requirement": 192
+    },
+    {
+      "category": "coding",
+      "difficulty": "hard",
+      "provider_output_allowance": 640,
+      "source_failure_classification": "OUTPUT_BUDGET_EXHAUSTION",
+      "task_id": "coding-hard-001",
+      "visible_output_requirement": 256
+    },
+    {
+      "category": "summarization",
+      "difficulty": "easy",
+      "provider_output_allowance": 480,
+      "source_failure_classification": "OUTPUT_BUDGET_EXHAUSTION",
+      "task_id": "summarization-easy-001",
+      "visible_output_requirement": 96
+    },
+    {
+      "category": "summarization",
+      "difficulty": "medium",
+      "provider_output_allowance": 512,
+      "source_failure_classification": "OUTPUT_BUDGET_EXHAUSTION",
+      "task_id": "summarization-medium-001",
+      "visible_output_requirement": 128
+    }
+  ],
+  "dataset_sha256": "1a9cadc2d557eacb4a7dce450100cdb495a2659c2862845ce9894cf0a7791005",
+  "execution_readiness_sha256": "3acf8a22b1b679012d23738c94122163cddcf6cf10d7df4f8c395d2855aca9ef",
+  "maximum_candidate_calls": 5,
+  "on_failure": "STOP_FOR_REVIEW",
+  "prior_failed_confirmation_run_id": "7f3c89bf-ae84-4210-bc9c-6dc3cdbbba0a",
+  "protocol": "routellm-routing-benchmark-v1.2",
+  "protocol_sha256": "b4cde3954a8ccd1b54684dcb62da303e7bc806248306464ae536b9ff717a0bd8",
+  "protocol_version": "1.7.0",
+  "provider_native_configuration": {
+    "google": {
+      "thinkingConfig": {
+        "thinkingLevel": "minimal"
+      }
+    }
+  },
+  "purpose": "Confirm complete Gemini visible responses under Protocol 1.7 Google provider-native minimal reasoning without quality evaluation.",
+  "quality_evaluation": false,
+  "reasoning_control": "google_provider_native",
+  "reasoning_effort": "minimal",
+  "reasoning_reserve_tokens": 384,
+  "shared_reasoning_field": "omitted",
+  "source_run_id": "c30b1f7c-c90e-4209-841b-7437abf9f93b",
+  "source_run_manifest_sha256": "20c08f2d9a4a6186a1a188f3aab61cb7245d2a10e3d85734abe56b8ada647e8e",
+  "split_manifest_sha256": "98c639be29da4e11fdf48073d74e83805f16fdfb72b0102b5f5543213ab4960b",
+  "status": "AWAITING_HUMAN_AUTHORIZATION",
+  "success_criteria": [
+    "non-empty visible output",
+    "authoritative termination is not length",
+    "visible response does not appear truncated",
+    "authoritative output usage is below the provider allowance with reasonable completion evidence"
+  ],
+  "upstream_model_slug": "google/gemini-3-flash",
+  "upstream_provider_pin": "google",
+  "version": "1.2.0"
+}

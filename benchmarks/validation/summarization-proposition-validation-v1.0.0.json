@@ -1,0 +1,149 @@
+{
+  "judge_inputs": [
+    {
+      "candidate_text": "The archive will open Tuesday at 8:30 a.m.",
+      "case_id": "prop-live-01",
+      "required_proposition": "The archive opens Tuesday at 08:30.",
+      "source_evidence": "The archive opens at 08:30 on Tuesday."
+    },
+    {
+      "candidate_text": "Mara approved the revised budget.",
+      "case_id": "prop-live-02",
+      "required_proposition": "Mara approved the revised budget.",
+      "source_evidence": "Mara approved the revised budget."
+    },
+    {
+      "candidate_text": "The board delayed its vote to June.",
+      "case_id": "prop-live-03",
+      "required_proposition": "The vote was postponed until June.",
+      "source_evidence": "The board postponed the vote until June."
+    },
+    {
+      "candidate_text": "The inspection did not disrupt trains.",
+      "case_id": "prop-live-04",
+      "required_proposition": "Rail service was unaffected.",
+      "source_evidence": "Rail service was unaffected by the inspection."
+    },
+    {
+      "candidate_text": "Northbound service briefly paused.",
+      "case_id": "prop-live-05",
+      "required_proposition": "Northbound service was interrupted.",
+      "source_evidence": "Northbound trains stopped at 08:10 and resumed at 08:25."
+    },
+    {
+      "candidate_text": "A three-day delivery gap disrupted appointments.",
+      "case_id": "prop-live-06",
+      "required_proposition": "The delivery interruption affected appointments.",
+      "source_evidence": "The clinic received no deliveries for three days and canceled appointments."
+    },
+    {
+      "candidate_text": "Staff deleted the duplicated invoice record.",
+      "case_id": "prop-live-07",
+      "required_proposition": "Staff removed the duplicate invoice entry.",
+      "source_evidence": "The same invoice was entered twice; staff removed the second entry."
+    },
+    {
+      "candidate_text": "Attendance was 75% of registrations.",
+      "case_id": "prop-live-08",
+      "required_proposition": "Three quarters of registered participants attended.",
+      "source_evidence": "Of 200 registered participants, 150 attended."
+    },
+    {
+      "candidate_text": "The item became five dollars cheaper.",
+      "case_id": "prop-live-09",
+      "required_proposition": "The price decreased by $5.",
+      "source_evidence": "The price fell from $20 to $15."
+    },
+    {
+      "candidate_text": "Service was down for half an hour.",
+      "case_id": "prop-live-10",
+      "required_proposition": "The outage lasted 30 minutes.",
+      "source_evidence": "The outage began at 11:05 and ended at 11:35."
+    },
+    {
+      "candidate_text": "The price decreased by $5.",
+      "case_id": "prop-live-11",
+      "required_proposition": "The final price was $15.",
+      "source_evidence": "The price fell from $20 to $15."
+    },
+    {
+      "candidate_text": "Half of the samples passed.",
+      "case_id": "prop-live-12",
+      "required_proposition": "Exactly three samples passed.",
+      "source_evidence": "Three of six samples passed."
+    },
+    {
+      "candidate_text": "Restrictions lasted three days.",
+      "case_id": "prop-live-13",
+      "required_proposition": "Restrictions ended Wednesday.",
+      "source_evidence": "Restrictions applied Monday through Wednesday."
+    },
+    {
+      "candidate_text": "The permit was approved Thursday.",
+      "case_id": "prop-live-14",
+      "required_proposition": "The diagram arrived Wednesday.",
+      "source_evidence": "The permit was approved Thursday after a diagram arrived Wednesday."
+    },
+    {
+      "candidate_text": "The shipment contained rice.",
+      "case_id": "prop-live-15",
+      "required_proposition": "The shipment contained medical supplies.",
+      "source_evidence": "The shipment contained rice and medical supplies."
+    },
+    {
+      "candidate_text": "The east entrance stayed open during the event.",
+      "case_id": "prop-live-16",
+      "required_proposition": "The east entrance remained closed.",
+      "source_evidence": "The east entrance remained closed throughout the event."
+    },
+    {
+      "candidate_text": "Some customer records were lost.",
+      "case_id": "prop-live-17",
+      "required_proposition": "No customer records were lost.",
+      "source_evidence": "No customer records were lost."
+    },
+    {
+      "candidate_text": "Monday's patch caused Tuesday's decline in errors.",
+      "case_id": "prop-live-18",
+      "required_proposition": "The patch caused errors to decline.",
+      "source_evidence": "A patch was installed Monday. Errors declined Tuesday."
+    },
+    {
+      "candidate_text": "Staff evacuated because the alarm sounded.",
+      "case_id": "prop-live-19",
+      "required_proposition": "The alarm caused the evacuation.",
+      "source_evidence": "The alarm sounded before staff evacuated."
+    },
+    {
+      "candidate_text": "The fan failure led to overheating.",
+      "case_id": "prop-live-20",
+      "required_proposition": "The stopped fan caused the overheating.",
+      "source_evidence": "A fan stopped and the server overheated moments later."
+    },
+    {
+      "candidate_text": "The committee proposed the amendment.",
+      "case_id": "prop-live-21",
+      "required_proposition": "Mina proposed the amendment.",
+      "source_evidence": "Mina proposed the amendment; the committee approved it."
+    },
+    {
+      "candidate_text": "Ana's report was issued by the laboratory.",
+      "case_id": "prop-live-22",
+      "required_proposition": "Ana authored the report.",
+      "source_evidence": "The laboratory issued the report after Ana completed the analysis."
+    },
+    {
+      "candidate_text": "Analysts said demand will rise.",
+      "case_id": "prop-live-23",
+      "required_proposition": "Analysts expressed uncertainty about rising demand.",
+      "source_evidence": "Analysts said demand may rise."
+    },
+    {
+      "candidate_text": "The successful pilot met the available measures.",
+      "case_id": "prop-live-24",
+      "required_proposition": "The pilot was successful.",
+      "source_evidence": "The pilot appears successful on the available measures."
+    }
+  ],
+  "validation_set_version": "1.0.0"
+}

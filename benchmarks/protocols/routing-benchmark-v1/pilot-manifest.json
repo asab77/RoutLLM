@@ -1,0 +1,177 @@
+{
+  "benchmark": "routellm-routing-benchmark-v1",
+  "expected_candidate_calls": 84,
+  "maximum_expected_semantic_judge_calls": 12,
+  "selection_rule": "reviewed train task per category/difficulty using distinct families and no trivial-only signal",
+  "tasks": [
+    {
+      "category": "classification",
+      "difficulty": "easy",
+      "internal_category": "classification",
+      "split": "train",
+      "task_family_id": "rbv1-classification-01-direct-material",
+      "task_id": "classification-easy-001"
+    },
+    {
+      "category": "classification",
+      "difficulty": "medium",
+      "internal_category": "classification",
+      "split": "train",
+      "task_family_id": "rbv1-classification-04-priority-precedence",
+      "task_id": "classification-medium-001"
+    },
+    {
+      "category": "classification",
+      "difficulty": "hard",
+      "internal_category": "classification",
+      "split": "train",
+      "task_family_id": "rbv1-classification-08-access-policy",
+      "task_id": "classification-hard-001"
+    },
+    {
+      "category": "coding",
+      "difficulty": "easy",
+      "internal_category": "coding",
+      "split": "train",
+      "task_family_id": "rbv1-coding-01-clamp-sequence",
+      "task_id": "coding-easy-001"
+    },
+    {
+      "category": "coding",
+      "difficulty": "medium",
+      "internal_category": "coding",
+      "split": "train",
+      "task_family_id": "rbv1-coding-03-initial-histogram",
+      "task_id": "coding-medium-001"
+    },
+    {
+      "category": "coding",
+      "difficulty": "hard",
+      "internal_category": "coding",
+      "split": "train",
+      "task_family_id": "rbv1-coding-07-merge-adjacent-intervals",
+      "task_id": "coding-hard-001"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "easy",
+      "internal_category": "extraction",
+      "split": "train",
+      "task_family_id": "rbv1-extraction-01-contact-prose",
+      "task_id": "extraction-easy-001"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "medium",
+      "internal_category": "extraction",
+      "split": "train",
+      "task_family_id": "rbv1-extraction-04-text-table-filter",
+      "task_id": "extraction-medium-001"
+    },
+    {
+      "category": "extraction",
+      "difficulty": "hard",
+      "internal_category": "extraction",
+      "split": "train",
+      "task_family_id": "rbv1-extraction-08-section-precedence",
+      "task_id": "extraction-hard-001"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "easy",
+      "internal_category": "json",
+      "split": "train",
+      "task_family_id": "rbv1-json-01-flat-profile",
+      "task_id": "json-easy-001"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "medium",
+      "internal_category": "json",
+      "split": "train",
+      "task_family_id": "rbv1-json-04-enum-mapping",
+      "task_id": "json-medium-001"
+    },
+    {
+      "category": "structured_json",
+      "difficulty": "hard",
+      "internal_category": "json",
+      "split": "train",
+      "task_family_id": "rbv1-json-10-joined-records",
+      "task_id": "json-hard-001"
+    },
+    {
+      "category": "qa",
+      "difficulty": "easy",
+      "internal_category": "qa",
+      "split": "train",
+      "task_family_id": "rbv1-qa-01-direct-location",
+      "task_id": "qa-easy-001"
+    },
+    {
+      "category": "qa",
+      "difficulty": "medium",
+      "internal_category": "qa",
+      "split": "train",
+      "task_family_id": "rbv1-qa-04-temporal-latest",
+      "task_id": "qa-medium-001"
+    },
+    {
+      "category": "qa",
+      "difficulty": "hard",
+      "internal_category": "qa",
+      "split": "train",
+      "task_family_id": "rbv1-qa-06-exception-owner",
+      "task_id": "qa-hard-001"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "easy",
+      "internal_category": "reasoning",
+      "split": "train",
+      "task_family_id": "rbv1-reasoning-01-net-change",
+      "task_id": "reasoning-easy-001"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "medium",
+      "internal_category": "reasoning",
+      "split": "train",
+      "task_family_id": "rbv1-reasoning-04-set-intersection",
+      "task_id": "reasoning-medium-001"
+    },
+    {
+      "category": "reasoning",
+      "difficulty": "hard",
+      "internal_category": "reasoning",
+      "split": "train",
+      "task_family_id": "rbv1-reasoning-05-state-machine",
+      "task_id": "reasoning-hard-001"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "easy",
+      "internal_category": "summarization",
+      "split": "train",
+      "task_family_id": "rbv1-summarization-01-chronology",
+      "task_id": "summarization-easy-001"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "medium",
+      "internal_category": "summarization",
+      "split": "train",
+      "task_family_id": "rbv1-summarization-03-incident",
+      "task_id": "summarization-medium-001"
+    },
+    {
+      "category": "summarization",
+      "difficulty": "hard",
+      "internal_category": "summarization",
+      "split": "train",
+      "task_family_id": "rbv1-summarization-08-multi-party-decision",
+      "task_id": "summarization-hard-001"
+    }
+  ],
+  "version": "1.1.0"
+}

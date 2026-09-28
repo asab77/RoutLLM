@@ -1,8 +1,10 @@
 from typing import Literal
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
-from adaptive_llm_gateway.models import InferenceRequest, InferenceResponse
+from adaptive_llm_gateway.models import (
+    InferenceRequest, InferenceResponse, TerminationReason,
+)
 from adaptive_llm_gateway.models.schemas import Identifier
 from adaptive_llm_gateway.telemetry.contracts import TelemetrySummary
 from adaptive_llm_gateway.evaluation.models import EvaluationSummary
@@ -31,6 +33,9 @@ class InferencePayload(InferenceRequest):
 
 
 class InferenceResult(InferenceResponse):
+    termination_reason: TerminationReason = Field(
+        default=TerminationReason.UNKNOWN, exclude=True)
+    provider_termination_reason: str | None = Field(default=None, exclude=True)
     request_id: str
 
 
@@ -59,6 +64,9 @@ class PublicRoutingMetadata(BaseModel):
 
 
 class AdaptiveInferenceResult(InferenceResponse):
+    termination_reason: TerminationReason = Field(
+        default=TerminationReason.UNKNOWN, exclude=True)
+    provider_termination_reason: str | None = Field(default=None, exclude=True)
     request_id: str
     routing: PublicRoutingMetadata
 

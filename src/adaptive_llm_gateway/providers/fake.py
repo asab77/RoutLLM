@@ -1,5 +1,7 @@
 from adaptive_llm_gateway.errors import ContextLimitError, ModelDisabledError
-from adaptive_llm_gateway.models import InferenceRequest, InferenceResponse, ModelConfig
+from adaptive_llm_gateway.models import (
+    InferenceRequest, InferenceResponse, ModelConfig, TerminationReason,
+)
 from adaptive_llm_gateway.pricing import calculate_cost
 
 from .base import LLMProvider
@@ -33,6 +35,8 @@ class FakeProvider(LLMProvider):
             input_tokens=input_tokens,
             output_tokens=output_tokens,
             latency_ms=0.0,
+            termination_reason=TerminationReason.COMPLETE,
+            provider_termination_reason="synthetic_stop",
             estimated_cost_usd=calculate_cost(
                 input_tokens=input_tokens, output_tokens=output_tokens, model=self._model
             ),

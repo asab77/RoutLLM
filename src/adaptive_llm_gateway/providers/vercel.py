@@ -7,7 +7,10 @@ import httpx
 from pydantic import ValidationError
 
 from adaptive_llm_gateway.errors import GatewayError, GatewayErrorCategory, ModelDisabledError
-from adaptive_llm_gateway.models import InferenceRequest, InferenceResponse, ModelConfig
+from adaptive_llm_gateway.models import (
+    InferenceRequest, InferenceResponse, ModelConfig, ReasoningControlMechanism,
+    TerminationReason,
+)
 from adaptive_llm_gateway.pricing import calculate_cost
 from .base import LLMProvider
 from .gateway_config import GatewaySettings, UPSTREAM_PROVIDERS
@@ -18,6 +21,30 @@ _SAFE_VALUE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$")
 
 def _safe_value(value):
     return value if isinstance(value, str) and _SAFE_VALUE.fullmatch(value) else None
+
+
+def _termination(choice) -> tuple[TerminationReason, str | None]:
+    if not isinstance(choice, dict):
+        return TerminationReason.UNKNOWN, None
+    raw = _safe_value(
+        choice.get("finish_reason")
+        or choice.get("finishReason")
+        or choice.get("stop_reason")
+    )
+    if raw is not None and len(raw) > 64:
+        raw = None
+    if raw is None:
+        return TerminationReason.UNKNOWN, None
+    normalized = raw.casefold()
+    if normalized in {"stop", "end_turn", "end", "complete", "completed"}:
+        return TerminationReason.COMPLETE, raw
+    if normalized in {"length", "max_tokens", "max_output_tokens", "token_limit"}:
+        return TerminationReason.LENGTH, raw
+    if normalized in {"tool_call", "tool_calls", "function_call"}:
+        return TerminationReason.TOOL_CALL, raw
+    if normalized in {"content_filter", "content_filtered", "safety", "blocked"}:
+        return TerminationReason.CONTENT_FILTER, raw
+    return TerminationReason.OTHER, raw
 
 
 def _response_identifiers(response: httpx.Response) -> dict:
@@ -54,12 +81,14 @@ def _error_diagnostics(response: httpx.Response, body) -> dict:
 def _completion_diagnostics(response: httpx.Response, choice, message, usage,
                             output_token_limit: int, *, input_tokens: int,
                             output_tokens: int, latency_ms: float,
-                            estimated_cost_usd) -> dict:
+                            estimated_cost_usd, content_empty: bool) -> dict:
     diagnostics = _response_identifiers(response)
-    finish_reason = _safe_value(choice.get("finish_reason")) if isinstance(choice, dict) else None
-    if finish_reason is not None:
-        diagnostics["finish_reason"] = finish_reason
-    diagnostics["content_empty"] = True
+    termination, provider_termination = _termination(choice)
+    diagnostics["termination_reason"] = termination.value
+    if provider_termination is not None:
+        diagnostics["provider_termination_reason"] = provider_termination
+        diagnostics["finish_reason"] = provider_termination
+    diagnostics["content_empty"] = content_empty
     diagnostics["output_token_limit"] = output_token_limit
     diagnostics["input_tokens"] = input_tokens
     diagnostics["output_tokens"] = output_tokens
@@ -100,7 +129,11 @@ class VercelGatewayProvider(LLMProvider):
                    "providerOptions": {"gateway": {"only": [UPSTREAM_PROVIDERS[self.model.provider_model_name]]}}}
         if self.model.capabilities.supports_temperature:
             payload["temperature"] = request.temperature
-        if self.model.reasoning_effort is not None:
+        if self.model.reasoning_control is ReasoningControlMechanism.GOOGLE_PROVIDER_NATIVE:
+            payload["providerOptions"]["google"] = {
+                "thinkingConfig": {"thinkingLevel": self.model.reasoning_effort.value},
+            }
+        elif self.model.reasoning_effort is not None:
             payload["reasoning"] = {"effort": self.model.reasoning_effort.value}
         started = perf_counter()
         try:
@@ -148,15 +181,23 @@ class VercelGatewayProvider(LLMProvider):
                 raise ValueError()
             estimated_cost = calculate_cost(
                 input_tokens=inputs, output_tokens=outputs, model=self.model)
+            termination, provider_termination = _termination(choice)
             if not text.strip():
                 raise GatewayError(GatewayErrorCategory.EMPTY_RESPONSE,
                     diagnostics=_completion_diagnostics(
                         response, choice, message, usage, request.max_output_tokens,
                         input_tokens=inputs, output_tokens=outputs, latency_ms=latency,
-                        estimated_cost_usd=estimated_cost))
+                        estimated_cost_usd=estimated_cost, content_empty=True))
+            if termination is TerminationReason.LENGTH:
+                raise GatewayError(GatewayErrorCategory.OUTPUT_BUDGET_EXHAUSTION,
+                    diagnostics=_completion_diagnostics(
+                        response, choice, message, usage, request.max_output_tokens,
+                        input_tokens=inputs, output_tokens=outputs, latency_ms=latency,
+                        estimated_cost_usd=estimated_cost, content_empty=False))
             return InferenceResponse(text=text, model_id=self.model.model_id, provider=self.model.provider,
                 input_tokens=inputs, output_tokens=outputs, latency_ms=latency,
-                estimated_cost_usd=estimated_cost)
+                estimated_cost_usd=estimated_cost, termination_reason=termination,
+                provider_termination_reason=provider_termination)
         except GatewayError:
             raise
         except (KeyError, IndexError, TypeError, ValueError, ValidationError):

@@ -18,6 +18,20 @@ class BenchmarkTask(InferenceRequest):
     acceptable_threshold: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
     tags: tuple[str, ...] = ()
     temperature: float = Field(default=0, ge=0, le=2, allow_inf_nan=False)
+    # Benchmark provenance is intentionally kept outside InferenceRequest. These
+    # fields are available to dataset validation and split tooling, but
+    # ``to_request`` cannot forward them to production routing features.
+    task_family_id: str | None = Field(
+        default=None, pattern=r"^[a-z0-9][a-z0-9_-]*$"
+    )
+    source_type: Literal[
+        "human_authored", "deterministic_generator",
+        "controlled_programmatic_construction",
+    ] | None = None
+    source_id: str | None = Field(default=None, min_length=1)
+    generation_seed: int | None = Field(default=None, ge=0)
+    evaluator_type: str | None = Field(default=None, min_length=1)
+    family_variant: str | None = Field(default=None, min_length=1)
 
     def to_request(self) -> InferenceRequest:
         return InferenceRequest(**self.model_dump(include=set(InferenceRequest.model_fields)))
