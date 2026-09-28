@@ -3,9 +3,14 @@ from dataclasses import asdict
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from adaptive_llm_gateway.telemetry.contracts import TelemetryEvent, TelemetrySummary
+from adaptive_llm_gateway.telemetry.contracts import (
+    AdaptiveExecutionTelemetry,
+    TelemetryEvent,
+    TelemetrySummary,
+)
 
 from .models import InferenceTelemetry as Row
+from .models import AdaptiveExecutionTelemetry as AdaptiveRow
 
 
 class PostgresTelemetryRepository:
@@ -16,6 +21,18 @@ class PostgresTelemetryRepository:
         # begin commits on success, rolls back on failure, and closes the session.
         async with self.sessions.begin() as session:
             session.add(Row(**asdict(event)))
+
+    async def record_adaptive_execution(
+        self, event: AdaptiveExecutionTelemetry
+    ) -> None:
+        values = event.model_dump(mode="python")
+        values["validation_outcome"] = event.validation_outcome.value
+        values["terminal_outcome"] = event.terminal_outcome.value
+        values["failure_codes"] = (
+            ",".join(code.value for code in event.failure_codes) or None
+        )
+        async with self.sessions.begin() as session:
+            session.add(AdaptiveRow(**values))
 
     async def summary(self) -> TelemetrySummary:
         statement = select(

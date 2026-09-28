@@ -1,6 +1,9 @@
+from decimal import Decimal
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
+
+from adaptive_llm_gateway.validation import ValidationContract
 
 from adaptive_llm_gateway.models import (
     InferenceRequest, InferenceResponse, TerminationReason,
@@ -42,6 +45,10 @@ class InferenceResult(InferenceResponse):
 class AdaptiveInferencePayload(InferenceRequest):
     """Public adaptive intent; the gateway owns artifact and candidate configuration."""
 
+    validation: ValidationContract | None = Field(
+        default=None,
+        description="Optional deterministic output checks with bounded escalation.",
+    )
     category: RoutingCategory
     quality_threshold: float
 
@@ -52,7 +59,7 @@ class AdaptiveInferencePayload(InferenceRequest):
 
     def to_domain(self) -> InferenceRequest:
         return InferenceRequest(
-            **self.model_dump(exclude={"category", "quality_threshold"})
+            **self.model_dump(exclude={"category", "quality_threshold", "validation"})
         )
 
 
@@ -63,12 +70,21 @@ class PublicRoutingMetadata(BaseModel):
     reason: RoutingDecisionReason
 
 
+class PublicExecutionMetadata(BaseModel):
+    attempts: int = Field(gt=0, le=3)
+    escalated: bool
+    validation_outcome: Literal["passed"]
+    total_estimated_cost_usd: Decimal | None
+    total_latency_ms: float = Field(ge=0, allow_inf_nan=False)
+
+
 class AdaptiveInferenceResult(InferenceResponse):
     termination_reason: TerminationReason = Field(
         default=TerminationReason.UNKNOWN, exclude=True)
     provider_termination_reason: str | None = Field(default=None, exclude=True)
     request_id: str
     routing: PublicRoutingMetadata
+    execution: PublicExecutionMetadata | None = None
 
 
 class PublicModel(BaseModel):

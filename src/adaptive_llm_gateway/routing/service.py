@@ -11,6 +11,7 @@ from adaptive_llm_gateway.errors import (
     PredictorInputCompatibilityError,
 )
 from adaptive_llm_gateway.models import InferenceRequest, ModelConfig
+from adaptive_llm_gateway.models.schemas import DomainModel
 from adaptive_llm_gateway.pricing import calculate_projected_cost
 
 from .features import ProductionRequestFeatureExtractor, RoutingCategory, RoutingRequestFeatures
@@ -22,6 +23,19 @@ from .policy import (
     RoutingDecision,
 )
 from .quality_features import resolve_effective_output_allowance
+
+
+class RoutingCandidateSnapshot(CandidatePrediction):
+    """Immutable original routing data retained for adaptive orchestration."""
+
+    qualifies: bool
+
+
+class RoutingResult(DomainModel):
+    """The unchanged decision plus the candidates from its single prediction pass."""
+
+    decision: RoutingDecision
+    candidates: tuple[RoutingCandidateSnapshot, ...]
 
 
 class RoutingDecisionService:
@@ -49,12 +63,29 @@ class RoutingDecisionService:
         category_hint: RoutingCategory | str | None = None,
         structured_output_required: bool = False,
     ) -> RoutingDecision:
+        return self.route_with_snapshot(
+            request,
+            candidates,
+            quality_threshold,
+            category_hint=category_hint,
+            structured_output_required=structured_output_required,
+        ).decision
+
+    def route_with_snapshot(
+        self,
+        request: InferenceRequest,
+        candidates: Sequence[ModelConfig],
+        quality_threshold: float | Decimal,
+        *,
+        category_hint: RoutingCategory | str | None = None,
+        structured_output_required: bool = False,
+    ) -> RoutingResult:
         features = self._feature_extractor.extract(
             request,
             category_hint=category_hint,
             structured_output_required=structured_output_required,
         )
-        return self.route_features(features, candidates, quality_threshold)
+        return self.route_features_with_snapshot(features, candidates, quality_threshold)
 
     def route_features(
         self,
@@ -62,6 +93,16 @@ class RoutingDecisionService:
         candidates: Sequence[ModelConfig],
         quality_threshold: float | Decimal,
     ) -> RoutingDecision:
+        return self.route_features_with_snapshot(
+            request_features, candidates, quality_threshold
+        ).decision
+
+    def route_features_with_snapshot(
+        self,
+        request_features: RoutingRequestFeatures,
+        candidates: Sequence[ModelConfig],
+        quality_threshold: float | Decimal,
+    ) -> RoutingResult:
         eligible = tuple(candidates)
         if self._eligibility_filter is not None:
             eligible = tuple(
@@ -107,7 +148,24 @@ class RoutingDecisionService:
             )
             for candidate in eligible
         )
-        return self._policy.route(priced, quality_threshold)
+        decision = self._policy.route(priced, quality_threshold)
+        return RoutingResult(
+            decision=decision,
+            candidates=tuple(
+                RoutingCandidateSnapshot(
+                    **candidate.model_dump(),
+                    qualifies=(
+                        candidate.predicted_acceptability
+                        >= decision.quality_threshold
+                    ),
+                )
+                for candidate in priced
+            ),
+        )
 
 
-__all__ = ["RoutingDecisionService"]
+__all__ = [
+    "RoutingCandidateSnapshot",
+    "RoutingDecisionService",
+    "RoutingResult",
+]

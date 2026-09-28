@@ -505,7 +505,7 @@ def test_adaptive_layer_contains_no_routing_provider_or_telemetry_reimplementati
     assert "calculate_projected_cost" not in source
     assert "resolve" not in call_names
     assert "_record" not in call_names
-    assert "escalat" not in source.lower()
+    assert "predict(" not in source
     assert "response_validator" not in source.lower()
     assert "foundation" not in source.lower()
 

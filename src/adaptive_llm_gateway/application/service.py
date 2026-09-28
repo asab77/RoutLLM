@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from adaptive_llm_gateway.telemetry.contracts import InferenceTelemetryRepository, TelemetryEvent
 from adaptive_llm_gateway.errors import (
+    CompletionRejectedError,
     ContextLimitError,
     GatewayError,
     ModelDisabledError,
@@ -48,9 +49,16 @@ class InferenceService:
             category = next(value for kind, value in categories.items() if isinstance(exc, kind))
             if isinstance(exc, GatewayError):
                 category = exc.category.value
+            completion = exc.completion if isinstance(exc, CompletionRejectedError) else None
             await self._record(TelemetryEvent(
                 request_id=correlation_id, model_id=model.model_id, provider=model.provider,
-                success=False, error_category=category, latency_ms=(perf_counter() - started) * 1000,
+                success=False, error_category=category,
+                latency_ms=(completion.latency_ms if completion is not None
+                            else (perf_counter() - started) * 1000),
+                input_tokens=(completion.input_tokens if completion is not None else None),
+                output_tokens=(completion.output_tokens if completion is not None else None),
+                estimated_cost_usd=(completion.estimated_cost_usd
+                                    if completion is not None else None),
                 max_output_tokens=request.max_output_tokens, temperature=request.temperature,
                 prompt_characters=len(request.prompt), system_prompt_characters=len(request.system_prompt or ""),
             ))

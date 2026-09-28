@@ -10,9 +10,17 @@ from alembic.script import ScriptDirectory
 from pydantic import ValidationError
 
 from adaptive_llm_gateway.persistence.config import DatabaseSettings
-from adaptive_llm_gateway.persistence.models import InferenceTelemetry
+from adaptive_llm_gateway.persistence.models import (
+    AdaptiveExecutionTelemetry as AdaptiveExecutionRow,
+    InferenceTelemetry,
+)
 from adaptive_llm_gateway.persistence.repository import PostgresTelemetryRepository
-from adaptive_llm_gateway.telemetry.contracts import TelemetryEvent
+from adaptive_llm_gateway.telemetry.contracts import (
+    AdaptiveExecutionTelemetry,
+    AdaptiveTerminalOutcome,
+    TelemetryEvent,
+)
+from adaptive_llm_gateway.validation import ValidationStatus
 
 
 @pytest.mark.parametrize("url", ["", "sqlite:///test.db", "postgresql://user:secret@localhost/db",
@@ -48,10 +56,11 @@ def test_migrations_load_and_render_postgres_ddl(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://test:unused@localhost/test")
     output = StringIO()
     config = Config("alembic.ini", output_buffer=output)
-    assert ScriptDirectory.from_config(config).get_current_head() == "0001"
+    assert ScriptDirectory.from_config(config).get_current_head() == "0002"
     command.upgrade(config, "head", sql=True)
     sql = output.getvalue()
     assert "CREATE TABLE inference_telemetry" in sql
+    assert "CREATE TABLE adaptive_execution_telemetry" in sql
     assert "NUMERIC" in sql and "TIMESTAMP WITH TIME ZONE" in sql
     assert "ix_telemetry_request_id" in sql
     assert "INSERT INTO alembic_version" in sql
@@ -64,6 +73,13 @@ def test_storage_schema_contains_no_raw_content():
     assert columns.estimated_cost_usd.type.scale is None
     assert columns.created_at.type.timezone
     assert not columns.request_id.unique
+    adaptive_columns = AdaptiveExecutionRow.__table__.columns
+    assert not {
+        "prompt", "system_prompt", "response", "text", "exception",
+        "stack_trace", "field_names", "allowed_labels", "provider_body",
+    } & set(adaptive_columns.keys())
+    assert adaptive_columns.cumulative_known_cost_usd.type.asdecimal
+    assert adaptive_columns.cumulative_known_cost_usd.type.scale is None
 
 
 def event():
@@ -84,6 +100,36 @@ async def test_repository_writes_exact_event_in_managed_transaction():
     row = session.add.call_args.args[0]
     assert all(getattr(row, name) == data for name, data in asdict(value).items())
     transaction.__aexit__.assert_awaited_once_with(None, None, None)
+
+
+@pytest.mark.asyncio
+async def test_repository_writes_sanitized_adaptive_summary():
+    sessions = MagicMock()
+    transaction = sessions.begin.return_value
+    session = MagicMock()
+    transaction.__aenter__ = AsyncMock(return_value=session)
+    transaction.__aexit__ = AsyncMock(return_value=False)
+    value = AdaptiveExecutionTelemetry(
+        request_id="trace",
+        initial_routed_model_id="small",
+        returned_model_id="large",
+        attempt_count=2,
+        escalated=True,
+        validation_outcome=ValidationStatus.PASSED,
+        terminal_outcome=AdaptiveTerminalOutcome.RETURNED,
+        cumulative_known_cost_usd=Decimal("0.0012"),
+        cost_complete=True,
+        cumulative_latency_ms=12,
+        validator_version="deterministic-v1",
+        validation_duration_ms=1,
+    )
+    await PostgresTelemetryRepository(sessions).record_adaptive_execution(value)
+    row = session.add.call_args.args[0]
+    assert row.initial_routed_model_id == "small"
+    assert row.returned_model_id == "large"
+    assert row.validation_outcome == "passed"
+    assert row.terminal_outcome == "returned"
+    assert row.failure_codes is None
 
 
 @pytest.mark.asyncio

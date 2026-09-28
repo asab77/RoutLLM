@@ -6,7 +6,7 @@ from time import perf_counter
 import httpx
 from pydantic import ValidationError
 
-from adaptive_llm_gateway.errors import GatewayError, GatewayErrorCategory, ModelDisabledError
+from adaptive_llm_gateway.errors import CompletionRejectedError, GatewayError, GatewayErrorCategory, ModelDisabledError
 from adaptive_llm_gateway.models import (
     InferenceRequest, InferenceResponse, ModelConfig, ReasoningControlMechanism,
     TerminationReason,
@@ -182,22 +182,26 @@ class VercelGatewayProvider(LLMProvider):
             estimated_cost = calculate_cost(
                 input_tokens=inputs, output_tokens=outputs, model=self.model)
             termination, provider_termination = _termination(choice)
+            completion = InferenceResponse(
+                text=text, model_id=self.model.model_id, provider=self.model.provider,
+                input_tokens=inputs, output_tokens=outputs, latency_ms=latency,
+                estimated_cost_usd=estimated_cost, termination_reason=termination,
+                provider_termination_reason=provider_termination)
             if not text.strip():
-                raise GatewayError(GatewayErrorCategory.EMPTY_RESPONSE,
+                raise CompletionRejectedError(GatewayErrorCategory.EMPTY_RESPONSE,
+                    completion=completion,
                     diagnostics=_completion_diagnostics(
                         response, choice, message, usage, request.max_output_tokens,
                         input_tokens=inputs, output_tokens=outputs, latency_ms=latency,
                         estimated_cost_usd=estimated_cost, content_empty=True))
             if termination is TerminationReason.LENGTH:
-                raise GatewayError(GatewayErrorCategory.OUTPUT_BUDGET_EXHAUSTION,
+                raise CompletionRejectedError(GatewayErrorCategory.OUTPUT_BUDGET_EXHAUSTION,
+                    completion=completion,
                     diagnostics=_completion_diagnostics(
                         response, choice, message, usage, request.max_output_tokens,
                         input_tokens=inputs, output_tokens=outputs, latency_ms=latency,
                         estimated_cost_usd=estimated_cost, content_empty=False))
-            return InferenceResponse(text=text, model_id=self.model.model_id, provider=self.model.provider,
-                input_tokens=inputs, output_tokens=outputs, latency_ms=latency,
-                estimated_cost_usd=estimated_cost, termination_reason=termination,
-                provider_termination_reason=provider_termination)
+            return completion
         except GatewayError:
             raise
         except (KeyError, IndexError, TypeError, ValueError, ValidationError):

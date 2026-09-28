@@ -42,3 +42,32 @@ class InferenceTelemetry(Base):
     temperature: Mapped[float] = mapped_column(Double)
     prompt_characters: Mapped[int] = mapped_column(BigInteger)
     system_prompt_characters: Mapped[int] = mapped_column(BigInteger)
+
+
+class AdaptiveExecutionTelemetry(Base):
+    __tablename__ = "adaptive_execution_telemetry"
+    __table_args__ = (
+        CheckConstraint("attempt_count > 0 AND attempt_count <= 3", name="ck_adaptive_attempt_count"),
+        CheckConstraint("cumulative_known_cost_usd >= 0",
+                        name="ck_adaptive_cost"),
+        CheckConstraint("cumulative_latency_ms >= 0", name="ck_adaptive_latency"),
+        CheckConstraint("validation_duration_ms >= 0", name="ck_adaptive_validation_duration"),
+        Index("ix_adaptive_execution_request_id", "request_id"),
+        Index("ix_adaptive_execution_created", "created_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
+    request_id: Mapped[str] = mapped_column(String(128))
+    initial_routed_model_id: Mapped[str] = mapped_column(String)
+    returned_model_id: Mapped[str | None] = mapped_column(String)
+    attempt_count: Mapped[int] = mapped_column(BigInteger)
+    escalated: Mapped[bool] = mapped_column(Boolean)
+    validation_outcome: Mapped[str] = mapped_column(String(32))
+    terminal_outcome: Mapped[str] = mapped_column(String(32))
+    cumulative_known_cost_usd: Mapped[Decimal] = mapped_column(Numeric(asdecimal=True))
+    cost_complete: Mapped[bool] = mapped_column(Boolean)
+    cumulative_latency_ms: Mapped[float] = mapped_column(Double)
+    validator_version: Mapped[str | None] = mapped_column(String(64))
+    validation_duration_ms: Mapped[float] = mapped_column(Double)
+    failure_codes: Mapped[str | None] = mapped_column(String(512))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

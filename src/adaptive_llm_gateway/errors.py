@@ -1,6 +1,10 @@
 """Application/provider errors independent of HTTP status codes."""
 
 from enum import StrEnum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from adaptive_llm_gateway.models import InferenceResponse
 
 
 class ModelDisabledError(ValueError):
@@ -45,6 +49,25 @@ class GatewayError(ProviderFailureError):
         self.category = category
         self.diagnostics = dict(diagnostics or {})
         super().__init__(category.value)
+
+
+class CompletionRejectedError(GatewayError):
+    """Normalized completion available in memory; legacy GatewayError behavior remains.
+
+    The completion must never be serialized into diagnostics or telemetry.
+    """
+
+    def __init__(self, category: GatewayErrorCategory, *,
+                 completion: "InferenceResponse", diagnostics: dict | None = None) -> None:
+        if category not in (GatewayErrorCategory.EMPTY_RESPONSE,
+                            GatewayErrorCategory.OUTPUT_BUDGET_EXHAUSTION):
+            raise ValueError("unsupported completion rejection category")
+        super().__init__(category, diagnostics=diagnostics)
+        self.completion = completion
+
+
+class ResponseValidationError(RuntimeError):
+    """No valid response can be returned under the bounded escalation policy."""
 
 
 class EvaluationNotFoundError(FileNotFoundError):

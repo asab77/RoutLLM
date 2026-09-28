@@ -881,3 +881,77 @@ Intelligent/rule-based/learned routing, ML training, Redis, Celery/background wo
 caching, retries/fallback/escalation,
 frontend, Prometheus/Grafana, API containerization, Kubernetes, and CI/CD remain future work.
 Docker Compose is used only for local PostgreSQL infrastructure.
+
+## Phase 10: deterministic validation and bounded escalation
+
+The adaptive endpoint accepts an optional `validation` contract. When present,
+RouteLLM applies deterministic checks after generation and may execute the next
+cheapest unused candidate that qualified under the original routing threshold.
+Routing and prediction run once. The original routed candidate always executes
+first, escalation uses the immutable original candidate snapshot, and at most three
+unique candidates execute. If initial routing used its existing no-qualifier
+fallback, a failed response is not escalated to another below-threshold candidate.
+
+Requests without `validation` retain the legacy single-attempt behavior and omit
+execution metadata. `InferenceRequest` and the explicit endpoint do not accept
+validation metadata. It is excluded from provider payloads and routing features,
+including `structured_output_required`; the threshold and initial decision remain
+unchanged.
+
+Example adaptive request addition:
+
+```json
+{"validation":{"format":"json","root_type":"object","required_fields":["answer"],"field_types":{"answer":"string"}}}
+```
+
+`format` is required when a contract is supplied: `text`, `json`, or `label`.
+Optional `min_characters` counts Unicode characters after surrounding whitespace
+is stripped. JSON contracts support `root_type`, `required_fields`, and
+`field_types`. Field names are literal top-level keys, never nested paths. Field
+types constrain present fields; use `required_fields` separately to require their
+presence. Types are `object`, `array`, `string`, `number`, `integer`, `boolean`, and
+`null`. Integer means a mathematically integral JSON number (including `1.0`);
+booleans and numeric strings do not qualify. Field constraints imply an object
+root. Label contracts require `allowed_labels`; matching is case-sensitive after
+trimming output. Labels themselves must be nonempty and already trimmed.
+
+`DeterministicResponseValidator.validate(response, ValidationContext(...))` returns
+`ValidationResult` with `passed`, `failed`, `not_run`, or `error`, bounded controlled
+failure codes, `deterministic-v1` version, and duration. No contract yields
+`not_run`. Checks cover empty output, explicit minimum length, strict JSON syntax,
+root/field constraints, labels, and normalized `LENGTH` termination. JSON rejects
+prose, fences, multiple values, duplicate keys, NaN, and infinities. No completion
+or refusal heuristics are used. Passing means **the configured runtime checks
+passed, not that the answer is semantically correct**.
+
+Bounds: 262,144 input characters (at most 1 MiB of UTF-8 for Unicode scalar text),
+32 JSON container levels, 64 required fields, 64 typed fields, 64 labels, 128
+characters per field name/label, and 16 reported failures. Size and quote-aware
+depth checks precede JSON parsing. Invalid contracts receive sanitized HTTP 422
+errors. Failures contain no field names, labels, response fragments, or exception
+messages; internal validator exceptions produce `error` / `validator_error`.
+
+`AdaptiveInferenceService` accepts an injected `ResponseValidator`. Its bounded
+orchestrator validates each normalized completion and stops on the first pass. A
+validator-internal error is non-recoverable. Provider failures also stop immediately
+with their existing error behavior; they are never converted into validation
+failures or retried.
+
+Successful validation-enabled responses include an `execution` object containing
+attempt count, escalation flag, `passed` outcome, cumulative known estimated cost,
+and cumulative model latency. `routing.selected_model_id` remains the initial routed
+model, while the top-level model/provider identify the returned response. Exhausted
+or unavailable escalation paths return sanitized `response_validation_failed`.
+
+`CompletionRejectedError`, a `GatewayError` subtype, carries a normalized
+completion in memory for empty/length-rejected adapter outputs. Existing callers
+still receive the same public error category. The completion is never placed in
+exception messages, diagnostics, or telemetry.
+
+Existing inference telemetry rows record each provider attempt. Migration `0002`
+adds one bounded `adaptive_execution_telemetry` summary row per validation-enabled
+request; it records no prompts, responses, validation field names, labels, parser
+errors, provider bodies, or reasoning. It stores the initial and returned model IDs,
+attempt count, escalation flag, terminal validation/outcome codes, cumulative known
+cost, and latency. This avoids a second per-attempt ledger. Telemetry remains
+timeout-bounded and fail-open. No provider retries or semantic judge are included.

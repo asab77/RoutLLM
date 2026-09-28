@@ -28,6 +28,7 @@ from adaptive_llm_gateway.errors import (
     ModelDisabledError,
     ProviderFailureError,
     ProviderUnavailableError,
+    ResponseValidationError,
     InvalidQualityThresholdError,
     MissingRoutingCategoryError,
     NoEligibleCandidatesError,
@@ -45,6 +46,7 @@ from .schemas import ErrorDetail, ErrorResponse
 
 _REQUEST_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
 _ERRORS = {
+    ResponseValidationError: (502, "response_validation_failed", "No response passed the configured validation checks."),
     AdaptiveRoutingUnavailableError: (503, "adaptive_routing_unavailable", "Adaptive inference is not configured."),
     PredictorArtifactError: (503, "adaptive_routing_unavailable", "Adaptive inference is unavailable."),
     UnsupportedPredictorCandidateError: (503, "adaptive_routing_unavailable", "Adaptive inference is unavailable."),

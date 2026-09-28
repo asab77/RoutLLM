@@ -20,6 +20,7 @@ from .schemas import (
     MetricsSummary,
     BenchmarkEvaluationSummary,
     PublicModel,
+    PublicExecutionMetadata,
     PublicRoutingMetadata,
 )
 
@@ -61,6 +62,7 @@ async def inference(payload: InferencePayload, request: Request, service: Servic
 @router.post(
     "/v1/inference/adaptive",
     response_model=AdaptiveInferenceResult,
+    response_model_exclude_none=True,
     tags=["inference"],
     responses={status: {"model": ErrorResponse} for status in (400, 403, 404, 422, 429, 502, 503, 504)},
 )
@@ -71,12 +73,14 @@ async def adaptive_inference(
 ) -> AdaptiveInferenceResult:
     result = await runtime.service.generate(
         payload.to_domain(),
+        **({"validation": payload.validation} if payload.validation is not None else {}),
         category=payload.category,
         quality_threshold=payload.quality_threshold,
         candidate_model_ids=runtime.candidate_model_ids,
         request_id=request.state.request_id,
     )
     decision = result.routing_decision
+    execution = result.execution
     return AdaptiveInferenceResult(
         **result.response.model_dump(),
         request_id=request.state.request_id,
@@ -85,6 +89,16 @@ async def adaptive_inference(
             threshold_satisfied=decision.threshold_satisfied,
             fallback_used=decision.fallback_used,
             reason=decision.reason,
+        ),
+        execution=(
+            PublicExecutionMetadata(
+                attempts=len(execution.attempts),
+                escalated=execution.escalated,
+                validation_outcome="passed",
+                total_estimated_cost_usd=execution.total_estimated_cost_usd,
+                total_latency_ms=execution.total_latency_ms,
+            )
+            if execution is not None else None
         ),
     )
 
