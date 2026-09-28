@@ -1,17 +1,20 @@
 """ASGI entry point: uvicorn adaptive_llm_gateway.api.app:app."""
 
-import re
+import asyncio
 import os
+import re
 from pathlib import Path
 from contextlib import asynccontextmanager
 from collections.abc import Awaitable, Callable
 from uuid import uuid4
+from time import perf_counter
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException
 from starlette.responses import Response
+from starlette.routing import Match
 
 from adaptive_llm_gateway.application.service import InferenceService
 from adaptive_llm_gateway.application.adaptive_config import (
@@ -25,6 +28,9 @@ from adaptive_llm_gateway.errors import (
     AdaptiveRoutingUnavailableError,
     GatewayError,
     GatewayErrorCategory,
+    InferenceDeadlineExceededError,
+    RateLimitExceededError,
+    RateLimitUnavailableError,
     ModelDisabledError,
     ProviderFailureError,
     ProviderUnavailableError,
@@ -36,7 +42,13 @@ from adaptive_llm_gateway.errors import (
     UnsupportedPredictorCandidateError,
 )
 from adaptive_llm_gateway.registry import ModelNotFoundError
-from adaptive_llm_gateway.runtime import application_service
+from adaptive_llm_gateway.rate_limit import (
+    DisabledRateLimiter,
+    InferenceRateLimiter,
+    RedisRateLimiter,
+)
+from adaptive_llm_gateway.observability import Observability, ObservabilitySettings
+from adaptive_llm_gateway.runtime import application_service, rate_limiter_service
 from adaptive_llm_gateway.telemetry.query import TelemetryUnavailableError
 from adaptive_llm_gateway.evaluation.service import EvaluationService
 from adaptive_llm_gateway.errors import EvaluationArtifactError, EvaluationNotFoundError
@@ -46,6 +58,9 @@ from .schemas import ErrorDetail, ErrorResponse
 
 _REQUEST_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
 _ERRORS = {
+    InferenceDeadlineExceededError: (504, "inference_deadline_exceeded", "The inference deadline was exceeded."),
+    RateLimitExceededError: (429, "rate_limit_exceeded", "The inference rate limit was exceeded."),
+    RateLimitUnavailableError: (503, "rate_limit_unavailable", "Inference protection is currently unavailable."),
     ResponseValidationError: (502, "response_validation_failed", "No response passed the configured validation checks."),
     AdaptiveRoutingUnavailableError: (503, "adaptive_routing_unavailable", "Adaptive inference is not configured."),
     PredictorArtifactError: (503, "adaptive_routing_unavailable", "Adaptive inference is unavailable."),
@@ -71,22 +86,62 @@ def error_response(request: Request, status: int, code: str, message: str) -> JS
                         headers={"X-Request-ID": request.state.request_id})
 
 
+def _matched_route(routes: list, scope: dict) -> str:
+    """Resolve a controlled route template, including FastAPI included routers."""
+    for candidate in routes:
+        original_router = getattr(candidate, "original_router", None)
+        if original_router is not None:
+            nested = _matched_route(original_router.routes, scope)
+            if nested != "unmatched":
+                return nested
+            continue
+        match, _ = candidate.matches(scope)
+        if match is Match.FULL:
+            return getattr(candidate, "path", "unmatched")
+    return "unmatched"
+
+
 def create_app(
     service: InferenceService | None = None,
     adaptive_runtime: AdaptiveRuntime | None = None,
+    rate_limiter: InferenceRateLimiter | None = None,
+    observability: Observability | None = None,
 ) -> FastAPI:
+    configured_observability = observability or Observability(
+        ObservabilitySettings.from_environment()
+    )
+
     @asynccontextmanager
     async def lifespan(application: FastAPI):
         if service is not None:
-            yield
-        else:
-            async with application_service() as configured_service:
-                application.state.inference_service = configured_service
-                config = AdaptiveRoutingConfig.from_environment()
-                application.state.adaptive_runtime = build_adaptive_runtime(
-                    configured_service, config
-                )
+            application.state.initialized = True
+            try:
                 yield
+            finally:
+                application.state.initialized = False
+        else:
+            try:
+                service_context = application_service(configured_observability)
+            except TypeError:
+                # Preserve the existing zero-argument injectable test boundary.
+                service_context = application_service()
+            async with service_context as configured_service:
+                async with rate_limiter_service(configured_observability) as configured_rate_limiter:
+                    configured_service.observability = configured_observability
+                    if isinstance(configured_rate_limiter, RedisRateLimiter):
+                        configured_rate_limiter.observability = configured_observability
+                    application.state.inference_service = configured_service
+                    application.state.rate_limiter = configured_rate_limiter
+                    config = AdaptiveRoutingConfig.from_environment()
+                    application.state.adaptive_required = config.enabled
+                    application.state.adaptive_runtime = build_adaptive_runtime(
+                        configured_service, config
+                    )
+                    application.state.initialized = True
+                    try:
+                        yield
+                    finally:
+                        application.state.initialized = False
 
     app = FastAPI(
         title="Adaptive LLM Gateway",
@@ -95,22 +150,74 @@ def create_app(
         lifespan=lifespan,
     )
     app.state.inference_service = service if service is not None else create_development_service()
+    app.state.inference_service.observability = configured_observability
     app.state.adaptive_runtime = adaptive_runtime
+    app.state.adaptive_required = adaptive_runtime is not None
+    app.state.rate_limiter = rate_limiter or DisabledRateLimiter()
+    app.state.observability = configured_observability
+    app.state.initialized = False
     app.state.evaluation_service = EvaluationService(
         Path(os.environ.get("BENCHMARK_RESULTS_DIR", "benchmark-results")))
 
     @app.middleware("http")
     async def correlation_id(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+        route = _matched_route(request.app.router.routes, request.scope)
+        method = request.method.upper()
+        started = perf_counter()
+        configured_observability.http_started(route)
         supplied_ids = request.headers.getlist("x-request-id")
         request.state.request_id = str(uuid4())
-        if supplied_ids:
-            if len(supplied_ids) != 1 or not _REQUEST_ID.fullmatch(supplied_ids[0]):
-                return error_response(request, 400, "invalid_request_id",
-                                      "X-Request-ID must contain 1-128 ASCII letters, digits, dots, underscores or hyphens, starting with a letter or digit.")
-            request.state.request_id = supplied_ids[0]
-        response = await call_next(request)
-        response.headers["X-Request-ID"] = request.state.request_id
-        return response
+        status_code = 500
+        status_class = "5xx"
+        outcome = "server_error"
+        cancelled = False
+        try:
+            if supplied_ids:
+                if len(supplied_ids) != 1 or not _REQUEST_ID.fullmatch(supplied_ids[0]):
+                    response = error_response(
+                        request,
+                        400,
+                        "invalid_request_id",
+                        "X-Request-ID must contain 1-128 ASCII letters, digits, dots, underscores or hyphens, starting with a letter or digit.",
+                    )
+                else:
+                    request.state.request_id = supplied_ids[0]
+                    response = await call_next(request)
+            else:
+                response = await call_next(request)
+            response.headers["X-Request-ID"] = request.state.request_id
+            status_code = response.status_code
+            status_class = f"{status_code // 100}xx"
+            outcome = (
+                "success" if status_code < 400
+                else "client_error" if status_code < 500
+                else "server_error"
+            )
+            return response
+        except asyncio.CancelledError:
+            cancelled = True
+            status_code = 499
+            status_class = "cancelled"
+            outcome = "cancelled"
+            raise
+        finally:
+            duration = perf_counter() - started
+            configured_observability.http_finished(
+                route=route,
+                method=method,
+                status_class=status_class,
+                outcome=outcome,
+                duration_seconds=duration,
+            )
+            configured_observability.events.emit(
+                "request_cancelled" if cancelled else "http_request_completed",
+                request_id=request.state.request_id,
+                route=route,
+                method=method,
+                status_code=status_code,
+                outcome=outcome,
+                latency_ms=duration * 1000,
+            )
 
     async def application_error(request: Request, exc: Exception) -> JSONResponse:
         if isinstance(exc, GatewayError):
@@ -121,7 +228,10 @@ def create_app(
         # Resolve subclasses as well as the explicitly registered error types.
         for error_type, (status, code, message) in _ERRORS.items():
             if isinstance(exc, error_type):
-                return error_response(request, status, code, message)
+                response = error_response(request, status, code, message)
+                if isinstance(exc, RateLimitExceededError):
+                    response.headers["Retry-After"] = str(exc.retry_after_seconds)
+                return response
         return error_response(request, 500, "internal_error", "An internal error occurred.")
 
     for error_type in _ERRORS:

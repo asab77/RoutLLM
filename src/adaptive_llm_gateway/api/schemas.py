@@ -103,6 +103,10 @@ class HealthResponse(BaseModel):
     status: Literal["ok"] = "ok"
 
 
+class ReadyResponse(BaseModel):
+    status: Literal["ready", "not_ready"]
+
+
 class ErrorDetail(BaseModel):
     code: str
     message: str

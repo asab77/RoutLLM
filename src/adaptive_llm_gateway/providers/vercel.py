@@ -110,12 +110,31 @@ def _completion_diagnostics(response: httpx.Response, choice, message, usage,
 
 class VercelGatewayProvider(LLMProvider):
     def __init__(self, model: ModelConfig, settings: GatewaySettings,
-                 *, transport: httpx.AsyncBaseTransport | None = None) -> None:
+                 *, client: httpx.AsyncClient | None = None,
+                 transport: httpx.AsyncBaseTransport | None = None) -> None:
         if model.provider != "vercel" or model.provider_model_name not in UPSTREAM_PROVIDERS:
             raise GatewayError(GatewayErrorCategory.INVALID_MODEL)
-        self.model, self.settings, self.transport = model, settings, transport
+        if client is not None and transport is not None:
+            raise ValueError("supply either a shared client or a test transport")
+        self.model, self.settings = model, settings
+        # The runtime always injects its lifespan-owned client. Constructing one
+        # here is retained only for isolated direct-adapter tests and tools.
+        self.client = client or create_http_client(settings, transport=transport)
 
-    async def generate(self, request: InferenceRequest) -> InferenceResponse:
+    async def generate(
+        self,
+        request: InferenceRequest,
+    ) -> InferenceResponse:
+        return await self.generate_with_timeout(
+            request, timeout_seconds=self.settings.timeout_seconds
+        )
+
+    async def generate_with_timeout(
+        self,
+        request: InferenceRequest,
+        *,
+        timeout_seconds: float,
+    ) -> InferenceResponse:
         if not self.model.enabled:
             raise ModelDisabledError("Model is disabled")
         if self.settings.api_key is None or not self.settings.api_key.get_secret_value().strip():
@@ -135,13 +154,16 @@ class VercelGatewayProvider(LLMProvider):
             }
         elif self.model.reasoning_effort is not None:
             payload["reasoning"] = {"effort": self.model.reasoning_effort.value}
+        effective_timeout = min(self.settings.timeout_seconds, timeout_seconds)
         started = perf_counter()
         try:
-            async with asyncio.timeout(self.settings.timeout_seconds):
-                async with httpx.AsyncClient(timeout=httpx.Timeout(self.settings.timeout_seconds),
-                        transport=self.transport, follow_redirects=False, trust_env=False) as client:
-                    response = await client.post(ENDPOINT, json=payload,
-                        headers={"Authorization": "Bearer " + self.settings.api_key.get_secret_value()})
+            async with asyncio.timeout(effective_timeout):
+                response = await self.client.post(
+                    ENDPOINT,
+                    json=payload,
+                    headers={"Authorization": "Bearer " + self.settings.api_key.get_secret_value()},
+                    timeout=httpx.Timeout(effective_timeout),
+                )
         except (httpx.TimeoutException, TimeoutError):
             raise GatewayError(GatewayErrorCategory.TIMEOUT) from None
         except httpx.RequestError:
@@ -207,3 +229,17 @@ class VercelGatewayProvider(LLMProvider):
         except (KeyError, IndexError, TypeError, ValueError, ValidationError):
             raise GatewayError(GatewayErrorCategory.MALFORMED_RESPONSE,
                                diagnostics=_response_identifiers(response)) from None
+
+
+def create_http_client(
+    settings: GatewaySettings,
+    *,
+    transport: httpx.AsyncBaseTransport | None = None,
+) -> httpx.AsyncClient:
+    """Create a client whose ownership remains with the composition root."""
+    return httpx.AsyncClient(
+        timeout=httpx.Timeout(settings.timeout_seconds),
+        transport=transport,
+        follow_redirects=False,
+        trust_env=False,
+    )

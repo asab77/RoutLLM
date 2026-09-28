@@ -1,5 +1,7 @@
 """Offline development configuration, with synthetic prices."""
 
+import httpx
+
 from adaptive_llm_gateway.application.service import InferenceService
 from adaptive_llm_gateway.models import ModelConfig
 from adaptive_llm_gateway.providers import FakeProvider
@@ -8,7 +10,7 @@ from adaptive_llm_gateway.registry import ModelRegistry
 from adaptive_llm_gateway.providers.gateway_config import GatewaySettings
 
 
-def create_development_service() -> InferenceService:
+def create_development_service(*, inference_deadline_seconds: float = 60.0) -> InferenceService:
     registry = ModelRegistry()
     for model_id, input_rate, output_rate, context_window in (
         ("fake-small", "0.15", "0.60", 4096),
@@ -24,10 +26,17 @@ def create_development_service() -> InferenceService:
         ))
     resolver = ProviderResolver()
     resolver.register("fake", FakeProvider)
-    return InferenceService(registry, resolver)
+    return InferenceService(
+        registry, resolver, inference_deadline_seconds=inference_deadline_seconds
+    )
 
 
-def configure_gateway(service: InferenceService, settings: GatewaySettings) -> None:
+def configure_gateway(
+    service: InferenceService,
+    settings: GatewaySettings,
+    *,
+    client: httpx.AsyncClient | None = None,
+) -> None:
     """Real models are registered only with credentials; offline bootstrap stays unchanged."""
     from adaptive_llm_gateway.providers.gateway_config import REAL_MODELS
     from adaptive_llm_gateway.providers.vercel import VercelGatewayProvider
@@ -35,4 +44,6 @@ def configure_gateway(service: InferenceService, settings: GatewaySettings) -> N
         return
     for model in REAL_MODELS:
         service.registry.register(model)
-    service.resolver.register("vercel", lambda model: VercelGatewayProvider(model, settings))
+    service.resolver.register(
+        "vercel", lambda model: VercelGatewayProvider(model, settings, client=client)
+    )

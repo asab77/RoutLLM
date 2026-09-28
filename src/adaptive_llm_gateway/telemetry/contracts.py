@@ -68,6 +68,7 @@ class AdaptiveTerminalOutcome(StrEnum):
     RETURNED = "returned"
     VALIDATION_FAILED = "validation_failed"
     PROVIDER_FAILURE = "provider_failure"
+    DEADLINE_EXCEEDED = "deadline_exceeded"
 
 
 class AdaptiveExecutionTelemetry(DomainModel):

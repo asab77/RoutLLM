@@ -8,7 +8,7 @@ version = "0.5.5"
 description = "Provider-independent foundations for an adaptive LLM inference gateway"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = ["pydantic>=2.10,<3", "fastapi>=0.115,<1", "uvicorn>=0.30,<1", "sqlalchemy[asyncio]>=2.0,<2.1", "asyncpg>=0.29,<1", "alembic>=1.13,<2", "httpx>=0.27,<1"]
+dependencies = ["pydantic>=2.10,<3", "fastapi>=0.115,<1", "uvicorn>=0.30,<1", "sqlalchemy[asyncio]>=2.0,<2.1", "asyncpg>=0.29,<1", "alembic>=1.13,<2", "httpx>=0.27,<1", "redis>=5,<7", "prometheus-client>=0.21,<1"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<10", "pytest-asyncio>=0.25,<2", "scikit-learn>=1.6,<2"]
@@ -22,4 +22,4 @@ testpaths = ["tests"]
 asyncio_mode = "strict"
 asyncio_default_fixture_loop_scope = "function"
 addopts = "-m 'not real_provider'"
-markers = ["postgres: opt-in integration tests requiring TEST_DATABASE_URL", "real_provider: opt-in paid gateway smoke test", "docker_sandbox: integration tests requiring the pinned local Docker image"]
+markers = ["postgres: opt-in integration tests requiring TEST_DATABASE_URL", "redis: opt-in integration tests requiring TEST_REDIS_URL", "real_provider: opt-in paid gateway smoke test", "docker_sandbox: integration tests requiring the pinned local Docker image"]

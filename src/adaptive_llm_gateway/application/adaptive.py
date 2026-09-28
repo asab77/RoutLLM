@@ -13,6 +13,7 @@ from pydantic import Field
 
 from adaptive_llm_gateway.errors import (
     CompletionRejectedError,
+    InferenceDeadlineExceededError,
     ModelDisabledError,
     ProviderUnavailableError,
     ResponseValidationError,
@@ -23,6 +24,7 @@ from adaptive_llm_gateway.models.schemas import DomainModel, Identifier, Money
 from adaptive_llm_gateway.routing.features import RoutingCategory
 from adaptive_llm_gateway.routing.policy import RoutingDecision
 from adaptive_llm_gateway.routing.service import RoutingDecisionService, RoutingResult
+from adaptive_llm_gateway.request_deadline import RequestDeadline
 from adaptive_llm_gateway.telemetry.contracts import (
     AdaptiveExecutionTelemetry,
     AdaptiveTerminalOutcome,
@@ -36,9 +38,6 @@ from adaptive_llm_gateway.validation import (
 )
 
 from .service import InferenceService
-
-logger = logging.getLogger(__name__)
-
 
 class AdaptiveAttempt(DomainModel):
     """Privacy-safe in-memory accounting for one executed candidate."""
@@ -123,7 +122,11 @@ class AdaptiveInferenceService:
         validation: ValidationContract | None = None,
         structured_output_required: bool = False,
         request_id: str | None = None,
+        deadline: RequestDeadline | None = None,
     ) -> AdaptiveInferenceResult:
+        request_deadline = deadline or self._inference_service.new_deadline()
+        if request_deadline.expired():
+            raise InferenceDeadlineExceededError("inference_deadline_exceeded")
         candidates = self._resolve_candidates(candidate_model_ids)
         if validation is None:
             # Preserve the legacy single-attempt path exactly when validation is absent.
@@ -134,10 +137,41 @@ class AdaptiveInferenceService:
                 category_hint=category,
                 structured_output_required=structured_output_required,
             )
-            response = await self._inference_service.generate(
-                decision.selected_model_id,
-                request,
-                request_id=request_id,
+            self._inference_service.observability.routing_decision(
+                selected_model=decision.selected_model_id,
+                reason=decision.reason.value,
+            )
+            correlation_id = request_id or str(uuid4())
+            try:
+                response = await self._inference_service.generate(
+                    decision.selected_model_id,
+                    request,
+                    request_id=correlation_id,
+                    deadline=request_deadline,
+                    request_mode="adaptive",
+                )
+            except Exception as exc:
+                terminal = (
+                    AdaptiveTerminalOutcome.DEADLINE_EXCEEDED
+                    if isinstance(exc, InferenceDeadlineExceededError)
+                    else AdaptiveTerminalOutcome.PROVIDER_FAILURE
+                )
+                self._inference_service.observability.adaptive_request(
+                    terminal_outcome=terminal.value,
+                    escalated=False,
+                    recovered=False,
+                    attempts=1,
+                    request_id=correlation_id,
+                    validation_outcome=ValidationStatus.NOT_RUN.value,
+                )
+                raise
+            self._inference_service.observability.adaptive_request(
+                terminal_outcome=AdaptiveTerminalOutcome.RETURNED.value,
+                escalated=False,
+                recovered=False,
+                attempts=1,
+                request_id=correlation_id,
+                validation_outcome=ValidationStatus.NOT_RUN.value,
             )
             return AdaptiveInferenceResult(
                 response=response,
@@ -151,11 +185,16 @@ class AdaptiveInferenceService:
             category_hint=category,
             structured_output_required=structured_output_required,
         )
+        self._inference_service.observability.routing_decision(
+            selected_model=routing.decision.selected_model_id,
+            reason=routing.decision.reason.value,
+        )
         return await self._generate_validated(
             request,
             validation,
             routing,
             request_id=request_id,
+            deadline=request_deadline,
         )
 
     async def _generate_validated(
@@ -165,6 +204,7 @@ class AdaptiveInferenceService:
         routing: RoutingResult,
         *,
         request_id: str | None,
+        deadline: RequestDeadline,
     ) -> AdaptiveInferenceResult:
         decision = routing.decision
         execution_id = uuid4()
@@ -183,15 +223,24 @@ class AdaptiveInferenceService:
 
         attempts: list[AdaptiveAttempt] = []
         for attempt_number, model_id in enumerate(model_ids, start=1):
+            if deadline.expired():
+                raise InferenceDeadlineExceededError("inference_deadline_exceeded")
             try:
                 response = await self._inference_service.generate(
                     model_id,
                     request,
                     request_id=correlation_id,
+                    deadline=deadline,
+                    request_mode="adaptive",
                 )
             except CompletionRejectedError as exc:
                 response = exc.completion
-            except Exception:
+            except Exception as exc:
+                terminal = (
+                    AdaptiveTerminalOutcome.DEADLINE_EXCEEDED
+                    if isinstance(exc, InferenceDeadlineExceededError)
+                    else AdaptiveTerminalOutcome.PROVIDER_FAILURE
+                )
                 await self._record_execution(
                     AdaptiveExecutionTelemetry(
                         id=execution_id,
@@ -204,7 +253,7 @@ class AdaptiveInferenceService:
                             attempts[-1].validation.status
                             if attempts else ValidationStatus.NOT_RUN
                         ),
-                        terminal_outcome=AdaptiveTerminalOutcome.PROVIDER_FAILURE,
+                        terminal_outcome=terminal,
                         cumulative_known_cost_usd=self._known_cost(attempts),
                         cost_complete=False,
                         cumulative_latency_ms=sum(
@@ -217,11 +266,33 @@ class AdaptiveInferenceService:
                         validation_duration_ms=sum(
                             item.validation.duration_ms for item in attempts
                         ),
-                    )
+                    ),
+                    deadline,
+                )
+                self._inference_service.observability.adaptive_request(
+                    terminal_outcome=terminal.value,
+                    escalated=attempt_number > 1,
+                    recovered=False,
+                    attempts=attempt_number,
+                    request_id=correlation_id,
+                    validation_outcome=(
+                        attempts[-1].validation.status.value
+                        if attempts else ValidationStatus.NOT_RUN.value
+                    ),
                 )
                 raise
 
+            if deadline.expired():
+                raise InferenceDeadlineExceededError("inference_deadline_exceeded")
             result = self.validate_response(response, validation)
+            if deadline.expired():
+                raise InferenceDeadlineExceededError("inference_deadline_exceeded")
+            for failure in result.failures:
+                self._inference_service.observability.validation_failure(
+                    model=model_id,
+                    reason=failure.code.value,
+                    attempt=attempt_number,
+                )
             attempts.append(AdaptiveAttempt(
                 attempt_number=attempt_number,
                 model_id=model_id,
@@ -247,7 +318,22 @@ class AdaptiveInferenceService:
                     validation_duration_ms=sum(
                         item.validation.duration_ms for item in attempts
                     ),
-                ))
+                ), deadline)
+                recovered = (
+                    len(attempts) > 1
+                    and any(
+                        item.validation.status is ValidationStatus.FAILED
+                        for item in attempts[:-1]
+                    )
+                )
+                self._inference_service.observability.adaptive_request(
+                    terminal_outcome=AdaptiveTerminalOutcome.RETURNED.value,
+                    escalated=len(attempts) > 1,
+                    recovered=recovered,
+                    attempts=len(attempts),
+                    request_id=correlation_id,
+                    validation_outcome=result.status.value,
+                )
                 return AdaptiveInferenceResult(
                     response=response,
                     routing_decision=decision,
@@ -278,7 +364,15 @@ class AdaptiveInferenceService:
                         item.validation.duration_ms for item in attempts
                     ),
                     failure_codes=tuple(item.code for item in result.failures),
-                ))
+                ), deadline)
+                self._inference_service.observability.adaptive_request(
+                    terminal_outcome=AdaptiveTerminalOutcome.VALIDATION_FAILED.value,
+                    escalated=len(attempts) > 1,
+                    recovered=False,
+                    attempts=len(attempts),
+                    request_id=correlation_id,
+                    validation_outcome=result.status.value,
+                )
                 raise ResponseValidationError("response_validation_failed")
 
         raise AssertionError("validated execution requires an initial candidate")
@@ -311,20 +405,54 @@ class AdaptiveInferenceService:
             total_latency_ms=sum(item.latency_ms or 0 for item in attempts),
         )
 
-    async def _record_execution(self, event: AdaptiveExecutionTelemetry) -> None:
+    async def _record_execution(
+        self,
+        event: AdaptiveExecutionTelemetry,
+        deadline: RequestDeadline,
+    ) -> None:
         repository = self._inference_service.telemetry
         record = getattr(repository, "record_adaptive_execution", None)
         if record is None:
+            self._inference_service.observability.telemetry_write(
+                record_type="adaptive",
+                outcome="skipped_unconfigured",
+                duration_seconds=None,
+            )
             return
+        timeout = deadline.constrain_timeout(
+            self._inference_service.telemetry_timeout
+        )
+        if timeout is None:
+            self._inference_service.observability.telemetry_write(
+                record_type="adaptive",
+                outcome="skipped_deadline",
+                duration_seconds=None,
+            )
+            return
+        started = asyncio.get_running_loop().time()
         try:
-            async with asyncio.timeout(self._inference_service.telemetry_timeout):
+            async with asyncio.timeout(timeout):
                 await record(event)
         except Exception:
-            logger.warning(
-                "adaptive_telemetry_write_failed request_id=%s",
-                event.request_id,
-                extra={"request_id": event.request_id,
-                       "event": "adaptive_telemetry_write_failed"},
+            duration = asyncio.get_running_loop().time() - started
+            self._inference_service.observability.telemetry_write(
+                record_type="adaptive",
+                outcome="failure",
+                duration_seconds=duration,
+            )
+            self._inference_service.observability.events.emit(
+                "telemetry_write_failed",
+                level=logging.WARNING,
+                request_id=event.request_id,
+                record_type="adaptive",
+                outcome="failure",
+                latency_ms=duration * 1000,
+            )
+        else:
+            self._inference_service.observability.telemetry_write(
+                record_type="adaptive",
+                outcome="success",
+                duration_seconds=asyncio.get_running_loop().time() - started,
             )
 
     def validate_response(

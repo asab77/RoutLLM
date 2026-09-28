@@ -1,9 +1,11 @@
 import asyncio
 import logging
 
+from adaptive_llm_gateway.observability import JsonEventLogger
+
 from .contracts import InferenceTelemetryRepository, TelemetrySummary
 
-logger = logging.getLogger(__name__)
+events = JsonEventLogger()
 
 
 class TelemetryUnavailableError(RuntimeError):
@@ -22,5 +24,11 @@ class TelemetryQueryService:
             async with asyncio.timeout(self.timeout):
                 return await self.repository.summary()
         except Exception:
-            logger.warning("telemetry_query_failed")
+            events.emit(
+                "dependency_degraded",
+                level=logging.WARNING,
+                dependency="postgresql",
+                record_type="summary",
+                outcome="unavailable",
+            )
             raise TelemetryUnavailableError() from None

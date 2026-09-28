@@ -19,7 +19,10 @@ class FakeProvider(LLMProvider):
             raise ValueError("FakeProvider requires provider='fake'")
         self._model = model
 
-    async def generate(self, request: InferenceRequest) -> InferenceResponse:
+    async def generate(
+        self,
+        request: InferenceRequest,
+    ) -> InferenceResponse:
         if not self._model.enabled:
             raise ModelDisabledError(f"Model is disabled: {self._model.model_id!r}")
         words = request.prompt.split()

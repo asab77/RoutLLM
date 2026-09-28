@@ -1,19 +1,32 @@
+import hmac
+import logging
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
+from prometheus_client import CONTENT_TYPE_LATEST
+from starlette.responses import JSONResponse, Response
 
 from adaptive_llm_gateway.application.service import InferenceService
 from adaptive_llm_gateway.application.adaptive_config import AdaptiveRuntime
 from adaptive_llm_gateway.telemetry.query import TelemetryQueryService
 from adaptive_llm_gateway.evaluation.service import EvaluationService
+from adaptive_llm_gateway.rate_limit import InferenceKind, InferenceRateLimiter
+from adaptive_llm_gateway.observability import Observability
 
-from .dependencies import get_adaptive_runtime, get_evaluation_service, get_service
+from .dependencies import (
+    get_adaptive_runtime,
+    get_evaluation_service,
+    get_rate_limiter,
+    get_observability,
+    get_service,
+)
 from .schemas import (
     AdaptiveInferencePayload,
     AdaptiveInferenceResult,
     ErrorResponse,
     HealthResponse,
+    ReadyResponse,
     InferencePayload,
     InferenceResult,
     ModelList,
@@ -28,11 +41,80 @@ router = APIRouter()
 Service = Annotated[InferenceService, Depends(get_service)]
 Evaluation = Annotated[EvaluationService, Depends(get_evaluation_service)]
 Adaptive = Annotated[AdaptiveRuntime, Depends(get_adaptive_runtime)]
+RateLimiter = Annotated[InferenceRateLimiter, Depends(get_rate_limiter)]
+Metrics = Annotated[Observability, Depends(get_observability)]
+
+
+def _effective_client(request: Request) -> str:
+    """Use only the peer identity supplied by ASGI/trusted proxy handling."""
+    return request.client.host if request.client is not None else "unknown"
 
 
 @router.get("/health", response_model=HealthResponse, tags=["health"])
 async def health() -> HealthResponse:
     return HealthResponse()
+
+
+@router.get(
+    "/ready",
+    response_model=ReadyResponse,
+    tags=["health"],
+    responses={503: {"model": ReadyResponse}},
+)
+async def ready(
+    request: Request,
+    service: Service,
+    rate_limiter: RateLimiter,
+    metrics: Metrics,
+) -> ReadyResponse | JSONResponse:
+    initialized = bool(request.app.state.initialized)
+    try:
+        providers_available = bool(service.list_models())
+    except Exception:
+        providers_available = False
+    adaptive_available = (
+        not request.app.state.adaptive_required
+        or request.app.state.adaptive_runtime is not None
+    )
+    try:
+        redis_available = await rate_limiter.ready()
+    except Exception:
+        redis_available = False
+    if initialized and providers_available and adaptive_available and redis_available:
+        return ReadyResponse(status="ready")
+    dependency = (
+        "initialization" if not initialized
+        else "provider_registry" if not providers_available
+        else "adaptive_routing" if not adaptive_available
+        else "redis"
+    )
+    metrics.events.emit(
+        "dependency_degraded",
+        level=logging.WARNING,
+        dependency=dependency,
+        outcome="not_ready",
+    )
+    return JSONResponse(status_code=503, content={"status": "not_ready"})
+
+
+@router.get("/metrics", include_in_schema=False)
+async def prometheus_metrics(request: Request, metrics: Metrics) -> Response:
+    settings = metrics.settings
+    if not settings.metrics_enabled:
+        return Response(status_code=404)
+    expected = settings.metrics_bearer_token
+    if expected is None:
+        return Response(status_code=404)
+    authorization = request.headers.get("authorization", "")
+    candidate = authorization[7:] if authorization.startswith("Bearer ") else ""
+    if not hmac.compare_digest(candidate, expected.get_secret_value()):
+        return Response(
+            status_code=401,
+            content="Unauthorized",
+            media_type="text/plain",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return Response(content=metrics.render(), media_type=CONTENT_TYPE_LATEST)
 
 
 @router.get("/v1/models", response_model=ModelList, tags=["models"])
@@ -54,8 +136,22 @@ async def list_models(service: Service) -> ModelList:
                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"},
     }]},
 )
-async def inference(payload: InferencePayload, request: Request, service: Service) -> InferenceResult:
-    result = await service.generate(payload.model_id, payload.to_domain(), request_id=request.state.request_id)
+async def inference(
+    payload: InferencePayload,
+    request: Request,
+    service: Service,
+    rate_limiter: RateLimiter,
+) -> InferenceResult:
+    deadline = service.new_deadline()
+    await rate_limiter.admit(
+        _effective_client(request), InferenceKind.EXPLICIT, deadline
+    )
+    result = await service.generate(
+        payload.model_id,
+        payload.to_domain(),
+        request_id=request.state.request_id,
+        deadline=deadline,
+    )
     return InferenceResult(**result.model_dump(), request_id=request.state.request_id)
 
 
@@ -70,7 +166,13 @@ async def adaptive_inference(
     payload: AdaptiveInferencePayload,
     request: Request,
     runtime: Adaptive,
+    rate_limiter: RateLimiter,
+    service: Service,
 ) -> AdaptiveInferenceResult:
+    deadline = service.new_deadline()
+    await rate_limiter.admit(
+        _effective_client(request), InferenceKind.ADAPTIVE, deadline
+    )
     result = await runtime.service.generate(
         payload.to_domain(),
         **({"validation": payload.validation} if payload.validation is not None else {}),
@@ -78,6 +180,7 @@ async def adaptive_inference(
         quality_threshold=payload.quality_threshold,
         candidate_model_ids=runtime.candidate_model_ids,
         request_id=request.state.request_id,
+        deadline=deadline,
     )
     decision = result.routing_decision
     execution = result.execution

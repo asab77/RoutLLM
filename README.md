@@ -59,10 +59,10 @@ python -m alembic current
 python -m uvicorn adaptive_llm_gateway.api.app:app --reload
 ```
 
-The second Compose command waits for a healthy database; do not migrate before
-that succeeds. `docker compose ps` shows health. The image is pinned to
-`postgres:18.6`, a supported PostgreSQL 18 release. It exposes only
-`127.0.0.1:5432`. Ensure that host port is free before startup.
+The second Compose command waits for healthy PostgreSQL and Redis services; do
+not migrate before that succeeds. `docker compose ps` shows health. Images are
+pinned to `postgres:18.6` and `redis:8.2.1-alpine`. They expose only loopback
+ports 5432 and 6379. Ensure those host ports are free before startup.
 
 Compose initializes two databases with separate non-superuser owner roles:
 
@@ -115,6 +115,69 @@ unreachable/unmigrated database logs a startup probe warning and lets inference
 serve. Each write still attempts persistence, allowing recovery after migration
 or reconnection. `/health` remains process liveness, not database readiness.
 
+## Distributed inference admission
+
+`POST /v1/inference` and `POST /v1/inference/adaptive` use Redis-backed atomic
+admission before any routing or provider execution when
+`RATE_LIMIT_REQUIRED=true`. One fixed-window limit protects each HMAC-derived
+client identity and a second protects the whole deployment. Explicit and adaptive
+requests have configurable weights; the adaptive weight reserves more potential
+capacity without asserting how many provider attempts will occur. The defaults in
+`.env.example` are conservative development values, not final production policy.
+
+Redis stores only bounded-lifetime counters. Client keys contain an HMAC-SHA256
+digest, never a raw address, prompt, response, credential, or provider output.
+Redis is not a cache or telemetry store. Unreachable or timed-out mandatory Redis
+returns sanitized `rate_limit_unavailable` (503); exceeded capacity returns
+`rate_limit_exceeded` (429) with `Retry-After`. `/health`, discovery, metrics, and
+benchmark summaries are not rate limited.
+
+Client identity comes only from the ASGI peer address after server/platform proxy
+handling. RouteLLM never parses `Forwarded`, `X-Forwarded-For`, or `X-Real-IP`.
+Production deployment must therefore configure and verify the ASGI server's
+trusted-proxy allowlist; accepting forwarding headers from arbitrary peers would
+weaken per-client protection. The limiter exposes a bounded Redis `ready()` probe
+for the future readiness endpoint, while `/health` remains liveness-only.
+
+## Operational observability
+
+`/health` remains a cheap process-liveness endpoint. `/ready` separately verifies
+that lifespan initialization completed, at least one registered provider/model is
+available, configured adaptive routing loaded successfully, and mandatory Redis
+admission protection answers its bounded readiness probe. It makes no provider or
+PostgreSQL calls; best-effort telemetry outages do not make inference unready.
+
+Prometheus metrics use a per-application collector registry and bounded labels for
+HTTP traffic, provider attempts, routing, validation, adaptive terminal outcomes,
+known estimated cost, telemetry writes, and rate-limit rejection scope. `/metrics`
+is disabled unless `METRICS_ENABLED=true`; when enabled it requires the dedicated
+`METRICS_BEARER_TOKEN` using constant-time comparison. The database-backed
+`/v1/metrics/summary` remains a durable application report and is not a scrape
+endpoint. Unknown provider cost is not emitted as zero, and adaptive aggregate
+telemetry never increments cost a second time.
+
+Application events are emitted through Python logging as JSON with an explicit
+field allowlist. They may include request ID, controlled route/model identifiers,
+outcomes, and timing, but never request bodies, prompts, responses, authorization,
+client identities, validation contracts, provider bodies, or exception messages.
+
+Run the optional local dashboard stack after starting RouteLLM on port 8000:
+
+```sh
+docker compose --profile observability up -d prometheus grafana
+```
+
+Prometheus is available on loopback port 9090 and Grafana on loopback port 3000.
+The checked-in scrape token and Grafana credentials are local-development
+placeholders only. The provisioned `RouteLLM Overview` dashboard uses the bundled
+Prometheus datasource. Production credentials and the production metrics
+destination remain deployment work.
+
+Current Prometheus instrumentation assumes one Uvicorn worker per RouteLLM
+instance. Scale horizontally with multiple instances. Multiple workers inside one
+instance require Prometheus multiprocess support, which is intentionally not
+implemented in Phase 11.
+
 ## API examples
 
 ```sh
@@ -165,8 +228,11 @@ HTTP request. Aggregates cover all history; per-model breakdowns are deferred.
 | Endpoint | Behavior |
 | --- | --- |
 | `GET /health` | `{"status":"ok"}` |
+| `GET /ready` | Bounded inference-readiness result; 503 when mandatory protection is unavailable |
+| `GET /metrics` | Bearer-protected Prometheus exposition when enabled |
 | `GET /v1/models` | Enabled models with registered adapters |
 | `POST /v1/inference` | Async generation using explicit `model_id` |
+| `POST /v1/inference/adaptive` | Configured adaptive routing with optional validation/escalation |
 | `GET /v1/metrics/summary` | Aggregate persisted telemetry |
 | `GET /v1/benchmarks/{run_id}/summary` | Read a previously generated evaluation summary |
 
@@ -198,6 +264,8 @@ src/adaptive_llm_gateway/
   routing/      Offline experiments plus provider-independent policy boundaries
   application/  Inference orchestration and best-effort telemetry lifecycle
   telemetry/    Storage-independent event/repository contracts and query service
+  rate_limit.py Atomic Redis admission, HMAC identity, and bounded readiness probe
+  observability.py  Isolated Prometheus registry and allowlisted JSON events
   persistence/  Environment settings, async engine, ORM model, PostgreSQL repository
   api/          HTTP schemas, dependency injection, routes, error translation
   bootstrap.py  Fake defaults and optional credential-enabled real models
@@ -877,10 +945,10 @@ Starlette/httpx and AnyIO deprecation warnings remain.
 
 ## Deliberately deferred
 
-Intelligent/rule-based/learned routing, ML training, Redis, Celery/background workers,
-caching, retries/fallback/escalation,
-frontend, Prometheus/Grafana, API containerization, Kubernetes, and CI/CD remain future work.
-Docker Compose is used only for local PostgreSQL infrastructure.
+Celery/background workers, inference/routing caching, provider retries, circuit
+breakers, frontend, API containerization, Kubernetes, and CI/CD remain future
+work. Docker Compose is used only for local PostgreSQL, ephemeral Redis, and the
+opt-in Prometheus/Grafana demonstration.
 
 ## Phase 10: deterministic validation and bounded escalation
 

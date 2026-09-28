@@ -1,0 +1,99 @@
+{
+  "annotations": {"list": []},
+  "editable": false,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "id": 1,
+      "title": "Request rate",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 0},
+      "targets": [{"expr": "sum by (route, status_class) (rate(routellm_http_requests_total[5m]))", "legendFormat": "{{route}} {{status_class}}", "refId": "A"}]
+    },
+    {
+      "id": 2,
+      "title": "HTTP p50 / p95 latency",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0},
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum by (le) (rate(routellm_http_request_duration_seconds_bucket[5m])))", "legendFormat": "p50", "refId": "A"},
+        {"expr": "histogram_quantile(0.95, sum by (le) (rate(routellm_http_request_duration_seconds_bucket[5m])))", "legendFormat": "p95", "refId": "B"}
+      ]
+    },
+    {
+      "id": 3,
+      "title": "In-flight requests",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0},
+      "targets": [{"expr": "sum by (route) (routellm_http_requests_in_progress)", "legendFormat": "{{route}}", "refId": "A"}]
+    },
+    {
+      "id": 4,
+      "title": "Provider attempts and errors",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 8},
+      "targets": [{"expr": "sum by (provider, model, outcome) (rate(routellm_provider_attempts_total[5m]))", "legendFormat": "{{provider}}/{{model}} {{outcome}}", "refId": "A"}]
+    },
+    {
+      "id": 5,
+      "title": "Provider/model p95 latency",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 8},
+      "targets": [{"expr": "histogram_quantile(0.95, sum by (le, provider, model) (rate(routellm_provider_attempt_duration_seconds_bucket[5m])))", "legendFormat": "{{provider}}/{{model}}", "refId": "A"}]
+    },
+    {
+      "id": 6,
+      "title": "Initial model selections",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 8},
+      "targets": [{"expr": "sum by (selected_model, reason) (rate(routellm_routing_decisions_total[5m]))", "legendFormat": "{{selected_model}} {{reason}}", "refId": "A"}]
+    },
+    {
+      "id": 7,
+      "title": "Adaptive escalation and recovery",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 16},
+      "targets": [
+        {"expr": "sum(rate(routellm_adaptive_requests_total{escalated=\"true\"}[5m]))", "legendFormat": "escalated", "refId": "A"},
+        {"expr": "sum(rate(routellm_adaptive_requests_total{recovered=\"true\"}[5m]))", "legendFormat": "recovered", "refId": "B"}
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Adaptive attempts p95",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 16},
+      "targets": [{"expr": "histogram_quantile(0.95, sum by (le, terminal_outcome) (rate(routellm_adaptive_attempts_bucket[5m])))", "legendFormat": "{{terminal_outcome}}", "refId": "A"}]
+    },
+    {
+      "id": 9,
+      "title": "Estimated inference cost",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 16},
+      "targets": [{"expr": "sum by (request_mode, model) (increase(routellm_estimated_cost_usd_total[1h]))", "legendFormat": "{{request_mode}} {{model}}", "refId": "A"}]
+    },
+    {
+      "id": 10,
+      "title": "Rate-limit rejections",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24},
+      "targets": [{"expr": "sum by (scope, route) (rate(routellm_rate_limit_rejections_total[5m]))", "legendFormat": "{{scope}} {{route}}", "refId": "A"}]
+    },
+    {
+      "id": 11,
+      "title": "Telemetry write failures",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24},
+      "targets": [{"expr": "sum by (record_type) (rate(routellm_telemetry_writes_total{outcome=\"failure\"}[5m]))", "legendFormat": "{{record_type}}", "refId": "A"}]
+    }
+  ],
+  "refresh": "15s",
+  "schemaVersion": 41,
+  "tags": ["routellm", "local"],
+  "templating": {"list": []},
+  "time": {"from": "now-6h", "to": "now"},
+  "timezone": "browser",
+  "title": "RouteLLM Overview",
+  "uid": "routellm-overview",
+  "version": 1
+}

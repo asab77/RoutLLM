@@ -27,6 +27,23 @@ class AdaptiveRoutingUnavailableError(RuntimeError):
     """Adaptive inference is not configured for this application instance."""
 
 
+class InferenceDeadlineExceededError(RuntimeError):
+    """The total inference request budget was exhausted."""
+
+
+class RateLimitExceededError(RuntimeError):
+    """Atomic inference admission was rejected by a configured limit."""
+
+    def __init__(self, *, retry_after_seconds: int, scope: str = "client") -> None:
+        self.retry_after_seconds = retry_after_seconds
+        self.scope = scope
+        super().__init__("rate_limit_exceeded")
+
+
+class RateLimitUnavailableError(RuntimeError):
+    """Mandatory distributed inference protection could not be reached."""
+
+
 
 class GatewayErrorCategory(StrEnum):
     NOT_CONFIGURED = "gateway_not_configured"
