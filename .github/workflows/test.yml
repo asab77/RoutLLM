@@ -25,7 +25,9 @@ jobs:
       - name: Run non-paid tests
         run: python -m pytest -m 'not postgres and not redis and not real_provider and not docker_sandbox'
       - name: Validate deployment configuration
-        run: docker compose --env-file deploy/.env.production.example -f compose.prod.yaml config --quiet
+        run: |
+          docker compose --env-file deploy/.env.production.example -f compose.prod.yaml config --quiet
+          docker compose --env-file deploy/.env.production.example -f compose.prod.yaml -f compose.demo.yaml config --quiet
       - name: Build production image
         run: docker build --tag routellm-app:ci .
       - name: Check whitespace and secrets

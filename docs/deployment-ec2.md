@@ -1,29 +1,29 @@
 # RouteLLM single-EC2 deployment
 
 This runbook deploys RouteLLM, PostgreSQL, Redis, and Caddy on one EC2 instance
-with Docker Compose. It does not create AWS resources and does not run any
-benchmark, DEV, FINAL, training, or evaluation workflow.
+with Docker Compose. It creates no AWS resources and runs no benchmark, DEV,
+FINAL, training, or evaluation workflow.
 
 ## Architecture and prerequisites
 
-Internet traffic reaches Caddy on ports 80 and 443. Caddy terminates TLS and
-proxies to one private Uvicorn worker. The app reaches PostgreSQL and ephemeral
-Redis on a private Docker network and Vercel AI Gateway over outbound HTTPS.
+Internet traffic reaches Caddy. Caddy proxies to one private Uvicorn worker; the
+app reaches PostgreSQL and ephemeral Redis on a private Docker network and Vercel
+AI Gateway over outbound HTTPS. Never expose ports 8000, 5432, 6379, 9090, or
+3000. Only Caddy publishes host ports.
 
-The eventual AWS setup needs one EC2 instance, one EBS root volume, a security
-group, a public address strategy, DNS, and an AWS Budget. Allow inbound 80/443;
-restrict SSH to the operator's address or use a deliberate alternative. Never
-open 8000, 5432, 6379, 9090, or 3000. Confirm current EC2, EBS, public IPv4,
-snapshot, DNS, and data-transfer prices before creating anything.
+The current domainless path needs the existing EC2 instance, EBS root volume,
+security group, and public address. It adds no Elastic IP, load balancer, Route
+53, NAT Gateway, RDS, ElastiCache, domain, or third-party dependency. Confirm
+current EC2, EBS, public IPv4, snapshot, and data-transfer prices and keep an AWS
+Budget enabled with actual-spend alerts at 50%, 80%, and 100% plus a forecast
+alert at 100%.
 
-Install Docker Engine, the Compose v2 plugin, Git, and enough disk space for
-images and PostgreSQL. Enable Docker at boot. Point the chosen domain at the
-instance before starting Caddy. A default EC2 public address may change after a
-stop/start; update DNS or use a separately reviewed stable-address option.
+Install Docker Engine, the Compose plugin, Git, and enough disk space for images
+and PostgreSQL. Enable Docker at boot.
 
-## Prepare configuration and secrets
+## Prepare shared configuration and secrets
 
-Check out the reviewed commit, then create the host-only environment file:
+Create the host-only environment file from the documented template:
 
 ```sh
 mkdir -p -m 0700 deploy
@@ -32,9 +32,14 @@ chmod 0600 deploy/.env.production
 ```
 
 The real file stays outside Git, is never copied into the image, and must be
-owned by the deployment user. Replace every `REPLACE_...` value. Use URL-safe
-random PostgreSQL passwords because the runtime password is embedded in a URL.
-Generate a Caddy password hash without retaining the plaintext in the repository:
+owned by the deployment user. Replace every `REPLACE_...` value. Common settings,
+including demo auth, gateway, database, Redis/rate-limit, metrics, router, and
+input-limit settings, are required in both modes. `ROUTELLM_DOMAIN` and
+`ACME_EMAIL` are Mode B only and may be deleted from the Mode A host file. Mode A
+has no mode-specific environment variable.
+
+Use URL-safe random PostgreSQL passwords. Generate the demo password hash
+without retaining the plaintext in the repository:
 
 ```sh
 read -r -s -p 'Demo password: ' ROUTELLM_DEMO_PASSWORD
@@ -43,16 +48,44 @@ unset ROUTELLM_DEMO_PASSWORD
 ```
 
 Put the resulting hash in single quotes in `deploy/.env.production` so `$`
-characters remain literal. Never echo secrets into logs or place them in shell
-command arguments. This small deployment intentionally uses a protected host file
-rather than AWS Secrets Manager.
+characters remain literal. Never echo secrets into logs or command arguments.
 
-Set a monthly AWS Budget with actual-spend alerts at 50%, 80%, and 100%, plus a
-forecast alert at 100%, before infrastructure creation.
+## Mode A — domainless EC2 portfolio demo (current path)
 
-## First deployment
+Mode A costs nothing beyond the existing EC2/EBS deployment. It serves HTTP on
+the instance's current public IPv4 address or public EC2 hostname. It is intended
+for temporary, attended portfolio demonstrations: HTTP does not encrypt Basic
+Auth credentials or inference traffic in transit. Do not use it on an untrusted
+network or for sensitive prompts. Stop the instance when the demo is not needed.
 
-All commands use the external environment file explicitly:
+Permit inbound TCP port 80 in the EC2 security group. Port 443 is not needed for
+Mode A. Do not add any other public application or data-store port.
+
+Use both Compose files for every Mode A operation:
+
+```sh
+docker compose --env-file deploy/.env.production -f compose.prod.yaml -f compose.demo.yaml config --quiet
+docker compose --env-file deploy/.env.production -f compose.prod.yaml -f compose.demo.yaml build --pull
+docker compose --env-file deploy/.env.production -f compose.prod.yaml -f compose.demo.yaml up -d postgres redis
+docker compose --env-file deploy/.env.production -f compose.prod.yaml -f compose.demo.yaml run --rm migrate
+docker compose --env-file deploy/.env.production -f compose.prod.yaml -f compose.demo.yaml up -d app caddy
+docker compose --env-file deploy/.env.production -f compose.prod.yaml -f compose.demo.yaml ps
+```
+
+Set the public URL using the current EC2 address:
+
+```sh
+ROUTELLM_URL=http://EC2_PUBLIC_IPV4
+```
+
+The default EC2 public address can change after stop/start. Read the new address
+from EC2 and update `ROUTELLM_URL`; no repository or Compose change is required.
+
+## Mode B — domain plus automatic HTTPS (future stable path)
+
+Mode B preserves the original Caddy automatic-TLS deployment. Point the chosen
+domain at the instance, set `ROUTELLM_DOMAIN` and `ACME_EMAIL`, and permit inbound
+TCP 80/443 plus UDP 443 as desired. Use only the production Compose file:
 
 ```sh
 docker compose --env-file deploy/.env.production -f compose.prod.yaml config --quiet
@@ -60,21 +93,19 @@ docker compose --env-file deploy/.env.production -f compose.prod.yaml build --pu
 docker compose --env-file deploy/.env.production -f compose.prod.yaml up -d postgres redis
 docker compose --env-file deploy/.env.production -f compose.prod.yaml run --rm migrate
 docker compose --env-file deploy/.env.production -f compose.prod.yaml up -d app caddy
-docker compose --env-file deploy/.env.production -f compose.prod.yaml ps
 ```
 
-The migration command uses the application image, waits for healthy PostgreSQL,
-runs `alembic upgrade head`, and fails visibly. Migrations never run implicitly in
-every app startup.
+Caddy obtains and renews certificates and redirects HTTP to HTTPS. Mode B is the
+intended path for a stable public deployment.
 
 ## Zero-provider verification
 
-These checks make no paid LLM calls. Set `ROUTELLM_URL` to the HTTPS origin and
-use the configured demo user for the fake request.
+These checks make no paid LLM calls. They apply to either mode after setting
+`ROUTELLM_URL` appropriately. The fake request still requires the demo gate.
 
 ```sh
-docker compose --env-file deploy/.env.production -f compose.prod.yaml ps
-docker compose --env-file deploy/.env.production -f compose.prod.yaml run --rm migrate python -m alembic current
+docker compose --env-file deploy/.env.production -f compose.prod.yaml -f compose.demo.yaml ps
+docker compose --env-file deploy/.env.production -f compose.prod.yaml -f compose.demo.yaml run --rm migrate python -m alembic current
 curl -fsS "$ROUTELLM_URL/health"
 curl -fsS "$ROUTELLM_URL/ready"
 curl -fsS "$ROUTELLM_URL/v1/models"
@@ -85,63 +116,55 @@ curl -u "$DEMO_AUTH_USER" -H 'Content-Type: application/json' \
 ```
 
 The public metrics request must return 404. Inspect authorized metrics and the
-database-backed summary only inside the app container/network:
+database-backed summary only inside the app container, using the same Compose
+file selection as the active mode:
 
 ```sh
-docker compose --env-file deploy/.env.production -f compose.prod.yaml exec app \
+docker compose --env-file deploy/.env.production -f compose.prod.yaml -f compose.demo.yaml exec app \
   python -c "import os,urllib.request; r=urllib.request.Request('http://127.0.0.1:8000/metrics',headers={'Authorization':'Bearer '+os.environ['METRICS_BEARER_TOKEN']}); print(urllib.request.urlopen(r).status)"
-docker compose --env-file deploy/.env.production -f compose.prod.yaml exec app \
+docker compose --env-file deploy/.env.production -f compose.prod.yaml -f compose.demo.yaml exec app \
   python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8000/v1/metrics/summary').read().decode())"
 ```
 
-Confirm the fake inference appears in the telemetry summary. A rate-limit test may
-temporarily lower the client quota and use only `fake-small`; restore the configured
-quota afterward. Review `docker compose ... logs app` for JSON application events
-and absence of prompts, credentials, or provider bodies. Verify only 80/443 are
-public using the host's listening-port tool and an external scan.
+Confirm fake inference appears in telemetry. Review Compose logs for structured
+JSON events and absence of prompts, credentials, or provider bodies. Verify the
+host exposes only port 80 in Mode A, or 80/443 in Mode B. A rate-limit test may
+temporarily lower the client quota and use only `fake-small`; restore it afterward.
 
 ## Optional one-provider smoke test
 
-Only after all zero-provider checks pass, make at most one explicit call with no
-validation or escalation. Reconfirm the cheapest available approved model and its
-current price first. Use the prompt `Reply exactly: OK`, temperature `0`, and at
-most two output tokens. Stop after that one provider attempt regardless of outcome.
+Only after zero-provider checks pass, make at most one explicit call with no
+validation or escalation. Reconfirm the cheapest approved model and current
+price first. Use `Reply exactly: OK`, temperature 0, and at most two output
+tokens. Stop after that one provider attempt regardless of outcome.
 
-## Routine start, stop, updates, and rollback
+## Routine operation, persistence, and recovery limits
+
+The migration service uses the application image, waits for healthy PostgreSQL,
+runs `alembic upgrade head`, and fails visibly. Migrations do not run during app
+startup. For updates, check out the reviewed commit, rebuild, migrate, and
+recreate long-running services. For rollback, check out the previously reviewed
+commit and repeat; never downgrade a populated database without a reviewed plan.
 
 With `restart: unless-stopped` and Docker enabled at boot, starting EC2 restores
-the containers automatically. Wait for `/ready`. To turn the portfolio off, stop
-the EC2 instance. Do not manually stop every Compose service first because Docker
-can remember that manual stopped state.
+containers automatically. To turn the portfolio off, stop the EC2 instance. Do
+not manually stop every Compose service first because Docker can remember that
+state.
 
-For an update, fetch the repository, check out the reviewed commit, rebuild, run
-the explicit migration, and recreate the long-running services. For rollback,
-check out the previously reviewed Git commit and repeat the build/up procedure.
-Never downgrade a populated database unless a separately reviewed migration plan
-explicitly permits it.
+PostgreSQL uses the persistent `routellm-prod_postgres_data` volume. Redis has no
+volume and its counters reset on restart. Caddy state remains in named volumes;
+Mode B certificates survive container replacement. Compose logs are sufficient;
+no CloudWatch agent, logging vendor, Prometheus, or Grafana runs in this stack.
+Monitor disk space and Docker log growth. One EBS volume is not a backup.
 
-## Persistence, logs, and recovery limits
+Ordinary startup loads the frozen router and initializes idle clients. It does
+not call providers, Astra, DEV, or FINAL and does not run benchmark datasets.
 
-PostgreSQL uses `routellm-prod_postgres_data`; it survives container recreation
-and EC2 stop/start because Docker stores it on EBS. Redis has no volume and its
-rate-limit counters reset on restart. Caddy's ACME certificates and state use
-named volumes. `docker compose down` preserves these volumes; never add `--volumes`
-unless permanent data deletion is deliberate.
-
-Use Compose logs for operations. No CloudWatch agent, logging vendor,
-Prometheus, or Grafana runs in this production stack. Monitor free disk space and
-Docker log growth. One root EBS volume is not a backup; termination, volume
-deletion, corruption, or operator error can destroy telemetry. Add a separately
-cost-reviewed snapshot/backup policy if that risk is unacceptable.
-
-Ordinary startup only loads the frozen router, initializes local dependencies,
-and creates an idle provider HTTP client. It does not call providers, Astra, DEV,
-or FINAL, and it does not retrain or run benchmark datasets.
-
-To shut down containers without deleting state:
+To shut down Mode A without deleting state:
 
 ```sh
-docker compose --env-file deploy/.env.production -f compose.prod.yaml down
+docker compose --env-file deploy/.env.production -f compose.prod.yaml -f compose.demo.yaml down
 ```
 
-Do not append `--volumes`.
+For Mode B, omit `-f compose.demo.yaml`. Never append `--volumes` unless permanent
+data destruction is deliberate.

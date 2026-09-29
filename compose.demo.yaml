@@ -1,0 +1,9 @@
+services:
+  caddy:
+    environment:
+      ROUTELLM_DOMAIN: !reset null
+      ACME_EMAIL: !reset null
+    ports: !override
+      - "80:80"
+    volumes:
+      - ./deploy/Caddyfile.http:/etc/caddy/Caddyfile:ro

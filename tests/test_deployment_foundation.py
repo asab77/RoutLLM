@@ -1,6 +1,7 @@
 import asyncio
 import hashlib
 import json
+import os
 import pickle
 import shutil
 import subprocess
@@ -231,6 +232,36 @@ def _compose_config() -> dict:
     return json.loads(result.stdout)
 
 
+def _domainless_compose_config() -> dict:
+    environment = os.environ.copy()
+    environment.pop("ROUTELLM_DOMAIN", None)
+    environment.pop("ACME_EMAIL", None)
+    environment.update(
+        {
+            "AI_GATEWAY_API_KEY": "placeholder-no-provider-call",
+            "POSTGRES_PASSWORD": "placeholder-bootstrap-password",
+            "POSTGRES_APP_USER": "routellm",
+            "POSTGRES_APP_PASSWORD": "placeholder-app-password",
+            "RATE_LIMIT_HMAC_SECRET": "placeholder-rate-secret-at-least-32-characters",
+            "METRICS_BEARER_TOKEN": "placeholder-metrics-secret-at-least-32-characters",
+            "DEMO_AUTH_USER": "demo",
+            "DEMO_AUTH_PASSWORD_HASH": "placeholder-caddy-hash",
+        }
+    )
+    result = subprocess.run(
+        [
+            "docker", "compose", "--env-file", "/dev/null", "--profile", "tools",
+            "-f", "compose.prod.yaml", "-f", "compose.demo.yaml", "config", "--format", "json",
+        ],
+        cwd=ROOT,
+        env=environment,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return json.loads(result.stdout)
+
+
 def test_production_compose_is_private_persistent_and_restartable():
     config = _compose_config()
     services = config["services"]
@@ -249,6 +280,42 @@ def test_production_compose_is_private_persistent_and_restartable():
     assert any("postgres_data" in item["source"] for item in services["postgres"]["volumes"])
     assert not services["redis"].get("volumes")
     assert any("caddy_data" in item["source"] for item in services["caddy"]["volumes"])
+
+
+def test_domainless_compose_needs_no_domain_or_acme_and_keeps_services_private():
+    config = _domainless_compose_config()
+    services = config["services"]
+    assert set(services) == {"app", "caddy", "migrate", "postgres", "redis"}
+    assert "ROUTELLM_DOMAIN" not in services["caddy"].get("environment", {})
+    assert "ACME_EMAIL" not in services["caddy"].get("environment", {})
+    assert {item["published"] for item in services["caddy"]["ports"]} == {"80"}
+    assert all("ports" not in services[name] for name in ("app", "postgres", "redis"))
+    caddy_mount = next(
+        item for item in services["caddy"]["volumes"]
+        if item["target"] == "/etc/caddy/Caddyfile"
+    )
+    assert caddy_mount["source"].endswith("deploy/Caddyfile.http")
+
+
+def test_domainless_edge_preserves_auth_blocking_and_proxy_security():
+    caddy = (ROOT / "deploy" / "Caddyfile.http").read_text()
+    assert caddy.startswith(":80 {")
+    assert "{$ROUTELLM_DOMAIN}" not in caddy
+    assert "{$ACME_EMAIL}" not in caddy
+    assert "basic_auth @paid" in caddy
+    assert "/v1/inference /v1/inference/adaptive" in caddy
+    for path in ("/metrics", "/v1/metrics/summary", "/v1/benchmarks/*", "/docs", "/redoc", "/openapi.json"):
+        assert path in caddy
+    assert "respond @protected 404" in caddy
+    assert "header_up -X-Forwarded-For" in caddy
+    assert "header_up X-Forwarded-For {remote_host}" in caddy
+
+
+def test_domain_https_edge_remains_configured_for_automatic_tls():
+    caddy = (ROOT / "deploy" / "Caddyfile").read_text()
+    assert "email {$ACME_EMAIL}" in caddy
+    assert "{$ROUTELLM_DOMAIN} {" in caddy
+    assert "basic_auth @paid" in caddy
 
 
 def test_edge_policy_gates_paid_and_blocks_operational_routes():

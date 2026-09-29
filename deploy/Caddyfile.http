@@ -1,0 +1,21 @@
+:80 {
+	encode zstd gzip
+
+	@paid path /v1/inference /v1/inference/adaptive
+	basic_auth @paid {
+		{$DEMO_AUTH_USER} {$DEMO_AUTH_PASSWORD_HASH}
+	}
+
+	@protected path /metrics /v1/metrics/summary /v1/benchmarks/* /docs /docs/* /redoc /redoc/* /openapi.json
+	respond @protected 404
+
+	reverse_proxy app:8000 {
+		header_up -Forwarded
+		header_up -X-Forwarded-For
+		header_up X-Forwarded-For {remote_host}
+		header_up -X-Real-IP
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+	}
+}
