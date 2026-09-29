@@ -30,6 +30,8 @@ def isolate_database_environment(monkeypatch, request):
     monkeypatch.delenv("TELEMETRY_TIMEOUT_SECONDS", raising=False)
     monkeypatch.delenv("ROUTELLM_ADAPTIVE_ARTIFACT_PATH", raising=False)
     monkeypatch.delenv("ROUTELLM_ADAPTIVE_CANDIDATES", raising=False)
+    monkeypatch.delenv("ROUTELLM_MAX_PROMPT_CHARACTERS", raising=False)
+    monkeypatch.delenv("ROUTELLM_MAX_OUTPUT_TOKENS", raising=False)
 
 
 @pytest.fixture

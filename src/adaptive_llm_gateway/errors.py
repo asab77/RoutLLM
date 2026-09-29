@@ -107,6 +107,10 @@ class InvalidQualityThresholdError(RoutingPolicyError):
     """The caller supplied a non-finite threshold outside [0, 1]."""
 
 
+class RequestLimitExceededError(ValueError):
+    """The public request exceeds trusted cost-safety bounds."""
+
+
 class DuplicateCandidatePredictionError(RoutingPolicyError):
     """More than one prediction was supplied for a model identifier."""
 

@@ -1,0 +1,153 @@
+name: routellm-prod
+
+x-app-image: &app-image routellm-app:prod
+x-app-environment: &app-environment
+  AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY:?set AI_GATEWAY_API_KEY}
+  AI_GATEWAY_TIMEOUT_SECONDS: ${AI_GATEWAY_TIMEOUT_SECONDS:-60}
+  INFERENCE_DEADLINE_SECONDS: ${INFERENCE_DEADLINE_SECONDS:-60}
+  DATABASE_URL: postgresql+asyncpg://${POSTGRES_APP_USER:?set POSTGRES_APP_USER}:${POSTGRES_APP_PASSWORD:?set POSTGRES_APP_PASSWORD}@postgres:5432/${POSTGRES_DB:-routellm}
+  TELEMETRY_TIMEOUT_SECONDS: ${TELEMETRY_TIMEOUT_SECONDS:-2}
+  RATE_LIMIT_REQUIRED: "true"
+  REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+  RATE_LIMIT_HMAC_SECRET: ${RATE_LIMIT_HMAC_SECRET:?set RATE_LIMIT_HMAC_SECRET}
+  REDIS_TIMEOUT_SECONDS: ${REDIS_TIMEOUT_SECONDS:-0.25}
+  RATE_LIMIT_CLIENT_CAPACITY: ${RATE_LIMIT_CLIENT_CAPACITY:-5}
+  RATE_LIMIT_CLIENT_WINDOW_SECONDS: ${RATE_LIMIT_CLIENT_WINDOW_SECONDS:-60}
+  RATE_LIMIT_GLOBAL_CAPACITY: ${RATE_LIMIT_GLOBAL_CAPACITY:-20}
+  RATE_LIMIT_GLOBAL_WINDOW_SECONDS: ${RATE_LIMIT_GLOBAL_WINDOW_SECONDS:-60}
+  RATE_LIMIT_EXPLICIT_WEIGHT: ${RATE_LIMIT_EXPLICIT_WEIGHT:-1}
+  RATE_LIMIT_ADAPTIVE_WEIGHT: ${RATE_LIMIT_ADAPTIVE_WEIGHT:-2}
+  METRICS_ENABLED: ${METRICS_ENABLED:-true}
+  METRICS_BEARER_TOKEN: ${METRICS_BEARER_TOKEN:?set METRICS_BEARER_TOKEN}
+  ROUTELLM_ADAPTIVE_ARTIFACT_PATH: ${ROUTELLM_ADAPTIVE_ARTIFACT_PATH:-/app/deploy/router}
+  ROUTELLM_ADAPTIVE_CANDIDATES: ${ROUTELLM_ADAPTIVE_CANDIDATES:-candidate-claude-sonnet-5,candidate-gemini-3-flash,candidate-gpt-6-luna,candidate-nemotron-3.5-lightning}
+  ROUTELLM_MAX_PROMPT_CHARACTERS: ${ROUTELLM_MAX_PROMPT_CHARACTERS:-12000}
+  ROUTELLM_MAX_OUTPUT_TOKENS: ${ROUTELLM_MAX_OUTPUT_TOKENS:-512}
+  BENCHMARK_RESULTS_DIR: /app/empty-benchmark-results
+
+services:
+  postgres:
+    image: postgres:18.6
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-routellm}
+      POSTGRES_USER: ${POSTGRES_USER:-routellm_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_APP_USER: ${POSTGRES_APP_USER:?set POSTGRES_APP_USER}
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:?set POSTGRES_APP_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./deploy/postgres/init.sh:/docker-entrypoint-initdb.d/01-routellm-production.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - backend
+
+  redis:
+    image: redis:8.2.1-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - backend
+
+  migrate:
+    image: *app-image
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "-m", "alembic", "upgrade", "head"]
+    environment: *app-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    profiles:
+      - tools
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - backend
+
+  app:
+    image: *app-image
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment: *app-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=2).read()"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 15s
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      edge:
+        ipv4_address: 172.30.0.3
+      backend: {}
+
+  caddy:
+    image: caddy:2.10.2-alpine
+    environment:
+      ROUTELLM_DOMAIN: ${ROUTELLM_DOMAIN:?set ROUTELLM_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL}
+      DEMO_AUTH_USER: ${DEMO_AUTH_USER:?set DEMO_AUTH_USER}
+      DEMO_AUTH_PASSWORD_HASH: ${DEMO_AUTH_PASSWORD_HASH:?set DEMO_AUTH_PASSWORD_HASH}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      edge:
+        ipv4_address: 172.30.0.2
+
+networks:
+  edge:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+  backend:
+    internal: true
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:

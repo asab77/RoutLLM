@@ -1,0 +1,45 @@
+{
+  "approved_quality_threshold": 0.8,
+  "artifact_format_version": "routellm-production-router-v1",
+  "canonical_feature_schema_version": "1.0.0",
+  "deployment_approval": {
+    "decision": "APPROVED_FROZEN_PRODUCTION_ROUTER",
+    "phase": "12.1B",
+    "statement": "The exact previously validated predictor bytes were subsequently approved as the frozen production router."
+  },
+  "known_candidate_ids": [
+    "candidate-claude-sonnet-5",
+    "candidate-gemini-3-flash",
+    "candidate-gpt-6-luna",
+    "candidate-nemotron-3.5-lightning"
+  ],
+  "known_categories": [
+    "classification",
+    "coding",
+    "extraction",
+    "structured_json",
+    "qa",
+    "reasoning",
+    "summarization"
+  ],
+  "model_filename": "predictor.pkl",
+  "predictor_formulation_id": "INTERACTION_NO_PROVIDER_PIN",
+  "predictor_formulation_version": "1.0.0",
+  "predictor_sha256": "502db83a54c4072c9741a8e4c406498ad88ec97e03bce1ddaf3e0a1b0001c0aa",
+  "preprocessing_id": "interaction-no-provider-pin-column-transformer-v1",
+  "protocol_sha256": "b4cde3954a8ccd1b54684dcb62da303e7bc806248306464ae536b9ff717a0bd8",
+  "protocol_version": "1.7.0",
+  "runtime_compatibility": {
+    "python_major_minor": "3.12",
+    "scikit_learn_version": "1.9.1"
+  },
+  "source_validation_metadata": {
+    "artifact_format_version": "phase9-dev-candidate-v1",
+    "deployment_status": "DEV_VALIDATION_CANDIDATE_NOT_DEPLOYED",
+    "missing_label_rows": 3,
+    "source_run_id": "cc28470f-55ed-4a2f-a6ee-8d25cf93ecd2",
+    "split_sha256": "98c639be29da4e11fdf48073d74e83805f16fdfb72b0102b5f5543213ab4960b",
+    "training_dataset_sha256": "1a9cadc2d557eacb4a7dce450100cdb495a2659c2862845ce9894cf0a7791005",
+    "valid_training_rows": 557
+  }
+}

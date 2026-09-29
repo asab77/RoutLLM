@@ -3,19 +3,20 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-from adaptive_llm_gateway.validation import ValidationContract
-
+from adaptive_llm_gateway.evaluation.models import EvaluationSummary
 from adaptive_llm_gateway.models import (
-    InferenceRequest, InferenceResponse, TerminationReason,
+    InferenceRequest,
+    InferenceResponse,
+    TerminationReason,
 )
 from adaptive_llm_gateway.models.schemas import Identifier
-from adaptive_llm_gateway.telemetry.contracts import TelemetrySummary
-from adaptive_llm_gateway.evaluation.models import EvaluationSummary
 from adaptive_llm_gateway.routing.features import RoutingCategory
 from adaptive_llm_gateway.routing.policy import (
     RoutingDecisionReason,
     validate_quality_threshold,
 )
+from adaptive_llm_gateway.telemetry.contracts import TelemetrySummary
+from adaptive_llm_gateway.validation import ValidationContract
 
 
 class MetricsSummary(TelemetrySummary):
@@ -50,11 +51,13 @@ class AdaptiveInferencePayload(InferenceRequest):
         description="Optional deterministic output checks with bounded escalation.",
     )
     category: RoutingCategory
-    quality_threshold: float
+    quality_threshold: float | None = None
 
     @field_validator("quality_threshold", mode="before")
     @classmethod
-    def apply_routing_threshold_contract(cls, value: object) -> float:
+    def apply_routing_threshold_contract(cls, value: object) -> float | None:
+        if value is None:
+            return value
         return validate_quality_threshold(value)
 
     def to_domain(self) -> InferenceRequest:

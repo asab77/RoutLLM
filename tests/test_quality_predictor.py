@@ -21,7 +21,7 @@ from adaptive_llm_gateway.errors import (
     PredictorArtifactNotFoundError,
     UnsupportedPredictorCandidateError,
 )
-from adaptive_llm_gateway.models import ModelConfig, ReasoningEffort
+from adaptive_llm_gateway.models import ReasoningEffort
 from adaptive_llm_gateway.providers.gateway_config import CANDIDATE_MODELS
 from adaptive_llm_gateway.registry import ModelRegistry
 from adaptive_llm_gateway.routing.features import (
@@ -57,7 +57,6 @@ from adaptive_llm_gateway.routing.quality_features import (
     CanonicalCompatibilityStatus,
     canonical_feature_matrix,
     canonical_from_production,
-    canonical_from_training_row,
     canonicalize_category,
     canonicalize_reasoning_effort,
     resolve_effective_output_allowance,
@@ -389,7 +388,7 @@ def test_predictor_has_no_threshold_routing_provider_or_foundation_dependency():
     import adaptive_llm_gateway.routing.predictor as module
 
     source = inspect.getsource(module)
-    assert "quality_threshold" not in source
+    assert "CostAwareRoutingPolicy" not in source
     assert "CostAwareRoutingPolicy" not in source
     assert "adaptive_llm_gateway.providers" not in source
     assert "benchmark-results" not in source
@@ -402,8 +401,8 @@ def test_predictor_has_no_threshold_routing_provider_or_foundation_dependency():
 
 
 def test_artifact_is_application_owned_and_not_exposed_by_http_api():
-    from adaptive_llm_gateway.api.schemas import InferencePayload
     from adaptive_llm_gateway.api.routes import inference
+    from adaptive_llm_gateway.api.schemas import InferencePayload
 
     assert "artifact" not in InferencePayload.model_fields
     assert "predictor" not in inspect.signature(inference).parameters

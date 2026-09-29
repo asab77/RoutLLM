@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Sequence
 from decimal import Decimal
 from pathlib import Path
-from typing import Sequence
 from uuid import uuid4
 
 from pydantic import Field
@@ -21,23 +21,26 @@ from adaptive_llm_gateway.errors import (
 )
 from adaptive_llm_gateway.models import InferenceRequest, InferenceResponse, ModelConfig
 from adaptive_llm_gateway.models.schemas import DomainModel, Identifier, Money
+from adaptive_llm_gateway.request_deadline import RequestDeadline
 from adaptive_llm_gateway.routing.features import RoutingCategory
 from adaptive_llm_gateway.routing.policy import RoutingDecision
 from adaptive_llm_gateway.routing.service import RoutingDecisionService, RoutingResult
-from adaptive_llm_gateway.request_deadline import RequestDeadline
 from adaptive_llm_gateway.telemetry.contracts import (
     AdaptiveExecutionTelemetry,
     AdaptiveTerminalOutcome,
     ValidationTelemetry,
 )
-
 from adaptive_llm_gateway.validation import (
-    DeterministicResponseValidator, ResponseValidator, ValidationContext,
-    ValidationContract, ValidationResult,
+    DeterministicResponseValidator,
+    ResponseValidator,
+    ValidationContext,
+    ValidationContract,
+    ValidationResult,
     ValidationStatus,
 )
 
 from .service import InferenceService
+
 
 class AdaptiveAttempt(DomainModel):
     """Privacy-safe in-memory accounting for one executed candidate."""
@@ -82,6 +85,7 @@ class AdaptiveInferenceService:
         self._routing_service = routing_service
         self._validator = validator if validator is not None else DeterministicResponseValidator()
         self._max_validation_attempts = max_validation_attempts
+        self.predictor_metadata = None
 
     @classmethod
     def from_trusted_artifact(
@@ -99,6 +103,7 @@ class AdaptiveInferenceService:
             Path(artifact_directory)
         )
         instance = cls(inference_service, RoutingDecisionService(predictor))
+        instance.predictor_metadata = predictor.metadata
         if candidate_model_ids is not None:
             candidates = instance._resolve_candidates(candidate_model_ids)
             supported = set(predictor.metadata.known_candidate_ids)
@@ -433,7 +438,7 @@ class AdaptiveInferenceService:
         try:
             async with asyncio.timeout(timeout):
                 await record(event)
-        except Exception:
+        except Exception:  # noqa: BLE001 - telemetry must not fail paid inference
             duration = asyncio.get_running_loop().time() - started
             self._inference_service.observability.telemetry_write(
                 record_type="adaptive",

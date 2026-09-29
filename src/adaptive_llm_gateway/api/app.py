@@ -3,11 +3,11 @@
 import asyncio
 import os
 import re
-from pathlib import Path
-from contextlib import asynccontextmanager
 from collections.abc import Awaitable, Callable
-from uuid import uuid4
+from contextlib import asynccontextmanager
+from pathlib import Path
 from time import perf_counter
+from uuid import uuid4
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -16,42 +16,45 @@ from starlette.exceptions import HTTPException
 from starlette.responses import Response
 from starlette.routing import Match
 
-from adaptive_llm_gateway.application.service import InferenceService
+from adaptive_llm_gateway.api.limits import RequestLimitSettings
 from adaptive_llm_gateway.application.adaptive_config import (
     AdaptiveRoutingConfig,
     AdaptiveRuntime,
     build_adaptive_runtime,
 )
+from adaptive_llm_gateway.application.service import InferenceService
 from adaptive_llm_gateway.bootstrap import create_development_service
 from adaptive_llm_gateway.errors import (
-    ContextLimitError,
     AdaptiveRoutingUnavailableError,
+    ContextLimitError,
+    EvaluationArtifactError,
+    EvaluationNotFoundError,
     GatewayError,
     GatewayErrorCategory,
     InferenceDeadlineExceededError,
-    RateLimitExceededError,
-    RateLimitUnavailableError,
-    ModelDisabledError,
-    ProviderFailureError,
-    ProviderUnavailableError,
-    ResponseValidationError,
     InvalidQualityThresholdError,
     MissingRoutingCategoryError,
+    ModelDisabledError,
     NoEligibleCandidatesError,
     PredictorArtifactError,
+    ProviderFailureError,
+    ProviderUnavailableError,
+    RateLimitExceededError,
+    RateLimitUnavailableError,
+    RequestLimitExceededError,
+    ResponseValidationError,
     UnsupportedPredictorCandidateError,
 )
-from adaptive_llm_gateway.registry import ModelNotFoundError
+from adaptive_llm_gateway.evaluation.service import EvaluationService
+from adaptive_llm_gateway.observability import Observability, ObservabilitySettings
 from adaptive_llm_gateway.rate_limit import (
     DisabledRateLimiter,
     InferenceRateLimiter,
     RedisRateLimiter,
 )
-from adaptive_llm_gateway.observability import Observability, ObservabilitySettings
+from adaptive_llm_gateway.registry import ModelNotFoundError
 from adaptive_llm_gateway.runtime import application_service, rate_limiter_service
 from adaptive_llm_gateway.telemetry.query import TelemetryUnavailableError
-from adaptive_llm_gateway.evaluation.service import EvaluationService
-from adaptive_llm_gateway.errors import EvaluationArtifactError, EvaluationNotFoundError
 
 from .routes import router
 from .schemas import ErrorDetail, ErrorResponse
@@ -67,6 +70,7 @@ _ERRORS = {
     UnsupportedPredictorCandidateError: (503, "adaptive_routing_unavailable", "Adaptive inference is unavailable."),
     NoEligibleCandidatesError: (503, "adaptive_routing_unavailable", "Adaptive inference is unavailable."),
     InvalidQualityThresholdError: (422, "invalid_adaptive_request", "The adaptive routing request is invalid."),
+    RequestLimitExceededError: (422, "invalid_request", "The request exceeds the configured production limits."),
     MissingRoutingCategoryError: (422, "invalid_adaptive_request", "The adaptive routing request is invalid."),
     EvaluationNotFoundError: (404, "evaluation_not_found", "The benchmark evaluation was not found."),
     EvaluationArtifactError: (422, "evaluation_artifact_invalid", "The benchmark evaluation artifact is invalid."),
@@ -106,6 +110,7 @@ def create_app(
     adaptive_runtime: AdaptiveRuntime | None = None,
     rate_limiter: InferenceRateLimiter | None = None,
     observability: Observability | None = None,
+    request_limits: RequestLimitSettings | None = None,
 ) -> FastAPI:
     configured_observability = observability or Observability(
         ObservabilitySettings.from_environment()
@@ -125,23 +130,25 @@ def create_app(
             except TypeError:
                 # Preserve the existing zero-argument injectable test boundary.
                 service_context = application_service()
-            async with service_context as configured_service:
-                async with rate_limiter_service(configured_observability) as configured_rate_limiter:
-                    configured_service.observability = configured_observability
-                    if isinstance(configured_rate_limiter, RedisRateLimiter):
-                        configured_rate_limiter.observability = configured_observability
-                    application.state.inference_service = configured_service
-                    application.state.rate_limiter = configured_rate_limiter
-                    config = AdaptiveRoutingConfig.from_environment()
-                    application.state.adaptive_required = config.enabled
-                    application.state.adaptive_runtime = build_adaptive_runtime(
-                        configured_service, config
-                    )
-                    application.state.initialized = True
-                    try:
-                        yield
-                    finally:
-                        application.state.initialized = False
+            async with (
+                service_context as configured_service,
+                rate_limiter_service(configured_observability) as configured_rate_limiter,
+            ):
+                configured_service.observability = configured_observability
+                if isinstance(configured_rate_limiter, RedisRateLimiter):
+                    configured_rate_limiter.observability = configured_observability
+                application.state.inference_service = configured_service
+                application.state.rate_limiter = configured_rate_limiter
+                config = AdaptiveRoutingConfig.from_environment()
+                application.state.adaptive_required = config.enabled
+                application.state.adaptive_runtime = build_adaptive_runtime(
+                    configured_service, config
+                )
+                application.state.initialized = True
+                try:
+                    yield
+                finally:
+                    application.state.initialized = False
 
     app = FastAPI(
         title="Adaptive LLM Gateway",
@@ -155,6 +162,7 @@ def create_app(
     app.state.adaptive_required = adaptive_runtime is not None
     app.state.rate_limiter = rate_limiter or DisabledRateLimiter()
     app.state.observability = configured_observability
+    app.state.request_limits = request_limits or RequestLimitSettings.from_environment()
     app.state.initialized = False
     app.state.evaluation_service = EvaluationService(
         Path(os.environ.get("BENCHMARK_RESULTS_DIR", "benchmark-results")))

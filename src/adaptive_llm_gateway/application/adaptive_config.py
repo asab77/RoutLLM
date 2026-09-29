@@ -32,7 +32,7 @@ class AdaptiveRoutingConfig(DomainModel):
         return self.artifact_path is not None
 
     @model_validator(mode="after")
-    def validate_complete_configuration(self) -> "AdaptiveRoutingConfig":
+    def validate_complete_configuration(self) -> AdaptiveRoutingConfig:
         if self.artifact_path is None and not self.candidate_model_ids:
             return self
         if self.artifact_path is None or not self.candidate_model_ids:
@@ -44,7 +44,7 @@ class AdaptiveRoutingConfig(DomainModel):
         return self
 
     @classmethod
-    def from_environment(cls) -> "AdaptiveRoutingConfig":
+    def from_environment(cls) -> AdaptiveRoutingConfig:
         artifact = os.environ.get(ADAPTIVE_ARTIFACT_PATH_ENV, "").strip()
         candidates = os.environ.get(ADAPTIVE_CANDIDATES_ENV, "").strip()
         if not artifact and not candidates:
@@ -65,12 +65,13 @@ class AdaptiveRoutingConfig(DomainModel):
 
 @dataclass(frozen=True)
 class AdaptiveRuntime:
-    service: "AdaptiveInferenceService"
+    service: AdaptiveInferenceService
     candidate_model_ids: tuple[str, ...]
+    approved_quality_threshold: float = 0.80
 
 
 def build_adaptive_runtime(
-    inference_service: "InferenceService",
+    inference_service: InferenceService,
     config: AdaptiveRoutingConfig,
 ) -> AdaptiveRuntime | None:
     """Load a configured trusted artifact once; disabled mode imports no sklearn."""
@@ -86,6 +87,9 @@ def build_adaptive_runtime(
     return AdaptiveRuntime(
         service=service,
         candidate_model_ids=tuple(config.candidate_model_ids),
+        approved_quality_threshold=float(
+            getattr(service.predictor_metadata, "approved_quality_threshold", 0.80)
+        ),
     )
 
 

@@ -2,7 +2,6 @@ import hashlib
 import inspect
 import json
 from decimal import Decimal
-from pathlib import Path
 
 import pytest
 
@@ -273,7 +272,7 @@ def test_quality_modes_remain_analysis_only(analysis):
 
 def test_production_api_and_config_contracts_are_unchanged():
     assert InferencePayload.model_fields["model_id"].is_required()
-    assert AdaptiveInferencePayload.model_fields["quality_threshold"].is_required()
+    assert not AdaptiveInferencePayload.model_fields["quality_threshold"].is_required()
     assert AdaptiveInferencePayload.model_fields["category"].is_required()
     assert "quality_threshold" not in AdaptiveRoutingConfig.model_fields
     assert "quality_mode" not in AdaptiveInferencePayload.model_fields

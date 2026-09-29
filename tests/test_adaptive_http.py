@@ -15,7 +15,6 @@ from fastapi.testclient import TestClient
 
 from adaptive_llm_gateway.api.app import create_app
 from adaptive_llm_gateway.application.adaptive import (
-    AdaptiveInferenceResult as InternalAdaptiveResult,
     AdaptiveInferenceService,
 )
 from adaptive_llm_gateway.application.adaptive_config import (
@@ -31,10 +30,9 @@ from adaptive_llm_gateway.errors import (
     IncompatibleArtifactFormatError,
     NoEligibleCandidatesError,
     PredictorArtifactNotFoundError,
-    ProviderFailureError,
     UnsupportedPredictorCandidateError,
 )
-from adaptive_llm_gateway.models import InferenceRequest, InferenceResponse, ModelConfig
+from adaptive_llm_gateway.models import InferenceResponse, ModelConfig
 from adaptive_llm_gateway.providers.base import LLMProvider
 from adaptive_llm_gateway.providers.gateway_config import CANDIDATE_MODELS
 from adaptive_llm_gateway.providers.resolver import ProviderResolver
@@ -307,7 +305,6 @@ def test_public_request_accepts_every_canonical_category(category):
 @pytest.mark.parametrize("changes", [
     {"category": None},
     {"category": "other"},
-    {"quality_threshold": None},
     {"quality_threshold": -0.1},
     {"quality_threshold": 1.1},
     {"quality_threshold": "0.8"},
@@ -321,8 +318,6 @@ def test_invalid_or_internal_public_inputs_return_422_and_call_no_provider(chang
     payload = adaptive_payload(**changes)
     if changes.get("category") is None:
         payload.pop("category")
-    if changes.get("quality_threshold") is None:
-        payload.pop("quality_threshold")
     with TestClient(configured_app({"cheap": 0.9}, models, calls)) as client:
         response = client.post("/v1/inference/adaptive", json=payload)
     assert_error(response, 422, "invalid_request")
@@ -358,7 +353,7 @@ def test_adaptive_http_fallback_executes_exactly_once():
     ) as client:
         response = client.post(
             "/v1/inference/adaptive",
-            json=adaptive_payload(quality_threshold=0.9),
+            json=adaptive_payload(),
         )
     assert response.status_code == 200
     assert response.json()["routing"]["fallback_used"] is True
@@ -435,7 +430,8 @@ def test_openapi_contract_is_minimal_and_explicit_endpoint_unchanged():
     adaptive_operation = schema["paths"]["/v1/inference/adaptive"]["post"]
     request_ref = adaptive_operation["requestBody"]["content"]["application/json"]["schema"]["$ref"]
     request_schema = schema["components"]["schemas"][request_ref.rsplit("/", 1)[-1]]
-    assert {"category", "quality_threshold"} <= set(request_schema["required"])
+    assert "category" in request_schema["required"]
+    assert "quality_threshold" not in request_schema["required"]
     assert not ({"candidate_model_ids", "artifact_path", "provider"} & set(request_schema["properties"]))
     response_ref = adaptive_operation["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
     response_schema = schema["components"]["schemas"][response_ref.rsplit("/", 1)[-1]]
@@ -479,8 +475,8 @@ async def test_concurrent_adaptive_http_has_no_request_metadata_leakage():
     )
     app = create_app(explicit, runtime)
     requests = [
-        adaptive_payload(prompt="code request", category="coding", quality_threshold=0.7),
-        adaptive_payload(prompt="qa request", category="qa", quality_threshold=0.95),
+        adaptive_payload(prompt="code request", category="coding"),
+        adaptive_payload(prompt="qa request", category="qa"),
     ]
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app), base_url="http://test"
@@ -492,10 +488,10 @@ async def test_concurrent_adaptive_http_has_no_request_metadata_leakage():
     assert responses[0].json()["model_id"] == "code-model"
     assert responses[0].json()["routing"]["fallback_used"] is False
     assert responses[1].json()["model_id"] == "qa-model"
-    assert responses[1].json()["routing"]["fallback_used"] is True
+    assert responses[1].json()["routing"]["fallback_used"] is False
     assert set(routing.seen) == {
-        ("code request", "coding", 0.7),
-        ("qa request", "qa", 0.95),
+        ("code request", "coding", 0.8),
+        ("qa request", "qa", 0.8),
     }
     assert set(calls) == {
         ("code-model", "code request"),

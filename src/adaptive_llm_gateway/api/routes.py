@@ -7,34 +7,37 @@ from fastapi import APIRouter, Depends, Request
 from prometheus_client import CONTENT_TYPE_LATEST
 from starlette.responses import JSONResponse, Response
 
-from adaptive_llm_gateway.application.service import InferenceService
+from adaptive_llm_gateway.api.limits import RequestLimitSettings
 from adaptive_llm_gateway.application.adaptive_config import AdaptiveRuntime
-from adaptive_llm_gateway.telemetry.query import TelemetryQueryService
+from adaptive_llm_gateway.application.service import InferenceService
+from adaptive_llm_gateway.errors import InvalidQualityThresholdError
 from adaptive_llm_gateway.evaluation.service import EvaluationService
-from adaptive_llm_gateway.rate_limit import InferenceKind, InferenceRateLimiter
 from adaptive_llm_gateway.observability import Observability
+from adaptive_llm_gateway.rate_limit import InferenceKind, InferenceRateLimiter
+from adaptive_llm_gateway.telemetry.query import TelemetryQueryService
 
 from .dependencies import (
     get_adaptive_runtime,
     get_evaluation_service,
-    get_rate_limiter,
     get_observability,
+    get_rate_limiter,
+    get_request_limits,
     get_service,
 )
 from .schemas import (
     AdaptiveInferencePayload,
     AdaptiveInferenceResult,
+    BenchmarkEvaluationSummary,
     ErrorResponse,
     HealthResponse,
-    ReadyResponse,
     InferencePayload,
     InferenceResult,
-    ModelList,
     MetricsSummary,
-    BenchmarkEvaluationSummary,
-    PublicModel,
+    ModelList,
     PublicExecutionMetadata,
+    PublicModel,
     PublicRoutingMetadata,
+    ReadyResponse,
 )
 
 router = APIRouter()
@@ -43,6 +46,7 @@ Evaluation = Annotated[EvaluationService, Depends(get_evaluation_service)]
 Adaptive = Annotated[AdaptiveRuntime, Depends(get_adaptive_runtime)]
 RateLimiter = Annotated[InferenceRateLimiter, Depends(get_rate_limiter)]
 Metrics = Annotated[Observability, Depends(get_observability)]
+RequestLimits = Annotated[RequestLimitSettings, Depends(get_request_limits)]
 
 
 def _effective_client(request: Request) -> str:
@@ -70,7 +74,7 @@ async def ready(
     initialized = bool(request.app.state.initialized)
     try:
         providers_available = bool(service.list_models())
-    except Exception:
+    except Exception:  # noqa: BLE001 - readiness must fail closed for any dependency error
         providers_available = False
     adaptive_available = (
         not request.app.state.adaptive_required
@@ -78,7 +82,7 @@ async def ready(
     )
     try:
         redis_available = await rate_limiter.ready()
-    except Exception:
+    except Exception:  # noqa: BLE001 - readiness must fail closed for any dependency error
         redis_available = False
     if initialized and providers_available and adaptive_available and redis_available:
         return ReadyResponse(status="ready")
@@ -141,7 +145,9 @@ async def inference(
     request: Request,
     service: Service,
     rate_limiter: RateLimiter,
+    request_limits: RequestLimits,
 ) -> InferenceResult:
+    request_limits.validate_request(payload)
     deadline = service.new_deadline()
     await rate_limiter.admit(
         _effective_client(request), InferenceKind.EXPLICIT, deadline
@@ -168,7 +174,15 @@ async def adaptive_inference(
     runtime: Adaptive,
     rate_limiter: RateLimiter,
     service: Service,
+    request_limits: RequestLimits,
 ) -> AdaptiveInferenceResult:
+    request_limits.validate_request(payload)
+    approved_threshold = runtime.approved_quality_threshold
+    if (
+        payload.quality_threshold is not None
+        and payload.quality_threshold != approved_threshold
+    ):
+        raise InvalidQualityThresholdError("unapproved production threshold")
     deadline = service.new_deadline()
     await rate_limiter.admit(
         _effective_client(request), InferenceKind.ADAPTIVE, deadline
@@ -177,7 +191,7 @@ async def adaptive_inference(
         payload.to_domain(),
         **({"validation": payload.validation} if payload.validation is not None else {}),
         category=payload.category,
-        quality_threshold=payload.quality_threshold,
+        quality_threshold=approved_threshold,
         candidate_model_ids=runtime.candidate_model_ids,
         request_id=request.state.request_id,
         deadline=deadline,

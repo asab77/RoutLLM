@@ -1,0 +1,301 @@
+import asyncio
+import hashlib
+import json
+import pickle
+import shutil
+import subprocess
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
+
+import pytest
+import sklearn
+from fastapi.testclient import TestClient
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+
+from adaptive_llm_gateway.api.app import create_app
+from adaptive_llm_gateway.api.limits import RequestLimitSettings
+from adaptive_llm_gateway.application.adaptive_config import AdaptiveRuntime
+from adaptive_llm_gateway.bootstrap import create_development_service
+from adaptive_llm_gateway.errors import (
+    CorruptPredictorArtifactError,
+    IncompatibleFeatureSchemaError,
+    PredictorArtifactChecksumError,
+)
+from adaptive_llm_gateway.models import InferenceResponse
+from adaptive_llm_gateway.routing.predictor import (
+    PRODUCTION_PREDICTOR_SHA256,
+    PRODUCTION_QUALITY_THRESHOLD,
+    ProductionQualityPredictorArtifactMetadata,
+    load_trusted_quality_artifact,
+)
+
+ROOT = Path(__file__).resolve().parents[1]
+PRODUCTION_ARTIFACT = ROOT / "deploy" / "router"
+
+
+def _copy_production_artifact(tmp_path: Path) -> Path:
+    target = tmp_path / "router"
+    shutil.copytree(PRODUCTION_ARTIFACT, target)
+    return target
+
+
+def _rewrite_metadata(directory: Path, update) -> None:
+    path = directory / "metadata.json"
+    metadata = json.loads(path.read_text())
+    update(metadata)
+    path.write_text(json.dumps(metadata))
+
+
+def test_frozen_production_artifact_exists_has_exact_hash_and_loads():
+    predictor = PRODUCTION_ARTIFACT / "predictor.pkl"
+    assert predictor.is_file()
+    assert hashlib.sha256(predictor.read_bytes()).hexdigest() == PRODUCTION_PREDICTOR_SHA256
+    pipeline, metadata = load_trusted_quality_artifact(PRODUCTION_ARTIFACT)
+    assert set(pipeline.named_steps) == {"preprocess", "classifier"}
+    assert isinstance(metadata, ProductionQualityPredictorArtifactMetadata)
+    assert metadata.approved_quality_threshold == PRODUCTION_QUALITY_THRESHOLD == 0.80
+    assert metadata.runtime_compatibility.scikit_learn_version == sklearn.__version__ == "1.9.1"
+    assert metadata.source_validation_metadata.deployment_status == "DEV_VALIDATION_CANDIDATE_NOT_DEPLOYED"
+
+
+def test_checksum_is_rejected_before_unpickle(monkeypatch, tmp_path):
+    directory = _copy_production_artifact(tmp_path)
+    predictor = directory / "predictor.pkl"
+    predictor.write_bytes(predictor.read_bytes() + b"corrupt")
+    unpickle = AsyncMock()
+    monkeypatch.setattr(pickle, "loads", unpickle)
+    with pytest.raises(PredictorArtifactChecksumError):
+        load_trusted_quality_artifact(directory)
+    unpickle.assert_not_called()
+
+
+def test_malformed_production_metadata_is_rejected(tmp_path):
+    directory = _copy_production_artifact(tmp_path)
+    (directory / "metadata.json").write_text("not-json")
+    with pytest.raises(CorruptPredictorArtifactError):
+        load_trusted_quality_artifact(directory)
+
+
+def test_wrong_production_feature_contract_is_rejected(tmp_path):
+    directory = _copy_production_artifact(tmp_path)
+    _rewrite_metadata(directory, lambda value: value.update(canonical_feature_schema_version="other"))
+    with pytest.raises(IncompatibleFeatureSchemaError):
+        load_trusted_quality_artifact(directory)
+
+
+def test_wrong_production_candidate_set_is_rejected(tmp_path):
+    directory = _copy_production_artifact(tmp_path)
+    _rewrite_metadata(directory, lambda value: value["known_candidate_ids"].pop())
+    with pytest.raises(CorruptPredictorArtifactError):
+        load_trusted_quality_artifact(directory)
+
+
+def _adaptive_app():
+    service = create_development_service()
+    generate = AsyncMock()
+    response = InferenceResponse(
+        text="ok",
+        model_id="fake-small",
+        provider="fake",
+        input_tokens=1,
+        output_tokens=1,
+        latency_ms=0,
+        estimated_cost_usd="0",
+    )
+    generate.return_value = SimpleNamespace(
+        response=response,
+        routing_decision=SimpleNamespace(
+            selected_model_id="fake-small",
+            threshold_satisfied=True,
+            fallback_used=False,
+            reason="quality_threshold_met",
+        ),
+        execution=None,
+    )
+    runtime = AdaptiveRuntime(
+        SimpleNamespace(generate=generate),
+        ("fake-small",),
+        approved_quality_threshold=0.80,
+    )
+    return create_app(service, runtime), generate
+
+
+@pytest.mark.parametrize("threshold", [None, 0.80])
+def test_production_threshold_omitted_or_exact_is_accepted(threshold):
+    app, generate = _adaptive_app()
+    payload = {"prompt": "threshold check", "category": "qa"}
+    if threshold is not None:
+        payload["quality_threshold"] = threshold
+    with TestClient(app) as client:
+        response = client.post("/v1/inference/adaptive", json=payload)
+    assert response.status_code == 200
+    assert generate.await_args.kwargs["quality_threshold"] == 0.80
+
+
+@pytest.mark.parametrize("threshold", [0, 0.5, 0.79, 0.81, 1])
+def test_unapproved_production_threshold_is_rejected_before_provider(threshold):
+    app, generate = _adaptive_app()
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/inference/adaptive",
+            json={"prompt": "threshold check", "category": "qa", "quality_threshold": threshold},
+        )
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "invalid_adaptive_request"
+    generate.assert_not_awaited()
+
+
+def test_internal_routing_policy_still_accepts_nonproduction_thresholds():
+    from adaptive_llm_gateway.routing.policy import (
+        CandidatePrediction,
+        CostAwareRoutingPolicy,
+    )
+
+    decision = CostAwareRoutingPolicy().route(
+        (CandidatePrediction(model_id="internal", predicted_acceptability=0.75,
+                             projected_cost_usd="0.01"),),
+        0.73,
+    )
+    assert decision.quality_threshold == 0.73
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"model_id": "fake-small", "prompt": "x" * 12_001, "max_output_tokens": 1},
+        {"model_id": "fake-small", "prompt": "normal", "max_output_tokens": 513},
+    ],
+)
+def test_public_cost_bounds_reject_before_provider(payload):
+    service = create_development_service()
+    service.generate = AsyncMock()
+    with TestClient(create_app(
+        service,
+        request_limits=RequestLimitSettings(
+            max_prompt_characters=12_000, max_output_tokens=512
+        ),
+    )) as client:
+        response = client.post("/v1/inference", json=payload)
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "invalid_request"
+    service.generate.assert_not_awaited()
+
+
+def test_normal_public_request_remains_valid():
+    service = create_development_service()
+    with TestClient(create_app(service)) as client:
+        response = client.post(
+            "/v1/inference",
+            json={"model_id": "fake-small", "prompt": "normal demo", "max_output_tokens": 8},
+        )
+    assert response.status_code == 200
+
+
+def test_request_limit_settings_have_production_values_and_hard_ceilings(monkeypatch):
+    monkeypatch.setenv("ROUTELLM_MAX_PROMPT_CHARACTERS", "12000")
+    monkeypatch.setenv("ROUTELLM_MAX_OUTPUT_TOKENS", "512")
+    assert RequestLimitSettings.from_environment() == RequestLimitSettings(
+        max_prompt_characters=12_000, max_output_tokens=512
+    )
+    with pytest.raises(ValueError):
+        RequestLimitSettings(max_prompt_characters=100_001)
+    with pytest.raises(ValueError):
+        RequestLimitSettings(max_output_tokens=8_193)
+
+
+def test_dockerfile_and_build_context_are_production_only():
+    dockerfile = (ROOT / "Dockerfile").read_text()
+    dockerignore = (ROOT / ".dockerignore").read_text().splitlines()
+    assert "python:3.12.12-slim-bookworm" in dockerfile
+    assert "USER 10001:10001" in dockerfile
+    assert '"--workers", "1"' in dockerfile
+    assert '"--forwarded-allow-ips", "172.30.0.2"' in dockerfile
+    assert "--reload" not in dockerfile
+    assert "COPY --chown=routellm:routellm deploy/router" in dockerfile
+    assert "artifacts" in dockerignore and "benchmark-results" in dockerignore
+    assert ".env" in dockerignore and "!deploy/router/**" in dockerignore
+
+
+def _compose_config() -> dict:
+    result = subprocess.run(
+        [
+            "docker", "compose", "--env-file", "deploy/.env.production.example",
+            "--profile", "tools", "-f", "compose.prod.yaml", "config", "--format", "json",
+        ],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return json.loads(result.stdout)
+
+
+def test_production_compose_is_private_persistent_and_restartable():
+    config = _compose_config()
+    services = config["services"]
+    assert set(services) == {"app", "caddy", "migrate", "postgres", "redis"}
+    assert "ports" not in services["app"]
+    assert "ports" not in services["postgres"]
+    assert "ports" not in services["redis"]
+    assert {item["published"] for item in services["caddy"]["ports"]} == {"80", "443"}
+    assert services["app"]["restart"] == "unless-stopped"
+    assert services["postgres"]["restart"] == "unless-stopped"
+    assert services["redis"]["restart"] == "unless-stopped"
+    assert services["caddy"]["restart"] == "unless-stopped"
+    assert all("healthcheck" in services[name] for name in ("app", "postgres", "redis"))
+    assert services["migrate"]["image"] == services["app"]["image"]
+    assert services["migrate"]["command"][-2:] == ["upgrade", "head"]
+    assert any("postgres_data" in item["source"] for item in services["postgres"]["volumes"])
+    assert not services["redis"].get("volumes")
+    assert any("caddy_data" in item["source"] for item in services["caddy"]["volumes"])
+
+
+def test_edge_policy_gates_paid_and_blocks_operational_routes():
+    caddy = (ROOT / "deploy" / "Caddyfile").read_text()
+    assert "basic_auth @paid" in caddy
+    assert "/v1/inference /v1/inference/adaptive" in caddy
+    for path in ("/metrics", "/v1/metrics/summary", "/v1/benchmarks/*", "/docs", "/redoc", "/openapi.json"):
+        assert path in caddy
+    assert "respond @protected 404" in caddy
+    assert all(path not in caddy.split("@protected", 1)[1].splitlines()[0]
+               for path in ("/health", "/ready", "/v1/models"))
+    assert "header_up -X-Forwarded-For" in caddy
+    assert "header_up X-Forwarded-For {remote_host}" in caddy
+
+
+async def _proxy_client(trusted_peer: str, forwarded: str) -> tuple[str, int]:
+    captured = {}
+
+    async def application(scope, receive, send):
+        captured["client"] = scope["client"]
+
+    middleware = ProxyHeadersMiddleware(application, trusted_hosts=["172.30.0.2"])
+    scope = {
+        "type": "http",
+        "client": (trusted_peer, 1234),
+        "headers": [(b"x-forwarded-for", forwarded.encode())],
+        "scheme": "http",
+    }
+    await middleware(scope, AsyncMock(), AsyncMock())
+    return captured["client"]
+
+
+def test_proxy_trust_is_narrow_distinguishes_clients_and_ignores_forgery():
+    first = asyncio.run(_proxy_client("172.30.0.2", "203.0.113.10"))
+    second = asyncio.run(_proxy_client("172.30.0.2", "203.0.113.11"))
+    forged = asyncio.run(_proxy_client("172.30.0.99", "198.51.100.1"))
+    assert first[0] == "203.0.113.10"
+    assert second[0] == "203.0.113.11"
+    assert first != second
+    assert forged == ("172.30.0.99", 1234)
+
+
+def test_production_environment_is_placeholder_only_and_not_copied():
+    template = (ROOT / "deploy" / ".env.production.example").read_text()
+    dockerfile = (ROOT / "Dockerfile").read_text()
+    assert "REPLACE_WITH" in template
+    assert "AI_GATEWAY_API_KEY=REPLACE_WITH" in template
+    assert "local_dev_only" not in template
+    assert "COPY ." not in dockerfile
+    assert ".env.production" not in dockerfile
