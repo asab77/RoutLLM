@@ -1,0 +1,1159 @@
+{
+  "abstention": [
+    {
+      "abstained": 82,
+      "abstention_rate": 0.5857142857142856,
+      "accepted": 58,
+      "accuracy_accepted": 1.0,
+      "category_effects": {
+        "classification": {
+          "accepted": 0,
+          "correct_accepted": 0,
+          "total": 20
+        },
+        "coding": {
+          "accepted": 20,
+          "correct_accepted": 20,
+          "total": 20
+        },
+        "extraction": {
+          "accepted": 4,
+          "correct_accepted": 4,
+          "total": 20
+        },
+        "qa": {
+          "accepted": 14,
+          "correct_accepted": 14,
+          "total": 20
+        },
+        "reasoning": {
+          "accepted": 0,
+          "correct_accepted": 0,
+          "total": 20
+        },
+        "structured_json": {
+          "accepted": 0,
+          "correct_accepted": 0,
+          "total": 20
+        },
+        "summarization": {
+          "accepted": 20,
+          "correct_accepted": 20,
+          "total": 20
+        }
+      },
+      "correct_accepted": 58,
+      "coverage": 0.4142857142857143,
+      "errors_accepted": 0,
+      "minimum_margin": 0.0,
+      "minimum_top_score": 0.5,
+      "name": "top_0.50"
+    },
+    {
+      "abstained": 73,
+      "abstention_rate": 0.5214285714285714,
+      "accepted": 67,
+      "accuracy_accepted": 0.9701492537313433,
+      "category_effects": {
+        "classification": {
+          "accepted": 2,
+          "correct_accepted": 2,
+          "total": 20
+        },
+        "coding": {
+          "accepted": 20,
+          "correct_accepted": 20,
+          "total": 20
+        },
+        "extraction": {
+          "accepted": 6,
+          "correct_accepted": 4,
+          "total": 20
+        },
+        "qa": {
+          "accepted": 19,
+          "correct_accepted": 19,
+          "total": 20
+        },
+        "reasoning": {
+          "accepted": 0,
+          "correct_accepted": 0,
+          "total": 20
+        },
+        "structured_json": {
+          "accepted": 0,
+          "correct_accepted": 0,
+          "total": 20
+        },
+        "summarization": {
+          "accepted": 20,
+          "correct_accepted": 20,
+          "total": 20
+        }
+      },
+      "correct_accepted": 65,
+      "coverage": 0.4785714285714286,
+      "errors_accepted": 2,
+      "minimum_margin": 0.2,
+      "minimum_top_score": 0.0,
+      "name": "margin_0.20"
+    },
+    {
+      "abstained": 82,
+      "abstention_rate": 0.5857142857142856,
+      "accepted": 58,
+      "accuracy_accepted": 1.0,
+      "category_effects": {
+        "classification": {
+          "accepted": 0,
+          "correct_accepted": 0,
+          "total": 20
+        },
+        "coding": {
+          "accepted": 20,
+          "correct_accepted": 20,
+          "total": 20
+        },
+        "extraction": {
+          "accepted": 4,
+          "correct_accepted": 4,
+          "total": 20
+        },
+        "qa": {
+          "accepted": 14,
+          "correct_accepted": 14,
+          "total": 20
+        },
+        "reasoning": {
+          "accepted": 0,
+          "correct_accepted": 0,
+          "total": 20
+        },
+        "structured_json": {
+          "accepted": 0,
+          "correct_accepted": 0,
+          "total": 20
+        },
+        "summarization": {
+          "accepted": 20,
+          "correct_accepted": 20,
+          "total": 20
+        }
+      },
+      "correct_accepted": 58,
+      "coverage": 0.4142857142857143,
+      "errors_accepted": 0,
+      "minimum_margin": 0.15,
+      "minimum_top_score": 0.5,
+      "name": "top_0.50_margin_0.15"
+    }
+  ],
+  "candidate_models": [
+    {
+      "configuration": {
+        "C": 1.0,
+        "name": "logreg-c1"
+      },
+      "hybrid": {
+        "accuracy": 0.8071428571428572,
+        "confusion_matrix": [
+          [
+            18,
+            0,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            20,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            10,
+            9,
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            10,
+            9,
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            20,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            0,
+            0,
+            2,
+            16,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            20
+          ]
+        ],
+        "confusion_matrix_labels": [
+          "classification",
+          "coding",
+          "extraction",
+          "structured_json",
+          "qa",
+          "reasoning",
+          "summarization"
+        ],
+        "correct": 113,
+        "macro_f1": 0.8034899413112387,
+        "per_category": {
+          "classification": {
+            "f1": 0.9,
+            "precision": 0.9,
+            "recall": 0.9,
+            "support": 20
+          },
+          "coding": {
+            "f1": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "support": 20
+          },
+          "extraction": {
+            "f1": 0.5,
+            "precision": 0.5,
+            "recall": 0.5,
+            "support": 20
+          },
+          "qa": {
+            "f1": 0.9302325581395349,
+            "precision": 0.8695652173913043,
+            "recall": 1.0,
+            "support": 20
+          },
+          "reasoning": {
+            "f1": 0.8205128205128205,
+            "precision": 0.8421052631578947,
+            "recall": 0.8,
+            "support": 20
+          },
+          "structured_json": {
+            "f1": 0.47368421052631576,
+            "precision": 0.5,
+            "recall": 0.45,
+            "support": 20
+          },
+          "summarization": {
+            "f1": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "support": 20
+          }
+        },
+        "total": 140
+      },
+      "learned": {
+        "accuracy": 0.8071428571428572,
+        "confusion_matrix": [
+          [
+            18,
+            0,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            20,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            10,
+            9,
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            10,
+            9,
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            20,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            0,
+            0,
+            2,
+            16,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            20
+          ]
+        ],
+        "confusion_matrix_labels": [
+          "classification",
+          "coding",
+          "extraction",
+          "structured_json",
+          "qa",
+          "reasoning",
+          "summarization"
+        ],
+        "correct": 113,
+        "macro_f1": 0.8034899413112387,
+        "per_category": {
+          "classification": {
+            "f1": 0.9,
+            "precision": 0.9,
+            "recall": 0.9,
+            "support": 20
+          },
+          "coding": {
+            "f1": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "support": 20
+          },
+          "extraction": {
+            "f1": 0.5,
+            "precision": 0.5,
+            "recall": 0.5,
+            "support": 20
+          },
+          "qa": {
+            "f1": 0.9302325581395349,
+            "precision": 0.8695652173913043,
+            "recall": 1.0,
+            "support": 20
+          },
+          "reasoning": {
+            "f1": 0.8205128205128205,
+            "precision": 0.8421052631578947,
+            "recall": 0.8,
+            "support": 20
+          },
+          "structured_json": {
+            "f1": 0.47368421052631576,
+            "precision": 0.5,
+            "recall": 0.45,
+            "support": 20
+          },
+          "summarization": {
+            "f1": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "support": 20
+          }
+        },
+        "total": 140
+      }
+    },
+    {
+      "configuration": {
+        "C": 4.0,
+        "name": "logreg-c4"
+      },
+      "hybrid": {
+        "accuracy": 0.8071428571428572,
+        "confusion_matrix": [
+          [
+            18,
+            0,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            20,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            10,
+            8,
+            1,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            10,
+            9,
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            20,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            0,
+            0,
+            2,
+            16,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            20
+          ]
+        ],
+        "confusion_matrix_labels": [
+          "classification",
+          "coding",
+          "extraction",
+          "structured_json",
+          "qa",
+          "reasoning",
+          "summarization"
+        ],
+        "correct": 113,
+        "macro_f1": 0.8023884349465744,
+        "per_category": {
+          "classification": {
+            "f1": 0.9,
+            "precision": 0.9,
+            "recall": 0.9,
+            "support": 20
+          },
+          "coding": {
+            "f1": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "support": 20
+          },
+          "extraction": {
+            "f1": 0.5,
+            "precision": 0.5,
+            "recall": 0.5,
+            "support": 20
+          },
+          "qa": {
+            "f1": 0.9302325581395349,
+            "precision": 0.8695652173913043,
+            "recall": 1.0,
+            "support": 20
+          },
+          "reasoning": {
+            "f1": 0.8,
+            "precision": 0.8,
+            "recall": 0.8,
+            "support": 20
+          },
+          "structured_json": {
+            "f1": 0.4864864864864865,
+            "precision": 0.5294117647058824,
+            "recall": 0.45,
+            "support": 20
+          },
+          "summarization": {
+            "f1": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "support": 20
+          }
+        },
+        "total": 140
+      },
+      "learned": {
+        "accuracy": 0.8071428571428572,
+        "confusion_matrix": [
+          [
+            18,
+            0,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            20,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            10,
+            8,
+            1,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            10,
+            9,
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            20,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            0,
+            0,
+            2,
+            16,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            20
+          ]
+        ],
+        "confusion_matrix_labels": [
+          "classification",
+          "coding",
+          "extraction",
+          "structured_json",
+          "qa",
+          "reasoning",
+          "summarization"
+        ],
+        "correct": 113,
+        "macro_f1": 0.8023884349465744,
+        "per_category": {
+          "classification": {
+            "f1": 0.9,
+            "precision": 0.9,
+            "recall": 0.9,
+            "support": 20
+          },
+          "coding": {
+            "f1": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "support": 20
+          },
+          "extraction": {
+            "f1": 0.5,
+            "precision": 0.5,
+            "recall": 0.5,
+            "support": 20
+          },
+          "qa": {
+            "f1": 0.9302325581395349,
+            "precision": 0.8695652173913043,
+            "recall": 1.0,
+            "support": 20
+          },
+          "reasoning": {
+            "f1": 0.8,
+            "precision": 0.8,
+            "recall": 0.8,
+            "support": 20
+          },
+          "structured_json": {
+            "f1": 0.4864864864864865,
+            "precision": 0.5294117647058824,
+            "recall": 0.45,
+            "support": 20
+          },
+          "summarization": {
+            "f1": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "support": 20
+          }
+        },
+        "total": 140
+      }
+    }
+  ],
+  "cv": {
+    "group": "task_family_id",
+    "random_state": 20260929,
+    "splits": 5,
+    "type": "StratifiedGroupKFold"
+  },
+  "hybrid": {
+    "accuracy": 0.8071428571428572,
+    "confusion_matrix": [
+      [
+        18,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0
+      ],
+      [
+        0,
+        20,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        10,
+        9,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        10,
+        9,
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        20,
+        0,
+        0
+      ],
+      [
+        2,
+        0,
+        0,
+        0,
+        2,
+        16,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        20
+      ]
+    ],
+    "confusion_matrix_labels": [
+      "classification",
+      "coding",
+      "extraction",
+      "structured_json",
+      "qa",
+      "reasoning",
+      "summarization"
+    ],
+    "correct": 113,
+    "macro_f1": 0.8034899413112387,
+    "per_category": {
+      "classification": {
+        "f1": 0.9,
+        "precision": 0.9,
+        "recall": 0.9,
+        "support": 20
+      },
+      "coding": {
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "support": 20
+      },
+      "extraction": {
+        "f1": 0.5,
+        "precision": 0.5,
+        "recall": 0.5,
+        "support": 20
+      },
+      "qa": {
+        "f1": 0.9302325581395349,
+        "precision": 0.8695652173913043,
+        "recall": 1.0,
+        "support": 20
+      },
+      "reasoning": {
+        "f1": 0.8205128205128205,
+        "precision": 0.8421052631578947,
+        "recall": 0.8,
+        "support": 20
+      },
+      "structured_json": {
+        "f1": 0.47368421052631576,
+        "precision": 0.5,
+        "recall": 0.45,
+        "support": 20
+      },
+      "summarization": {
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "support": 20
+      }
+    },
+    "total": 140
+  },
+  "identity": {
+    "count": 140,
+    "per_category": {
+      "classification": 20,
+      "coding": 20,
+      "extraction": 20,
+      "qa": 20,
+      "reasoning": 20,
+      "structured_json": 20,
+      "summarization": 20
+    },
+    "prompt_projection_sha256": "332816aee6edcae3f792082768aae200df8113df6fccafc1979d3f7bb231de4e",
+    "task_ids": [
+      "classification-easy-001",
+      "classification-easy-002",
+      "classification-easy-003",
+      "classification-easy-004",
+      "classification-easy-005",
+      "classification-easy-006",
+      "classification-medium-001",
+      "classification-medium-002",
+      "classification-medium-003",
+      "classification-medium-004",
+      "classification-medium-005",
+      "classification-medium-006",
+      "classification-easy-007",
+      "classification-easy-008",
+      "classification-medium-007",
+      "classification-hard-001",
+      "classification-medium-008",
+      "classification-medium-009",
+      "classification-hard-002",
+      "classification-hard-003",
+      "coding-easy-001",
+      "coding-easy-002",
+      "coding-easy-003",
+      "coding-easy-004",
+      "coding-easy-005",
+      "coding-medium-001",
+      "coding-medium-002",
+      "coding-medium-003",
+      "coding-medium-004",
+      "coding-medium-005",
+      "coding-easy-006",
+      "coding-medium-006",
+      "coding-hard-001",
+      "coding-hard-002",
+      "coding-medium-007",
+      "coding-hard-003",
+      "coding-hard-004",
+      "coding-hard-005",
+      "coding-easy-007",
+      "coding-easy-008",
+      "extraction-easy-001",
+      "extraction-easy-002",
+      "extraction-easy-003",
+      "extraction-easy-004",
+      "extraction-easy-005",
+      "extraction-easy-006",
+      "extraction-medium-001",
+      "extraction-medium-002",
+      "extraction-easy-007",
+      "extraction-easy-008",
+      "extraction-medium-003",
+      "extraction-medium-004",
+      "extraction-medium-005",
+      "extraction-medium-006",
+      "extraction-hard-001",
+      "extraction-hard-002",
+      "extraction-medium-007",
+      "extraction-medium-008",
+      "extraction-hard-003",
+      "extraction-hard-004",
+      "json-easy-001",
+      "json-easy-002",
+      "json-easy-003",
+      "json-easy-004",
+      "json-easy-005",
+      "json-easy-006",
+      "json-medium-001",
+      "json-medium-002",
+      "json-easy-007",
+      "json-easy-008",
+      "json-medium-003",
+      "json-medium-004",
+      "json-medium-005",
+      "json-medium-006",
+      "json-medium-007",
+      "json-medium-008",
+      "json-medium-009",
+      "json-medium-010",
+      "json-hard-001",
+      "json-hard-002",
+      "qa-easy-001",
+      "qa-easy-002",
+      "qa-easy-003",
+      "qa-easy-004",
+      "qa-easy-005",
+      "qa-easy-006",
+      "qa-medium-001",
+      "qa-medium-002",
+      "qa-easy-007",
+      "qa-easy-008",
+      "qa-hard-001",
+      "qa-hard-002",
+      "qa-medium-003",
+      "qa-medium-004",
+      "qa-hard-003",
+      "qa-hard-004",
+      "qa-medium-005",
+      "qa-medium-006",
+      "qa-medium-007",
+      "qa-medium-008",
+      "reasoning-easy-001",
+      "reasoning-easy-002",
+      "reasoning-easy-003",
+      "reasoning-easy-004",
+      "reasoning-easy-005",
+      "reasoning-easy-006",
+      "reasoning-medium-001",
+      "reasoning-medium-002",
+      "reasoning-medium-003",
+      "reasoning-hard-001",
+      "reasoning-hard-002",
+      "reasoning-hard-003",
+      "reasoning-medium-004",
+      "reasoning-medium-005",
+      "reasoning-easy-007",
+      "reasoning-easy-008",
+      "reasoning-medium-006",
+      "reasoning-medium-007",
+      "reasoning-medium-008",
+      "reasoning-medium-009",
+      "summarization-easy-001",
+      "summarization-easy-002",
+      "summarization-easy-003",
+      "summarization-easy-004",
+      "summarization-easy-005",
+      "summarization-medium-001",
+      "summarization-medium-002",
+      "summarization-medium-003",
+      "summarization-medium-004",
+      "summarization-medium-005",
+      "summarization-easy-006",
+      "summarization-medium-006",
+      "summarization-easy-007",
+      "summarization-easy-008",
+      "summarization-hard-001",
+      "summarization-hard-002",
+      "summarization-medium-007",
+      "summarization-hard-003",
+      "summarization-medium-008",
+      "summarization-medium-009"
+    ],
+    "unique_task_ids": 140
+  },
+  "learned": {
+    "accuracy": 0.8071428571428572,
+    "confusion_matrix": [
+      [
+        18,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0
+      ],
+      [
+        0,
+        20,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        10,
+        9,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        10,
+        9,
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        20,
+        0,
+        0
+      ],
+      [
+        2,
+        0,
+        0,
+        0,
+        2,
+        16,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        20
+      ]
+    ],
+    "confusion_matrix_labels": [
+      "classification",
+      "coding",
+      "extraction",
+      "structured_json",
+      "qa",
+      "reasoning",
+      "summarization"
+    ],
+    "correct": 113,
+    "macro_f1": 0.8034899413112387,
+    "per_category": {
+      "classification": {
+        "f1": 0.9,
+        "precision": 0.9,
+        "recall": 0.9,
+        "support": 20
+      },
+      "coding": {
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "support": 20
+      },
+      "extraction": {
+        "f1": 0.5,
+        "precision": 0.5,
+        "recall": 0.5,
+        "support": 20
+      },
+      "qa": {
+        "f1": 0.9302325581395349,
+        "precision": 0.8695652173913043,
+        "recall": 1.0,
+        "support": 20
+      },
+      "reasoning": {
+        "f1": 0.8205128205128205,
+        "precision": 0.8421052631578947,
+        "recall": 0.8,
+        "support": 20
+      },
+      "structured_json": {
+        "f1": 0.47368421052631576,
+        "precision": 0.5,
+        "recall": 0.45,
+        "support": 20
+      },
+      "summarization": {
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "support": 20
+      }
+    },
+    "total": 140
+  },
+  "primary_detector": "learned",
+  "rules": {
+    "correct_covered": 44,
+    "coverage": 0.3142857142857143,
+    "coverage_count": 44,
+    "per_predicted_category": {
+      "classification": {
+        "correct": 0,
+        "precision": null,
+        "predicted": 0
+      },
+      "coding": {
+        "correct": 20,
+        "precision": 1.0,
+        "predicted": 20
+      },
+      "extraction": {
+        "correct": 4,
+        "precision": 1.0,
+        "predicted": 4
+      },
+      "qa": {
+        "correct": 0,
+        "precision": null,
+        "predicted": 0
+      },
+      "reasoning": {
+        "correct": 0,
+        "precision": null,
+        "predicted": 0
+      },
+      "structured_json": {
+        "correct": 0,
+        "precision": null,
+        "predicted": 0
+      },
+      "summarization": {
+        "correct": 20,
+        "precision": 1.0,
+        "predicted": 20
+      }
+    },
+    "per_true_category": {
+      "classification": {
+        "correct": 0,
+        "covered": 0,
+        "total": 20
+      },
+      "coding": {
+        "correct": 20,
+        "covered": 20,
+        "total": 20
+      },
+      "extraction": {
+        "correct": 4,
+        "covered": 4,
+        "total": 20
+      },
+      "qa": {
+        "correct": 0,
+        "covered": 0,
+        "total": 20
+      },
+      "reasoning": {
+        "correct": 0,
+        "covered": 0,
+        "total": 20
+      },
+      "structured_json": {
+        "correct": 0,
+        "covered": 0,
+        "total": 20
+      },
+      "summarization": {
+        "correct": 20,
+        "covered": 20,
+        "total": 20
+      }
+    },
+    "precision_when_fired": 1.0,
+    "unresolved_count": 96,
+    "unresolved_rate": 0.6857142857142857
+  },
+  "selected_configuration": {
+    "C": 1.0,
+    "name": "logreg-c1"
+  },
+  "stage": "train_cv"
+}

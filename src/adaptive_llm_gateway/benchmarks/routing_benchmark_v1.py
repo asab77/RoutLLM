@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from difflib import SequenceMatcher
 from pathlib import Path
-from typing import Any, Iterable, Literal
+from typing import Any, Callable, Iterable, Literal
 
 from adaptive_llm_gateway.evaluation.evaluators import EVALUATION_VERSION, evaluator_for
 from adaptive_llm_gateway.evaluation.judge import JUDGE_PROMPT_VERSION, SEMANTIC_JUDGE_VERSION
@@ -214,6 +214,21 @@ class FamilySpec:
     variants: tuple[dict[str, Any], dict[str, Any]]
 
 
+FamilyInputFactory = Callable[[], Any]
+
+
+def _materialize_family_inputs(
+    factories: tuple[FamilyInputFactory, ...],
+    family_indexes: Iterable[int] | None,
+) -> tuple[tuple[int, Any], ...]:
+    indexes = tuple(range(len(factories))) if family_indexes is None else tuple(family_indexes)
+    if len(set(indexes)) != len(indexes):
+        raise ValueError("Family indexes must be unique")
+    if any(index < 0 or index >= len(factories) for index in indexes):
+        raise ValueError("Family index is outside the benchmark family plan")
+    return tuple((index, factories[index]()) for index in indexes)
+
+
 def _json(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
 
@@ -222,144 +237,146 @@ def _sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def _classification_families() -> tuple[FamilySpec, ...]:
-    return (
-        FamilySpec("direct-material", (
+def _classification_families(family_indexes: Iterable[int] | None = None) -> tuple[FamilySpec, ...]:
+    factories = (
+        lambda: FamilySpec("direct-material", (
             {"prompt": "Return only METAL, WOOD, or GLASS. The sample is transparent, brittle, and made from fused silica.", "expected": "GLASS"},
             {"prompt": "Return only METAL, WOOD, or GLASS. The sample has visible grain, can splinter, and came from a maple board.", "expected": "WOOD"},
         )),
-        FamilySpec("numeric-band", (
+        lambda: FamilySpec("numeric-band", (
             {"prompt": "Classify a temperature as COLD below 5, MILD from 5 through 24, or HOT at 25 or above. Temperature: 24. Return one label.", "expected": "MILD"},
             {"prompt": "Classify a temperature as COLD below 5, MILD from 5 through 24, or HOT at 25 or above. Temperature: 5. Return one label.", "expected": "MILD"},
         )),
-        FamilySpec("document-routing", (
+        lambda: FamilySpec("document-routing", (
             {"prompt": "Route to BILLING if the request disputes a charge, TECH if software fails, otherwise GENERAL. Request: The app works, but I was charged twice. Return one label.", "expected": "BILLING"},
             {"prompt": "Route to BILLING if the request disputes a charge, TECH if software fails, otherwise GENERAL. Request: My invoice is fine, but sign-in shows error 403. Return one label.", "expected": "TECH"},
         )),
-        FamilySpec("priority-precedence", (
+        lambda: FamilySpec("priority-precedence", (
             {"prompt": "Assign P1 if safety is threatened; otherwise P2 if service is fully unavailable; otherwise P3. Report: checkout is unavailable and a decorative icon is misaligned. Return only P1, P2, or P3.", "expected": "P2"},
             {"prompt": "Assign P1 if safety is threatened; otherwise P2 if service is fully unavailable; otherwise P3. Report: service still works, but an exposed wire may shock staff. Return only P1, P2, or P3.", "expected": "P1"},
         )),
-        FamilySpec("refund-exception", (
+        lambda: FamilySpec("refund-exception", (
             {"prompt": "Label APPROVE when purchase age is at most 30 days, except opened hygiene items are always DENY. An opened toothbrush was bought 4 days ago. Return one label.", "expected": "DENY"},
             {"prompt": "Label APPROVE when purchase age is at most 30 days, except opened hygiene items are always DENY. A sealed lamp was bought 29 days ago. Return one label.", "expected": "APPROVE"},
         )),
-        FamilySpec("risk-matrix", (
+        lambda: FamilySpec("risk-matrix", (
             {"prompt": "Risk is HIGH when impact is high and likelihood is medium or high; MEDIUM when exactly one dimension is high; otherwise LOW. Impact high, likelihood low. Return one label.", "expected": "MEDIUM"},
             {"prompt": "Risk is HIGH when impact is high and likelihood is medium or high; MEDIUM when exactly one dimension is high; otherwise LOW. Impact medium, likelihood high. Return one label.", "expected": "MEDIUM"},
         )),
-        FamilySpec("inventory-state", (
+        lambda: FamilySpec("inventory-state", (
             {"prompt": "Label OUT if stock is zero; BACKORDER if stock is positive but below reserved quantity; READY otherwise. Stock 4, reserved 7, incoming 20. Incoming is a distractor. Return one label.", "expected": "BACKORDER"},
             {"prompt": "Label OUT if stock is zero; BACKORDER if stock is positive but below reserved quantity; READY otherwise. Stock 8, reserved 8, incoming 0. Return one label.", "expected": "READY"},
         )),
-        FamilySpec("access-policy", (
+        lambda: FamilySpec("access-policy", (
             {"prompt": "Access is ALLOW if the user is active and has the required role, unless the account is suspended; suspended always means DENY. Active editor, required role editor, suspended yes. Return one label.", "expected": "DENY"},
             {"prompt": "Access is ALLOW if the user is active and has the required role, unless the account is suspended. Active viewer, required role editor, suspended no. Return one label.", "expected": "DENY"},
         )),
-        FamilySpec("sla-clock", (
+        lambda: FamilySpec("sla-clock", (
             {"prompt": "Label BREACH if elapsed business hours exceed the tier limit: gold 4, silver 8, bronze 16. Gold ticket elapsed 4 hours; calendar age 2 days is irrelevant. Return BREACH or WITHIN.", "expected": "WITHIN"},
             {"prompt": "Label BREACH if elapsed business hours exceed the tier limit: gold 4, silver 8, bronze 16. Silver ticket elapsed 9 business hours. Return BREACH or WITHIN.", "expected": "BREACH"},
         )),
-        FamilySpec("travel-policy", (
+        lambda: FamilySpec("travel-policy", (
             {"prompt": "Label REIMBURSE when a trip is approved and the receipt is present. For meals over $50, manager sign-off is also required. Approved trip, $68 meal, receipt yes, sign-off no. Return one label.", "expected": "DENY"},
             {"prompt": "Label REIMBURSE when a trip is approved and the receipt is present. For meals over $50, manager sign-off is also required. Approved trip, $42 meal, receipt yes, sign-off no. Return one label.", "expected": "REIMBURSE"},
         )),
-        FamilySpec("retention-rule", (
+        lambda: FamilySpec("retention-rule", (
             {"prompt": "Classify KEEP, DELETE, or LEGAL_HOLD. Legal hold overrides all rules. Otherwise delete expired records and keep unexpired records. Record expired yes; legal hold yes. Return one label.", "expected": "LEGAL_HOLD"},
             {"prompt": "Classify KEEP, DELETE, or LEGAL_HOLD. Legal hold overrides all rules. Otherwise delete expired records and keep unexpired records. Record expired yes; legal hold no. Return one label.", "expected": "DELETE"},
         )),
-        FamilySpec("subscription-eligibility", (
+        lambda: FamilySpec("subscription-eligibility", (
             {"prompt": "Label ELIGIBLE if age is at least 18 and country is supported. Students aged 16–17 are also eligible only with guardian consent. Age 17, student yes, supported country yes, consent no. Return one label.", "expected": "INELIGIBLE"},
             {"prompt": "Label ELIGIBLE if age is at least 18 and country is supported. Students aged 16–17 are also eligible only with guardian consent. Age 16, student yes, supported country yes, consent yes. Return one label.", "expected": "ELIGIBLE"},
         )),
-        FamilySpec("incident-cause", (
+        lambda: FamilySpec("incident-cause", (
             {"prompt": "Classify NETWORK, DATABASE, or APPLICATION. If database health is failed, choose DATABASE even when application errors appear. Otherwise packet loss over 10% means NETWORK; otherwise APPLICATION. DB failed, packet loss 18%, app errors 90. Return one label.", "expected": "DATABASE"},
             {"prompt": "Classify NETWORK, DATABASE, or APPLICATION. If database health is failed, choose DATABASE. Otherwise packet loss over 10% means NETWORK; otherwise APPLICATION. DB healthy, packet loss 12%, app errors 40. Return one label.", "expected": "NETWORK"},
         )),
-        FamilySpec("shipping-service", (
+        lambda: FamilySpec("shipping-service", (
             {"prompt": "Choose GROUND, AIR, or REJECT. Hazardous items are REJECT. Otherwise choose AIR when weight <=2 kg and deadline <=2 days; choose GROUND otherwise. Weight 1 kg, deadline 1 day, hazardous yes. Return one label.", "expected": "REJECT"},
             {"prompt": "Choose GROUND, AIR, or REJECT. Hazardous items are REJECT. Otherwise choose AIR when weight <=2 kg and deadline <=2 days; choose GROUND otherwise. Weight 3 kg, deadline 1 day, hazardous no. Return one label.", "expected": "GROUND"},
         )),
-        FamilySpec("support-escalation", (
+        lambda: FamilySpec("support-escalation", (
             {"prompt": "Label ESCALATE if two failed fixes occurred, or immediately for security issues. Do not count a diagnostic check as a fix. History: diagnostic check, password reset failed, cache clear failed; no security issue. Return one label.", "expected": "ESCALATE"},
             {"prompt": "Label ESCALATE if two failed fixes occurred, or immediately for security issues. History: three diagnostic checks and one failed reinstall; security issue no. Return ESCALATE or CONTINUE.", "expected": "CONTINUE"},
         )),
-        FamilySpec("compliance-hierarchy", (
+        lambda: FamilySpec("compliance-hierarchy", (
             {"prompt": "Classify BLOCK, REVIEW, or PASS. Sanctions match means BLOCK. Otherwise missing ownership data means REVIEW. Otherwise PASS. A sanctions match exists and ownership data is missing. Return one label.", "expected": "BLOCK"},
             {"prompt": "Classify BLOCK, REVIEW, or PASS. Sanctions match means BLOCK. Otherwise missing ownership data means REVIEW. Otherwise PASS. No sanctions match; ownership data missing; identity verified. Return one label.", "expected": "REVIEW"},
         )),
     )
+    return tuple(value for _, value in _materialize_family_inputs(factories, family_indexes))
 
 
-def _coding_families() -> tuple[FamilySpec, ...]:
-    specs = (
-        ("clamp-sequence", "clamp_values", 3,
+def _coding_families(family_indexes: Iterable[int] | None = None) -> tuple[FamilySpec, ...]:
+    spec_factories = (
+        lambda: ("clamp-sequence", "clamp_values", 3,
          "Return a new list with every number limited to the inclusive [low, high] range. Do not mutate inputs.",
          "def clamp_values(values, low, high):\n    return [min(high, max(low, x)) for x in values]",
          [([[1, -2, 9], 0, 5], [1, 0, 5]), ([[], 0, 1], []), ([[3, 3], 3, 3], [3, 3]), ([[-5, 2], -2, 4], [-2, 2])]),
-        ("collapse-whitespace", "normalize_spaces", 1,
+        lambda: ("collapse-whitespace", "normalize_spaces", 1,
          "Collapse every run of whitespace to one ASCII space and strip the ends.",
          "def normalize_spaces(text):\n    return ' '.join(text.split())",
          [(["  a   b  "], "a b"), (["one\ntwo\tthree"], "one two three"), ([""], ""), (["solo"], "solo")]),
-        ("initial-histogram", "count_by_initial", 1,
+        lambda: ("initial-histogram", "count_by_initial", 1,
          "Return a mapping from each lowercase first character to its word count; ignore empty strings.",
          "def count_by_initial(words):\n    out = {}\n    for word in words:\n        if word:\n            key = word[0].lower()\n            out[key] = out.get(key, 0) + 1\n    return out",
          [([["Apple", "ant", "Bee", ""]], {"a": 2, "b": 1}), ([[]], {}), ([["X", "x", "y"]], {"x": 2, "y": 1}), ([["9a", "9b"]], {"9": 2})]),
-        ("key-value-parser", "parse_pairs", 1,
+        lambda: ("key-value-parser", "parse_pairs", 1,
          "Parse strings formatted key=value. Trim both sides, ignore malformed entries, and let the last duplicate key win.",
          "def parse_pairs(lines):\n    out = {}\n    for line in lines:\n        if '=' in line:\n            key, value = line.split('=', 1)\n            key = key.strip()\n            if key:\n                out[key] = value.strip()\n    return out",
          [([["a=1", " bad ", "b = two"]], {"a": "1", "b": "two"}), ([["x=1", "x=2"]], {"x": "2"}), ([[]], {}), ([["=z", "q="]], {"q": ""})]),
-        ("cyclic-rotation", "rotate_left", 2,
+        lambda: ("cyclic-rotation", "rotate_left", 2,
          "Return a list rotated left by k positions. Support negative and oversized k; do not mutate the input.",
          "def rotate_left(items, k):\n    if not items:\n        return []\n    n = k % len(items)\n    return items[n:] + items[:n]",
          [([[1, 2, 3], 1], [2, 3, 1]), ([[1, 2, 3], 4], [2, 3, 1]), ([[1, 2, 3], -1], [3, 1, 2]), ([[], 5], [])]),
-        ("stable-score-ranking", "rank_scores", 1,
+        lambda: ("stable-score-ranking", "rank_scores", 1,
          "Input records are [name, score]. Return names sorted by descending score, breaking ties alphabetically.",
          "def rank_scores(records):\n    return [row[0] for row in sorted(records, key=lambda row: (-row[1], row[0]))]",
          [([[['b', 2], ['a', 2], ['c', 1]]], ["a", "b", "c"]), ([[]], []), ([[['z', -1], ['x', 3]]], ["x", "z"]), ([[['a', 1]]], ["a"])]),
-        ("merge-adjacent-intervals", "merge_intervals", 1,
+        lambda: ("merge-adjacent-intervals", "merge_intervals", 1,
          "Merge closed integer intervals that overlap or are adjacent. Adjacent means next_start <= current_end + 1. Return sorted [start,end] lists.",
          "def merge_intervals(intervals):\n    ordered = sorted(intervals)\n    out = []\n    for start, end in ordered:\n        if not out or start > out[-1][1] + 1:\n            out.append([start, end])\n        else:\n            out[-1][1] = max(out[-1][1], end)\n    return out",
          [([[[1, 2], [3, 4], [8, 9]]], [[1, 4], [8, 9]]), ([[]], []), ([[[5, 7], [1, 3], [2, 6]]], [[1, 7]]), ([[[-2, -1], [1, 1]]], [[-2, -1], [1, 1]])]),
-        ("balanced-delimiters", "balanced_brackets", 1,
+        lambda: ("balanced-delimiters", "balanced_brackets", 1,
          "Return true exactly when (), [], and {} delimiters are correctly nested; ignore other characters.",
          "def balanced_brackets(text):\n    pairs = {')': '(', ']': '[', '}': '{'}\n    stack = []\n    for ch in text:\n        if ch in '([{':\n            stack.append(ch)\n        elif ch in pairs:\n            if not stack or stack.pop() != pairs[ch]:\n                return False\n    return not stack",
          [(["([{}])"], True), (["([)]"], False), (["abc"], True), (["("], False)]),
-        ("unweighted-shortest-path", "shortest_hops", 3,
+        lambda: ("unweighted-shortest-path", "shortest_hops", 3,
          "Edges are directed [from,to] pairs. Return the minimum hop count from start to end, or -1 if unreachable.",
          "def shortest_hops(edges, start, end):\n    if start == end:\n        return 0\n    queue = [[start, 0]]\n    seen = {start}\n    for node, dist in queue:\n        for left, right in edges:\n            if left == node and right not in seen:\n                if right == end:\n                    return dist + 1\n                seen.add(right)\n                queue.append([right, dist + 1])\n    return -1",
          [([[['a', 'b'], ['b', 'c']], 'a', 'c'], 2), ([[['a', 'b']], 'b', 'a'], -1), ([[], 'x', 'x'], 0), ([[['a', 'c'], ['a', 'b'], ['b', 'c']], 'a', 'c'], 1)]),
-        ("nested-group-total", "nested_sum", 1,
+        lambda: ("nested-group-total", "nested_sum", 1,
          "Input is a list of integer lists. Return the sum of every integer across all groups.",
          "def nested_sum(groups):\n    return sum(sum(group) for group in groups)",
          [([[[1], [2, 3], []]], 6), ([[[5]]], 5), ([[]], 0), ([[[-1], [4, 2]]], 5)]),
-        ("longest-nondecreasing", "longest_nondecreasing", 1,
+        lambda: ("longest-nondecreasing", "longest_nondecreasing", 1,
          "Return the length of the longest non-contiguous nondecreasing subsequence.",
          "def longest_nondecreasing(values):\n    if not values:\n        return 0\n    best = [1] * len(values)\n    for i in range(len(values)):\n        for j in range(i):\n            if values[j] <= values[i]:\n                best[i] = max(best[i], best[j] + 1)\n    return max(best)",
          [([[3, 1, 2, 2, 4]], 4), ([[]], 0), ([[5, 4, 3]], 1), ([[1, 1, 1]], 3)]),
-        ("slug-validation", "valid_slug", 1,
+        lambda: ("slug-validation", "valid_slug", 1,
          "Return true for nonempty lowercase slugs containing only a-z, digits, and single hyphens, with no leading or trailing hyphen.",
          "def valid_slug(text):\n    if not text or text[0] == '-' or text[-1] == '-':\n        return False\n    previous = ''\n    for ch in text:\n        if not (ch.isdigit() or ('a' <= ch <= 'z') or ch == '-'):\n            return False\n        if ch == '-' and previous == '-':\n            return False\n        previous = ch\n    return True",
          [(["alpha-2"], True), (["-alpha"], False), (["two--parts"], False), (["Alpha"], False)]),
-        ("run-length-encoding", "run_length_encode", 1,
+        lambda: ("run-length-encoding", "run_length_encode", 1,
          "Return consecutive character runs as [[character,count], ...]. Preserve case and order.",
          "def run_length_encode(text):\n    out = []\n    for ch in text:\n        if out and out[-1][0] == ch:\n            out[-1][1] += 1\n        else:\n            out.append([ch, 1])\n    return out",
          [(["aaabb"], [["a", 3], ["b", 2]]), ([""], []), (["aAa"], [["a", 1], ["A", 1], ["a", 1]]), (["xxx"], [["x", 3]])]),
-        ("rolling-window-sums", "window_sums", 2,
+        lambda: ("rolling-window-sums", "window_sums", 2,
          "Return sums of every contiguous window of size k. Return [] when k <= 0 or k exceeds the list length.",
          "def window_sums(values, k):\n    if k <= 0 or k > len(values):\n        return []\n    return [sum(values[i:i+k]) for i in range(len(values)-k+1)]",
          [([[1, 2, 3, 4], 2], [3, 5, 7]), ([[1], 1], [1]), ([[1, 2], 3], []), ([[2, -2, 2], 2], [0, 0])]),
-        ("transaction-state", "apply_transactions", 2,
+        lambda: ("transaction-state", "apply_transactions", 2,
          "Apply signed transactions in order. Skip any transaction that would make balance negative. Return the final balance.",
          "def apply_transactions(balance, transactions):\n    for amount in transactions:\n        if balance + amount >= 0:\n            balance += amount\n    return balance",
          [([10, [-3, -8, 5]], 12), ([0, [-1, 2]], 2), ([5, []], 5), ([3, [-3, -1]], 0)]),
-        ("dependency-readiness", "ready_steps", 2,
+        lambda: ("dependency-readiness", "ready_steps", 2,
          "Dependencies map each step to prerequisite names. Return alphabetically sorted incomplete steps whose prerequisites are all completed.",
          "def ready_steps(dependencies, completed):\n    done = set(completed)\n    return sorted(step for step, needs in dependencies.items() if step not in done and all(item in done for item in needs))",
          [([{"build": ["test"], "test": ["code"], "code": []}, ["code"]], ["test"]), ([{}, []], []), ([{"a": [], "b": []}, []], ["a", "b"]), ([{"a": ["x"]}, ["a", "x"]], [])]),
     )
     families = []
-    for index, (slug, function_name, parameters, behavior, source, cases) in enumerate(specs):
+    for index, spec in _materialize_family_inputs(spec_factories, family_indexes):
+        slug, function_name, parameters, behavior, source, cases = spec
         midpoint = max(2, len(cases) // 2)
         variants = []
         for variant in range(2):
@@ -382,255 +399,260 @@ def _coding_families() -> tuple[FamilySpec, ...]:
     return tuple(families)
 
 
-def _extraction_families() -> tuple[FamilySpec, ...]:
-    pairs = (
-        ("contact-prose",
+def _extraction_families(family_indexes: Iterable[int] | None = None) -> tuple[FamilySpec, ...]:
+    pair_factories = (
+        lambda: ("contact-prose",
          ("Return JSON only with name and email. Contact: Mira Chen can be reached at mira@example.com; her office color is blue.", {"name": "Mira Chen", "email": "mira@example.com"}),
          ("Return JSON only with name and email. Contact: Omar Vale, phone 555-0100, email omar@sample.org.", {"name": "Omar Vale", "email": "omar@sample.org"})),
-        ("invoice-header",
+        lambda: ("invoice-header",
          ("Extract invoice_id, date, and currency as JSON. Invoice INV-204 | issued 2026-02-03 | currency USD | page 1 of 2.", {"invoice_id": "INV-204", "date": "2026-02-03", "currency": "USD"}),
          ("Extract invoice_id, date, and currency as JSON. Currency: EUR; issued: 2026-05-19; invoice: Q-77; draft marker: no.", {"invoice_id": "Q-77", "date": "2026-05-19", "currency": "EUR"})),
-        ("latest-error-log",
+        lambda: ("latest-error-log",
          ("Return JSON with latest_error {time,code}. Logs: 09:00 INFO start; 09:04 ERROR E12 disk; 09:06 WARN slow; 09:08 ERROR E19 network.", {"latest_error": {"time": "09:08", "code": "E19"}}),
          ("Return JSON with latest_error {time,code}. Logs: 14:10 ERROR X2 auth; 14:11 INFO retry; 14:15 ERROR X5 quota; 14:16 INFO stop.", {"latest_error": {"time": "14:15", "code": "X5"}})),
-        ("text-table-filter",
+        lambda: ("text-table-filter",
          ("Return JSON {active_ids:[...]} preserving table order. Table: id|state|owner; A1|active|Lee; B2|paused|Lee; C3|active|Noor.", {"active_ids": ["A1", "C3"]}),
          ("Return JSON {active_ids:[...]} preserving table order. Rows: K9|closed|Ari; J2|active|Bo; M4|active|Cy; N1|paused|Di.", {"active_ids": ["J2", "M4"]})),
-        ("optional-field",
+        lambda: ("optional-field",
          ("Extract JSON {id,owner,deadline}. Use null when deadline is absent. Record R8 owner Inez; priority high; no deadline supplied.", {"id": "R8", "owner": "Inez", "deadline": None}),
          ("Extract JSON {id,owner,deadline}. Use null when deadline is absent. Record T3 owner Pavel, deadline 2026-11-02, note pending.", {"id": "T3", "owner": "Pavel", "deadline": "2026-11-02"})),
-        ("repeated-entity-total",
+        lambda: ("repeated-entity-total",
          ("Return JSON {customer,total}. Entries: Ada +$12; Ben +$7; Ada -$2; Ada +$5. Target customer Ada.", {"customer": "Ada", "total": 15}),
          ("Return JSON {customer,total}. Entries: Sol +$9; Uma +$4; Sol +$3; Uma -$1. Target customer Uma.", {"customer": "Uma", "total": 3})),
-        ("nested-shipment",
+        lambda: ("nested-shipment",
          ("Extract JSON {shipment_id,destination:{city,country},packages}. Shipment S-5 has 3 packages. Destination city Lima, country PE. Origin Quito EC.", {"shipment_id": "S-5", "destination": {"city": "Lima", "country": "PE"}, "packages": 3}),
          ("Extract JSON {shipment_id,destination:{city,country},packages}. Origin Oslo NO; shipment Z-2; destination Riga LV; packages 1.", {"shipment_id": "Z-2", "destination": {"city": "Riga", "country": "LV"}, "packages": 1})),
-        ("section-precedence",
+        lambda: ("section-precedence",
          ("Return JSON {status,owner} using the FINAL section, not DRAFT. DRAFT status=open owner=Kai. FINAL status=closed owner=Ruth.", {"status": "closed", "owner": "Ruth"}),
          ("Return JSON {status,owner} using the APPROVED section. PROPOSED status=hold owner=Max. APPROVED status=active owner=Liv.", {"status": "active", "owner": "Liv"})),
-        ("unit-bearing-measurement",
+        lambda: ("unit-bearing-measurement",
          ("Extract JSON {value,unit,sensor}. Sensor TH-2 reports 18.4 C; threshold 22 C; battery 90%.", {"value": 18.4, "unit": "C", "sensor": "TH-2"}),
          ("Extract JSON {value,unit,sensor}. Battery 71%; sensor PR-8 reports 101.3 kPa; alert threshold 99.", {"value": 101.3, "unit": "kPa", "sensor": "PR-8"})),
-        ("multi-party-action",
+        lambda: ("multi-party-action",
          ("Return JSON {approver,requester,amount}. Jules requested $480. Nia reviewed it. Omar approved the request.", {"approver": "Omar", "requester": "Jules", "amount": 480}),
          ("Return JSON {approver,requester,amount}. Priya approved after Chen requested $75; Mateo merely copied the note.", {"approver": "Priya", "requester": "Chen", "amount": 75})),
-        ("keyed-list-order",
+        lambda: ("keyed-list-order",
          ("Return JSON {items:[{sku,qty}]} sorted by sku. Manifest: Z9 qty2; A1 qty5; M3 qty1. Ignore prices.", {"items": [{"sku": "A1", "qty": 5}, {"sku": "M3", "qty": 1}, {"sku": "Z9", "qty": 2}]}),
          ("Return JSON {items:[{sku,qty}]} sorted by sku. Manifest: C2 qty4; B7 qty1. Warehouse west.", {"items": [{"sku": "B7", "qty": 1}, {"sku": "C2", "qty": 4}]})),
-        ("event-window",
+        lambda: ("event-window",
          ("Return JSON {events:[...]} containing event names from 10:00 through 10:30 inclusive. 09:55 boot; 10:00 login; 10:12 upload; 10:31 logout.", {"events": ["login", "upload"]}),
          ("Return JSON {events:[...]} containing event names from 15:10 through 15:20 inclusive. 15:09 open; 15:10 edit; 15:20 save; 15:21 close.", {"events": ["edit", "save"]})),
-        ("cross-line-record",
+        lambda: ("cross-line-record",
          ("Return JSON {case_id,patient,medication}. Case C44. Patient: Lena Ortiz. Notes continue below. Prescribed medication: amoxicillin. Nurse: Bo.", {"case_id": "C44", "patient": "Lena Ortiz", "medication": "amoxicillin"}),
          ("Return JSON {case_id,patient,medication}. Patient Ravi Sen is in case D12. Clinician note: medication metformin; follow-up Friday.", {"case_id": "D12", "patient": "Ravi Sen", "medication": "metformin"})),
-        ("conditional-record-selection",
+        lambda: ("conditional-record-selection",
          ("Return JSON for the highest-version approved record as {id,version,owner}. R1 v2 draft Mia; R1 v1 approved Jon; R1 v3 approved Zoe.", {"id": "R1", "version": 3, "owner": "Zoe"}),
          ("Return JSON for the highest-version approved record as {id,version,owner}. K2 v4 rejected Ali; K2 v2 approved Bea; K2 v3 approved Cy.", {"id": "K2", "version": 3, "owner": "Cy"})),
-        ("paired-source-join",
+        lambda: ("paired-source-join",
          ("Join by product_id and return JSON {product,name,stock}. Catalog: P1=Pen, P2=Book. Inventory: P2=7, P1=12. Target P2.", {"product": "P2", "name": "Book", "stock": 7}),
          ("Join by product_id and return JSON {product,name,stock}. Catalog: X4=Lamp, X5=Desk. Inventory: X5=2, X4=9. Target X4.", {"product": "X4", "name": "Lamp", "stock": 9})),
-        ("exception-aware-roles",
+        lambda: ("exception-aware-roles",
          ("Return JSON {primary,backup}. Team list says primary=Ada backup=Ben. Exception notice effective today swaps primary to Cy but leaves backup unchanged.", {"primary": "Cy", "backup": "Ben"}),
          ("Return JSON {primary,backup}. Roster primary=Dee backup=Eli. Override says Eli becomes primary and Fran becomes backup.", {"primary": "Eli", "backup": "Fran"})),
     )
+    pairs = (value for _, value in _materialize_family_inputs(pair_factories, family_indexes))
     return tuple(FamilySpec(slug, (
         {"prompt": first[0], "expected": first[1]},
         {"prompt": second[0], "expected": second[1]},
     )) for slug, first, second in pairs)
 
 
-def _json_families() -> tuple[FamilySpec, ...]:
-    pairs = (
-        ("flat-profile",
+def _json_families(family_indexes: Iterable[int] | None = None) -> tuple[FamilySpec, ...]:
+    pair_factories = (
+        lambda: ("flat-profile",
          ("Return JSON only: {name,age,active}. Name Niko; age 31; active yes.", {"name": "Niko", "age": 31, "active": True}),
          ("Return JSON only: {name,age,active}. Active no; age 44; name Sara.", {"name": "Sara", "age": 44, "active": False})),
-        ("filter-array",
+        lambda: ("filter-array",
          ("Return JSON {ids:[...]} for enabled records in input order. A enabled, B disabled, C enabled.", {"ids": ["A", "C"]}),
          ("Return JSON {ids:[...]} for enabled records in input order. X disabled, Y enabled, Z disabled.", {"ids": ["Y"]})),
-        ("nested-address",
+        lambda: ("nested-address",
          ("Return JSON {user:{id,address:{city,zip}}}. User U1 lives in Reno, zip 89501.", {"user": {"id": "U1", "address": {"city": "Reno", "zip": "89501"}}}),
          ("Return JSON {user:{id,address:{city,zip}}}. City Boise, user U8, zip 83702.", {"user": {"id": "U8", "address": {"city": "Boise", "zip": "83702"}}})),
-        ("enum-mapping",
+        lambda: ("enum-mapping",
          ("Return JSON {ticket,status}. Map new->OPEN, working->IN_PROGRESS, done->CLOSED. Ticket T2 is working.", {"ticket": "T2", "status": "IN_PROGRESS"}),
          ("Return JSON {ticket,status}. Map new->OPEN, working->IN_PROGRESS, done->CLOSED. Ticket T7 is done.", {"ticket": "T7", "status": "CLOSED"})),
-        ("nullable-field",
+        lambda: ("nullable-field",
          ("Return JSON {id,assignee}. Use null if unassigned. Item A4 is unassigned.", {"id": "A4", "assignee": None}),
          ("Return JSON {id,assignee}. Use null if unassigned. Item B9 is assigned to Jo.", {"id": "B9", "assignee": "Jo"})),
-        ("sorted-ranking",
+        lambda: ("sorted-ranking",
          ("Return JSON {ranking:[{name,score}]} sorted score descending then name. Bea 8, Ana 8, Cy 5.", {"ranking": [{"name": "Ana", "score": 8}, {"name": "Bea", "score": 8}, {"name": "Cy", "score": 5}]}),
          ("Return JSON {ranking:[{name,score}]} sorted score descending then name. Xu 3, Wen 9, Zoe 9.", {"ranking": [{"name": "Wen", "score": 9}, {"name": "Zoe", "score": 9}, {"name": "Xu", "score": 3}]})),
-        ("grouped-counts",
+        lambda: ("grouped-counts",
          ("Return JSON {counts:{...}} counting statuses. Records: open, closed, open, hold. Include only observed statuses.", {"counts": {"closed": 1, "hold": 1, "open": 2}}),
          ("Return JSON {counts:{...}} counting regions. Records: east, west, east, east. Include only observed regions.", {"counts": {"east": 3, "west": 1}})),
-        ("conditional-field",
+        lambda: ("conditional-field",
          ("Return JSON {id,state,error}. Include error as a string only when state=failed; otherwise null. Job J3 failed with timeout.", {"id": "J3", "state": "failed", "error": "timeout"}),
          ("Return JSON {id,state,error}. Include error as a string only when state=failed; otherwise null. Job J8 completed; an old timeout note is irrelevant.", {"id": "J8", "state": "completed", "error": None})),
-        ("deduplicated-array",
+        lambda: ("deduplicated-array",
          ("Return JSON {tags:[...]} with first-occurrence order and duplicates removed. Tags: red, blue, red, green, blue.", {"tags": ["red", "blue", "green"]}),
          ("Return JSON {tags:[...]} with first-occurrence order and duplicates removed. Tags: api, web, api, cli.", {"tags": ["api", "web", "cli"]})),
-        ("joined-records",
+        lambda: ("joined-records",
          ("Return JSON {orders:[{id,customer}]} joining customer IDs. Customers C1=Ada, C2=Bo. Orders O2:C2, O1:C1. Sort by order id.", {"orders": [{"id": "O1", "customer": "Ada"}, {"id": "O2", "customer": "Bo"}]}),
          ("Return JSON {orders:[{id,customer}]} joining customer IDs. Customers K1=Ira, K2=Lee. Orders R3:K1, R1:K2. Sort by order id.", {"orders": [{"id": "R1", "customer": "Lee"}, {"id": "R3", "customer": "Ira"}]})),
-        ("cross-field-status",
+        lambda: ("cross-field-status",
          ("Return JSON {id,total,status}. total=qty*unit_price. status is LARGE when total>=100 else SMALL. id A, qty 6, unit_price 20.", {"id": "A", "total": 120, "status": "LARGE"}),
          ("Return JSON {id,total,status}. total=qty*unit_price. status is LARGE when total>=100 else SMALL. id B, qty 4, unit_price 24.", {"id": "B", "total": 96, "status": "SMALL"})),
-        ("hierarchy-tree",
+        lambda: ("hierarchy-tree",
          ("Return JSON {department,teams:[{name,lead}]}. Department Ops; teams: Infra led by Mei, Support led by Raj. Preserve order.", {"department": "Ops", "teams": [{"name": "Infra", "lead": "Mei"}, {"name": "Support", "lead": "Raj"}]}),
          ("Return JSON {department,teams:[{name,lead}]}. Department Product; teams: Core led by Liv, Labs led by Noa. Preserve order.", {"department": "Product", "teams": [{"name": "Core", "lead": "Liv"}, {"name": "Labs", "lead": "Noa"}]})),
-        ("schedule-slots",
+        lambda: ("schedule-slots",
          ("Return JSON {free:[...]} for hourly slots not occupied. Candidate slots [9,10,11,12], occupied [10,12].", {"free": [9, 11]}),
          ("Return JSON {free:[...]} for hourly slots not occupied. Candidate slots [13,14,15], occupied [14].", {"free": [13, 15]})),
-        ("invoice-aggregation",
+        lambda: ("invoice-aggregation",
          ("Return JSON {subtotal,tax,total}. Lines 2*$10 and 1*$5; tax rate 0.10. Use numbers.", {"subtotal": 25, "tax": 2.5, "total": 27.5}),
          ("Return JSON {subtotal,tax,total}. Lines 3*$8 and 2*$3; tax rate 0.20. Use numbers.", {"subtotal": 30, "tax": 6, "total": 36})),
-        ("permission-matrix",
+        lambda: ("permission-matrix",
          ("Return JSON {users:[{name,permissions}]} sorted by name. Roles: editor=[read,write], viewer=[read]. Users Zoe viewer, Ana editor.", {"users": [{"name": "Ana", "permissions": ["read", "write"]}, {"name": "Zoe", "permissions": ["read"]}]}),
          ("Return JSON {users:[{name,permissions}]} sorted by name. Roles: admin=[read,write,delete], viewer=[read]. Users Bo admin, Cy viewer.", {"users": [{"name": "Bo", "permissions": ["read", "write", "delete"]}, {"name": "Cy", "permissions": ["read"]}]})),
-        ("rule-derived-summary",
+        lambda: ("rule-derived-summary",
          ("Return JSON {eligible,ineligible}. Minimum score 70 and attendance 80. Ada 72/81, Ben 90/60, Cy 69/99. Lists sorted.", {"eligible": ["Ada"], "ineligible": ["Ben", "Cy"]}),
          ("Return JSON {eligible,ineligible}. Minimum score 60 and attendance 75. Dio 60/75, Eve 59/100, Fox 88/74. Lists sorted.", {"eligible": ["Dio"], "ineligible": ["Eve", "Fox"]})),
     )
+    pairs = (value for _, value in _materialize_family_inputs(pair_factories, family_indexes))
     return tuple(FamilySpec(slug, (
         {"prompt": first[0], "expected": first[1]},
         {"prompt": second[0], "expected": second[1]},
     )) for slug, first, second in pairs)
 
 
-def _qa_families() -> tuple[FamilySpec, ...]:
-    pairs = (
-        ("direct-location",
+def _qa_families(family_indexes: Iterable[int] | None = None) -> tuple[FamilySpec, ...]:
+    pair_factories = (
+        lambda: ("direct-location",
          ("Context: The cobalt binder is in drawer 6. The amber binder is in drawer 2. Question: Where is the cobalt binder? Answer with the drawer number only.", ["6", "drawer 6"]),
          ("Context: The north key is in locker 14; the south key is in locker 9. Question: Which locker holds the south key? Answer with the number only.", ["9", "locker 9"])),
-        ("attribute-lookup",
+        lambda: ("attribute-lookup",
          ("Context: Plan Birch costs $12 and supports 3 users. Plan Cedar costs $18 and supports 8 users. Question: How many users does Cedar support? Answer with a number.", ["8", "8 users"]),
          ("Context: Sensor A samples every 5 seconds. Sensor B samples every 12 seconds. Question: What is Sensor A's sampling interval? Answer in seconds.", ["5", "5 seconds"])),
-        ("two-fact-sum",
+        lambda: ("two-fact-sum",
          ("Context: Warehouse east has 17 boxes and warehouse west has 9. Two east boxes are damaged but still counted. Question: How many boxes are listed in total? Answer with a number.", ["26"]),
          ("Context: Team Red closed 14 tickets and Team Blue closed 11. Three reopened tickets are already included in those counts. Question: Total tickets closed? Answer with a number.", ["25"])),
-        ("temporal-latest",
+        lambda: ("temporal-latest",
          ("Context: On Monday the owner was Ari. On Wednesday ownership moved to Bea. On Friday Bea delegated review to Cy but retained ownership. Question: Who owns the item after Friday?", ["Bea"]),
          ("Context: Version 1 used port 80. Version 2 changed to 8080. Version 3 changed logging only. Question: Which port does version 3 use?", ["8080", "port 8080"])),
-        ("difference-comparison",
+        lambda: ("difference-comparison",
          ("Context: Route Pine is 42 km and Route Oak is 35 km. Both include the same 4 km tunnel. Question: How many kilometers longer is Pine than Oak?", ["7", "7 km", "7 kilometers"]),
          ("Context: Report A has 118 pages and Report B has 93 pages. Appendices are included. Question: By how many pages is A longer?", ["25", "25 pages"])),
-        ("exception-owner",
+        lambda: ("exception-owner",
          ("Context: Requests normally go to Mina. Hardware requests go to Sol instead. Emergency requests go to Teo regardless of type. This is an emergency hardware request. Question: Who receives it?", ["Teo"]),
          ("Context: Reviews go to Ana, except finance reviews go to Bo. Confidential reviews go to Cy regardless of department. This review is finance and confidential. Who receives it?", ["Cy"])),
-        ("multi-passage-link",
+        lambda: ("multi-passage-link",
          ("Passage 1: Project Kestrel is managed by Lin. Passage 2: Lin's office is Building C. Passage 3: Project Heron is managed by Uma in Building A. Question: Which building houses Kestrel's manager?", ["Building C", "C"]),
          ("Passage 1: Dataset Delta belongs to team Quartz. Passage 2: Quartz reports to director Noel. Passage 3: Team Onyx reports to Priya. Question: Who directs the team that owns Delta?", ["Noel"])),
-        ("schedule-intersection",
+        lambda: ("schedule-intersection",
          ("Context: Mira is available Tuesday and Thursday. Oren is available Monday, Thursday, Friday. The room is free Wednesday and Thursday. Question: On which day can all meet?", ["Thursday"]),
          ("Context: Team A can deploy at 10:00 or 14:00. Team B can deploy at 09:00 or 14:00. The change window permits 14:00 or 16:00. Which time works for all?", ["14:00", "14:00 hours"])),
-        ("conditional-count",
+        lambda: ("conditional-count",
          ("Context: Orders A=$40 paid, B=$70 unpaid, C=$30 paid, D=$60 paid. Only paid orders of at least $40 qualify. Question: How many qualify?", ["2"]),
          ("Context: Devices P active age2, Q inactive age1, R active age5, S active age1. Only active devices younger than 3 years qualify. How many qualify?", ["2"])),
-        ("state-after-updates",
+        lambda: ("state-after-updates",
          ("Context: Balance starts at 30. A deposit adds 12, a purchase subtracts 9, and a reversed fee adds back 3. Question: Final balance?", ["36", "$36"]),
          ("Context: Tank starts with 50 liters. Use 18, add 7, then spill 4. Question: How many liters remain?", ["35", "35 liters"])),
-        ("rank-with-tie-rule",
+        lambda: ("rank-with-tie-rule",
          ("Context: Scores are Ana 9, Bo 12, Cy 12. Ties are broken alphabetically. Question: Who ranks first?", ["Bo"]),
          ("Context: Completion times: Li 8, Mo 6, Noa 6 minutes. Lower is better; ties alphabetical. Who ranks first?", ["Mo"])),
-        ("dependency-question",
+        lambda: ("dependency-question",
          ("Context: Publish requires Review. Review requires Draft. Draft is complete; Review is not. Question: What is the next incomplete prerequisite that can be worked on?", ["Review"]),
          ("Context: Launch requires Signoff and Training. Signoff is complete. Training requires Materials, which are complete. Training is incomplete. What should be completed next?", ["Training"])),
-        ("policy-date-window",
+        lambda: ("policy-date-window",
          ("Context: Returns are allowed within 14 days inclusive. Purchase was June 1 and return was June 15. Assume day difference is 14. Question: Is the return allowed? Answer yes or no.", ["yes"]),
          ("Context: Cancellation is free fewer than 48 hours before nothing; the rule actually says at least 48 hours before departure. Request is exactly 48 hours before. Is it free? Answer yes or no.", ["yes"])),
-        ("multi-step-rate",
+        lambda: ("multi-step-rate",
          ("Context: A machine makes 6 parts per hour for 4 hours. Three parts fail inspection. Question: How many passing parts remain?", ["21", "21 parts"]),
          ("Context: Four vans carry 8 crates each. Five crates are unloaded at stop one. How many remain on the vans?", ["27", "27 crates"])),
-        ("role-chain",
+        lambda: ("role-chain",
          ("Context: Eli mentors Faye. Faye mentors Gus. A mentor's mentor is called a grandmentor. Question: Who is Gus's grandmentor?", ["Eli"]),
          ("Context: Hana supervises Ivo. Ivo supervises Jae. The supervisor of one's supervisor is the senior supervisor. Who is Jae's senior supervisor?", ["Hana"])),
-        ("rule-and-fact-synthesis",
+        lambda: ("rule-and-fact-synthesis",
          ("Context: A parcel is express when marked urgent and under 5 kg, unless it contains glass. Parcel R is urgent, 3 kg, and contains glass. Express parcels use Dock 1; others use Dock 3. Which dock handles R?", ["Dock 3", "3"]),
          ("Context: A case is auto-approved when score>=80 and documents complete, unless fraud flag is set. Case Z score 91, documents complete, fraud flag set. Auto-approved cases go Queue A; others Queue B. Which queue receives Z?", ["Queue B", "B"])),
     )
+    pairs = (value for _, value in _materialize_family_inputs(pair_factories, family_indexes))
     return tuple(FamilySpec(slug, (
         {"prompt": first[0], "accepted": first[1]},
         {"prompt": second[0], "accepted": second[1]},
     )) for slug, first, second in pairs)
 
 
-def _reasoning_families() -> tuple[FamilySpec, ...]:
-    pairs = (
-        ("net-change",
+def _reasoning_families(family_indexes: Iterable[int] | None = None) -> tuple[FamilySpec, ...]:
+    pair_factories = (
+        lambda: ("net-change",
          ("A counter starts at 7, increases by 5, then decreases by 3. Return only the final integer.", "9", {"op": "net", "start": 7, "changes": [5, -3]}),
          ("A counter starts at 12, decreases by 8, then increases by 6. Return only the final integer.", "10", {"op": "net", "start": 12, "changes": [-8, 6]})),
-        ("weighted-total",
+        lambda: ("weighted-total",
          ("Three red tokens are worth 4 points each and two blue tokens are worth 7 each. Return only the total points.", "26", {"op": "weighted", "items": [[3, 4], [2, 7]]}),
          ("Five small boxes weigh 2 kg each and three large boxes weigh 6 kg each. Return only total kilograms.", "28", {"op": "weighted", "items": [[5, 2], [3, 6]]})),
-        ("ordered-middle",
+        lambda: ("ordered-middle",
          ("Lena finished before Omar. Priya finished after Omar. Return only the person in the middle.", "Omar", {"op": "middle", "order": ["Lena", "Omar", "Priya"]}),
          ("Task Cedar precedes Birch, and Birch precedes Aspen. Return only the middle task.", "Birch", {"op": "middle", "order": ["Cedar", "Birch", "Aspen"]})),
-        ("set-intersection",
+        lambda: ("set-intersection",
          ("Set A={mira,noa,sol}; Set B={noa,sol,uma}; Set C={sol,uma}. Return only the name present in all three.", "sol", {"op": "intersection", "sets": [["mira", "noa", "sol"], ["noa", "sol", "uma"], ["sol", "uma"]]}),
          ("Set A={red,blue,green}; Set B={blue,green}; Set C={green,yellow}. Return only the color in all sets.", "green", {"op": "intersection", "sets": [["red", "blue", "green"], ["blue", "green"], ["green", "yellow"]]})),
-        ("state-machine",
+        lambda: ("state-machine",
          ("State starts CLOSED. OPEN changes it to OPEN, LOCK changes OPEN to LOCKED, and OPEN has no effect while LOCKED. Apply OPEN, LOCK, OPEN. Return only the final state.", "LOCKED", {"op": "transitions", "start": "CLOSED", "events": ["OPEN", "LOCK", "OPEN"], "table": {"CLOSED|OPEN": "OPEN", "OPEN|LOCK": "LOCKED"}}),
          ("State starts IDLE. START makes RUNNING, PAUSE makes PAUSED only from RUNNING, and START from PAUSED makes RUNNING. Apply START, PAUSE, START. Return final state.", "RUNNING", {"op": "transitions", "start": "IDLE", "events": ["START", "PAUSE", "START"], "table": {"IDLE|START": "RUNNING", "RUNNING|PAUSE": "PAUSED", "PAUSED|START": "RUNNING"}})),
-        ("conditional-elimination",
+        lambda: ("conditional-elimination",
          ("Exactly one box contains a coin. Box A says 'not A'; Box B says 'coin in C'. Exactly one statement is true. Testing the possibilities gives one solution. Return A, B, or C.", "A", {"op": "literal", "answer": "A"}),
          ("Exactly one badge is gold: X, Y, or Z. Claim 1: 'X is gold.' Claim 2: 'Y is not gold.' Exactly one claim is true. Return the gold badge.", "Z", {"op": "literal", "answer": "Z"})),
-        ("capacity-allocation",
+        lambda: ("capacity-allocation",
          ("A van holds 10 units. Items A=6, B=4, C=5. Choose exactly two items without exceeding capacity and maximize used capacity. Return item letters alphabetically with no separator.", "AB", {"op": "best_pair", "weights": {"A": 6, "B": 4, "C": 5}, "capacity": 10}),
          ("A bin holds 12 units. Items D=7, E=5, F=4. Choose exactly two without exceeding capacity and maximize used capacity. Return letters alphabetically.", "DE", {"op": "best_pair", "weights": {"D": 7, "E": 5, "F": 4}, "capacity": 12})),
-        ("cyclic-schedule",
+        lambda: ("cyclic-schedule",
          ("A three-day cycle is Red, Blue, Green and repeats. Day 1 is Red. What color is day 8? Return only the color.", "Blue", {"op": "cycle", "values": ["Red", "Blue", "Green"], "index": 8}),
          ("A four-shift cycle is A, B, C, D and repeats. Shift 1 is A. What is shift 11?", "C", {"op": "cycle", "values": ["A", "B", "C", "D"], "index": 11})),
-        ("transitive-implication",
+        lambda: ("transitive-implication",
          ("Rules: if P then Q; if Q then R; if R then S. P is true. Return the furthest entailed letter only.", "S", {"op": "chain", "start": "P", "edges": [["P", "Q"], ["Q", "R"], ["R", "S"]]}),
          ("Rules: A implies C; C implies D; D implies F. A holds. Return the final entailed letter.", "F", {"op": "chain", "start": "A", "edges": [["A", "C"], ["C", "D"], ["D", "F"]]})),
-        ("meeting-slot",
+        lambda: ("meeting-slot",
          ("A is free {1,3,5}; B {2,3,5}; room {3,4}. Choose the earliest common slot. Return only the number.", "3", {"op": "earliest_intersection", "sets": [[1, 3, 5], [2, 3, 5], [3, 4]]}),
          ("X is free {4,6,8}; Y {5,6,8}; room {6,7,8}. Choose the earliest common slot.", "6", {"op": "earliest_intersection", "sets": [[4, 6, 8], [5, 6, 8], [6, 7, 8]]})),
-        ("assignment-enumeration",
+        lambda: ("assignment-enumeration",
          ("Assign Ana and Bo to distinct rooms 1 and 2. Ana cannot use room 2. Return assignments as Ana-room,Bo-room.", "Ana-1,Bo-2", {"op": "literal", "answer": "Ana-1,Bo-2"}),
          ("Assign Cy and Dee to distinct shifts M and N. Dee cannot take M. Return Cy-shift,Dee-shift.", "Cy-M,Dee-N", {"op": "literal", "answer": "Cy-M,Dee-N"})),
-        ("multi-rate-time",
+        lambda: ("multi-rate-time",
          ("A worker completes 3 units/hour for 2 hours, then 5 units/hour for 3 hours. Return total units.", "21", {"op": "weighted", "items": [[3, 2], [5, 3]]}),
          ("A pump moves 4 liters/minute for 5 minutes, then 2 liters/minute for 3 minutes. Return total liters.", "26", {"op": "weighted", "items": [[4, 5], [2, 3]]})),
-        ("exclusive-rules",
+        lambda: ("exclusive-rules",
          ("Choose one route. North is allowed only if dry. East is allowed only if daylight. South is allowed only if both wet and dark. It is wet and daylight. Only one route is allowed. Return the route.", "East", {"op": "literal", "answer": "East"}),
          ("Choose one door. Red opens with key and no alarm. Blue opens with code during day. Green opens only at night without alarm. It is day, no key, valid code, alarm off. Return the open door.", "Blue", {"op": "literal", "answer": "Blue"})),
-        ("bounded-path",
+        lambda: ("bounded-path",
          ("Directed edges: A->B, A->C, B->D, C->E, E->D. What is the minimum edge count from A to D? Return an integer.", "2", {"op": "shortest", "edges": [["A", "B"], ["A", "C"], ["B", "D"], ["C", "E"], ["E", "D"]], "start": "A", "end": "D"}),
          ("Directed edges: K->L, L->M, K->N, N->P, P->M. Minimum edges K to M?", "2", {"op": "shortest", "edges": [["K", "L"], ["L", "M"], ["K", "N"], ["N", "P"], ["P", "M"]], "start": "K", "end": "M"})),
-        ("constraint-ordering",
+        lambda: ("constraint-ordering",
          ("Arrange W,X,Y,Z. W before X; Y immediately before Z; X before Y. Return the unique order with no spaces.", "WXYZ", {"op": "permutation", "items": ["W", "X", "Y", "Z"], "before": [["W", "X"], ["X", "Y"]], "adjacent": [["Y", "Z"]]}),
          ("Arrange A,B,C,D. C immediately before D; A before C; B after D. Return the unique order.", "ACDB", {"op": "permutation", "items": ["A", "B", "C", "D"], "before": [["A", "C"], ["D", "B"]], "adjacent": [["C", "D"]]})),
-        ("resource-sequence",
+        lambda: ("resource-sequence",
          ("Start with 8 energy. Action A costs 3 and yields key; B costs 4 and requires key; C restores 2. Execute A,C,B. Return remaining energy.", "3", {"op": "net", "start": 8, "changes": [-3, 2, -4]}),
          ("Start with 10 credits. Step X costs 6 and unlocks Y; bonus adds 3; Y costs 5. Execute X, bonus, Y. Return credits.", "2", {"op": "net", "start": 10, "changes": [-6, 3, -5]})),
     )
+    pairs = (value for _, value in _materialize_family_inputs(pair_factories, family_indexes))
     return tuple(FamilySpec(slug, (
         {"prompt": first[0], "answer": first[1], "oracle": first[2]},
         {"prompt": second[0], "answer": second[1], "oracle": second[2]},
     )) for slug, first, second in pairs)
 
 
-def _summarization_families() -> tuple[FamilySpec, ...]:
-    sources = (
-        ("chronology", "On Monday the team opened the migration. Tuesday testing found a timezone bug. Wednesday the bug was fixed, and Thursday the migration completed. A separate office lunch occurred Friday.", ["testing found a timezone bug Tuesday", "the bug was fixed Wednesday", "the migration completed Thursday"], "the migration failed"),
-        ("ownership", "Maya drafted the policy, Rafi reviewed its legal terms, and Chen approved the final version. Inez attended the meeting but had no approval role.", ["Maya drafted the policy", "Rafi reviewed the legal terms", "Chen approved the final version"], "Inez approved the policy"),
-        ("incident", "At 09:10 an expired certificate blocked logins. Operations renewed it at 09:32, and access recovered by 09:36. No customer data was lost.", ["an expired certificate blocked logins", "operations renewed the certificate at 09:32", "access recovered by 09:36", "no customer data was lost"], "customer data was lost"),
-        ("quantitative", "The campaign reached 12,400 people, generated 620 visits, and produced 31 purchases. Spend was $1,550. The design team also tested three unused logos.", ["12,400 people were reached", "620 visits were generated", "31 purchases resulted", "spend was $1,550"], "the campaign made 620 purchases"),
-        ("policy-exception", "Employees may work remotely two days per week. New hires must work onsite during their first month, while documented accessibility accommodations can override that restriction.", ["remote work is allowed two days per week", "new hires must be onsite for their first month", "accessibility accommodations can override the restriction"], "new hires may always work remotely"),
-        ("change-over-time", "The original launch date was May 4. Supplier delays moved it to May 18. After expedited shipping, the final approved date became May 12.", ["the original date was May 4", "supplier delays moved it to May 18", "the final approved date is May 12"], "the final date is May 18"),
-        ("causal", "A cooling fan failed, causing the server to overheat and shut down. Replacing the fan restored normal temperature; the database required no repair.", ["a cooling fan failed and the server shut down", "replacing the fan restored normal temperature", "the database required no repair"], "the database caused the shutdown"),
-        ("multi-party-decision", "Asha proposed retaining the vendor. Bo favored a new bid. Cy abstained because of a conflict. The committee voted 4–2 to seek a new vendor.", ["Asha favored retaining the vendor", "Bo favored a new bid", "Cy abstained due to a conflict", "the committee voted 4–2 for a new vendor search"], "the vote retained the vendor"),
-        ("process", "To publish a report, an analyst uploads the draft, a reviewer resolves factual issues, and an editor approves formatting. Publication occurs only after all three stages pass.", ["the analyst uploads the draft", "a reviewer resolves factual issues", "an editor approves formatting", "publication requires all stages to pass"], "publication occurs before review"),
-        ("comparison", "Plan North costs $18 monthly and includes 20 GB. Plan South costs $24 and includes 50 GB plus roaming. Both include phone support.", ["North costs $18 and includes 20 GB", "South costs $24 and includes 50 GB plus roaming", "both include phone support"], "North includes more data than South"),
-        ("uncertainty", "The preliminary survey suggests demand may rise by 8–12%, but the sample is small and the estimate is not a forecast. A larger survey begins next month.", ["preliminary demand may rise 8–12%", "the sample is small", "the estimate is not a forecast", "a larger survey begins next month"], "demand will definitely rise 12%"),
-        ("nested-exception", "Standard refunds require a receipt within 30 days. Gifts may use an order number instead. Clearance items are never refundable unless defective.", ["standard refunds require a receipt within 30 days", "gifts may use an order number", "clearance items require a defect to be refundable"], "all clearance items are refundable"),
-        ("milestones", "The bridge design passed safety review in January. Funding was approved in March. Construction began in June and is scheduled to finish in November.", ["safety review passed in January", "funding was approved in March", "construction began in June", "completion is scheduled for November"], "construction finished in June"),
-        ("tradeoff", "Option A cuts latency by 30% but raises cost by 15%. Option B keeps cost flat and cuts latency by 10%. The team selected B because the budget is fixed.", ["A cuts latency 30% but raises cost 15%", "B keeps cost flat and cuts latency 10%", "the team selected B because the budget is fixed"], "the team selected A"),
-        ("handoff", "Support reproduced the defect and sent logs to Engineering. Engineering identified a parser bug and supplied a patch. Release Management scheduled the patch for Tuesday.", ["support reproduced the defect and sent logs", "engineering found a parser bug and supplied a patch", "release management scheduled Tuesday"], "support supplied the patch"),
-        ("mixed-signal", "Revenue rose 6% and customer count rose 9%, while average order value fell 3%. Management attributed growth to new customers, not larger purchases.", ["revenue rose 6%", "customer count rose 9%", "average order value fell 3%", "management attributed growth to new customers"], "larger purchases drove growth"),
+def _summarization_families(family_indexes: Iterable[int] | None = None) -> tuple[FamilySpec, ...]:
+    source_factories = (
+        lambda: ("chronology", "On Monday the team opened the migration. Tuesday testing found a timezone bug. Wednesday the bug was fixed, and Thursday the migration completed. A separate office lunch occurred Friday.", ["testing found a timezone bug Tuesday", "the bug was fixed Wednesday", "the migration completed Thursday"], "the migration failed"),
+        lambda: ("ownership", "Maya drafted the policy, Rafi reviewed its legal terms, and Chen approved the final version. Inez attended the meeting but had no approval role.", ["Maya drafted the policy", "Rafi reviewed the legal terms", "Chen approved the final version"], "Inez approved the policy"),
+        lambda: ("incident", "At 09:10 an expired certificate blocked logins. Operations renewed it at 09:32, and access recovered by 09:36. No customer data was lost.", ["an expired certificate blocked logins", "operations renewed the certificate at 09:32", "access recovered by 09:36", "no customer data was lost"], "customer data was lost"),
+        lambda: ("quantitative", "The campaign reached 12,400 people, generated 620 visits, and produced 31 purchases. Spend was $1,550. The design team also tested three unused logos.", ["12,400 people were reached", "620 visits were generated", "31 purchases resulted", "spend was $1,550"], "the campaign made 620 purchases"),
+        lambda: ("policy-exception", "Employees may work remotely two days per week. New hires must work onsite during their first month, while documented accessibility accommodations can override that restriction.", ["remote work is allowed two days per week", "new hires must be onsite for their first month", "accessibility accommodations can override the restriction"], "new hires may always work remotely"),
+        lambda: ("change-over-time", "The original launch date was May 4. Supplier delays moved it to May 18. After expedited shipping, the final approved date became May 12.", ["the original date was May 4", "supplier delays moved it to May 18", "the final approved date is May 12"], "the final date is May 18"),
+        lambda: ("causal", "A cooling fan failed, causing the server to overheat and shut down. Replacing the fan restored normal temperature; the database required no repair.", ["a cooling fan failed and the server shut down", "replacing the fan restored normal temperature", "the database required no repair"], "the database caused the shutdown"),
+        lambda: ("multi-party-decision", "Asha proposed retaining the vendor. Bo favored a new bid. Cy abstained because of a conflict. The committee voted 4–2 to seek a new vendor.", ["Asha favored retaining the vendor", "Bo favored a new bid", "Cy abstained due to a conflict", "the committee voted 4–2 for a new vendor search"], "the vote retained the vendor"),
+        lambda: ("process", "To publish a report, an analyst uploads the draft, a reviewer resolves factual issues, and an editor approves formatting. Publication occurs only after all three stages pass.", ["the analyst uploads the draft", "a reviewer resolves factual issues", "an editor approves formatting", "publication requires all stages to pass"], "publication occurs before review"),
+        lambda: ("comparison", "Plan North costs $18 monthly and includes 20 GB. Plan South costs $24 and includes 50 GB plus roaming. Both include phone support.", ["North costs $18 and includes 20 GB", "South costs $24 and includes 50 GB plus roaming", "both include phone support"], "North includes more data than South"),
+        lambda: ("uncertainty", "The preliminary survey suggests demand may rise by 8–12%, but the sample is small and the estimate is not a forecast. A larger survey begins next month.", ["preliminary demand may rise 8–12%", "the sample is small", "the estimate is not a forecast", "a larger survey begins next month"], "demand will definitely rise 12%"),
+        lambda: ("nested-exception", "Standard refunds require a receipt within 30 days. Gifts may use an order number instead. Clearance items are never refundable unless defective.", ["standard refunds require a receipt within 30 days", "gifts may use an order number", "clearance items require a defect to be refundable"], "all clearance items are refundable"),
+        lambda: ("milestones", "The bridge design passed safety review in January. Funding was approved in March. Construction began in June and is scheduled to finish in November.", ["safety review passed in January", "funding was approved in March", "construction began in June", "completion is scheduled for November"], "construction finished in June"),
+        lambda: ("tradeoff", "Option A cuts latency by 30% but raises cost by 15%. Option B keeps cost flat and cuts latency by 10%. The team selected B because the budget is fixed.", ["A cuts latency 30% but raises cost 15%", "B keeps cost flat and cuts latency 10%", "the team selected B because the budget is fixed"], "the team selected A"),
+        lambda: ("handoff", "Support reproduced the defect and sent logs to Engineering. Engineering identified a parser bug and supplied a patch. Release Management scheduled the patch for Tuesday.", ["support reproduced the defect and sent logs", "engineering found a parser bug and supplied a patch", "release management scheduled Tuesday"], "support supplied the patch"),
+        lambda: ("mixed-signal", "Revenue rose 6% and customer count rose 9%, while average order value fell 3%. Management attributed growth to new customers, not larger purchases.", ["revenue rose 6%", "customer count rose 9%", "average order value fell 3%", "management attributed growth to new customers"], "larger purchases drove growth"),
     )
     families = []
-    for index, (slug, source, facts, forbidden) in enumerate(sources):
+    for index, source_spec in _materialize_family_inputs(source_factories, family_indexes):
+        slug, source, facts, forbidden = source_spec
         second_source = source.replace("The ", "According to the update, the ", 1) if "The " in source else source + " This update supersedes informal notes."
         variants = []
         for variant, text in enumerate((source, second_source)):
@@ -823,6 +845,95 @@ FAMILY_BUILDERS = {
     "reasoning": _reasoning_families,
     "summarization": _summarization_families,
 }
+
+
+class CategoryDetectorProjectionError(ValueError):
+    """Raised when the prompt projection cannot fail closed."""
+
+
+_CATEGORY_DETECTOR_SPLITS = {
+    "train": (tuple(range(0, 10)), "train", "train-manifest.json"),
+    "dev": (tuple(range(10, 13)), "development", "development-manifest.json"),
+}
+
+
+def export_category_detector_prompts(
+    split: Literal["train", "dev"], *, artifact_root: Path = DEFAULT_ROOT,
+) -> tuple[dict[str, str], ...]:
+    """Build prompt-only TRAIN or DEV records without constructing FINAL families."""
+    if split not in _CATEGORY_DETECTOR_SPLITS:
+        raise CategoryDetectorProjectionError(
+            "Category-detector prompt projection permits only 'train' or 'dev'"
+        )
+
+    family_indexes, manifest_split, manifest_name = _CATEGORY_DETECTOR_SPLITS[split]
+    manifest = json.loads((artifact_root / manifest_name).read_text(encoding="utf-8"))
+    entries = manifest.get("tasks")
+    if not isinstance(entries, list):
+        raise CategoryDetectorProjectionError(f"Invalid {split} split manifest")
+
+    task_ids = [entry.get("task_id") for entry in entries]
+    if any(not isinstance(task_id, str) or not task_id for task_id in task_ids):
+        raise CategoryDetectorProjectionError(f"Invalid task ID in {split} split manifest")
+    if len(task_ids) != len(set(task_ids)):
+        raise CategoryDetectorProjectionError(f"Duplicate task ID in {split} split manifest")
+    if any(entry.get("split") != manifest_split for entry in entries):
+        raise CategoryDetectorProjectionError(f"Unexpected split entry in {split} split manifest")
+
+    entries_by_family: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for entry in entries:
+        family_id = entry.get("task_family_id")
+        if not isinstance(family_id, str) or not family_id:
+            raise CategoryDetectorProjectionError(f"Missing family ID in {split} split manifest")
+        entries_by_family[family_id].append(entry)
+
+    records: list[dict[str, str]] = []
+    consumed_families: set[str] = set()
+    for category in CATEGORIES:
+        families = _redesign_families(
+            category, FAMILY_BUILDERS[category](family_indexes)
+        )
+        if len(families) != len(family_indexes):
+            raise CategoryDetectorProjectionError(
+                f"Unexpected {split} family count for {category}"
+            )
+        for family_index, family in zip(family_indexes, families, strict=True):
+            family_id = f"rbv1-{category}-{family_index + 1:02d}-{family.slug}"
+            family_entries = entries_by_family.get(family_id, [])
+            if len(family_entries) != len(family.variants):
+                raise CategoryDetectorProjectionError(
+                    f"Manifest membership mismatch for {family_id}"
+                )
+            consumed_families.add(family_id)
+            for entry, variant in zip(family_entries, family.variants, strict=True):
+                if entry.get("internal_category") != category:
+                    raise CategoryDetectorProjectionError(
+                        f"Manifest category mismatch for {entry['task_id']}"
+                    )
+                prompt = variant.get("prompt")
+                if not isinstance(prompt, str) or not prompt:
+                    raise CategoryDetectorProjectionError(
+                        f"Missing prompt for {entry['task_id']}"
+                    )
+                records.append({
+                    "task_id": entry["task_id"],
+                    "split": split,
+                    "category": entry["category"],
+                    "prompt": prompt,
+                })
+
+    if consumed_families != set(entries_by_family):
+        raise CategoryDetectorProjectionError(f"Unexpected family in {split} split manifest")
+    expected_per_category = 20 if split == "train" else 6
+    category_counts = Counter(record["category"] for record in records)
+    expected_categories = set(DISPLAY_CATEGORY.get(value, value) for value in CATEGORIES)
+    if set(category_counts) != expected_categories or any(
+        count != expected_per_category for count in category_counts.values()
+    ):
+        raise CategoryDetectorProjectionError(f"Unexpected category balance in {split} projection")
+    if len(records) != expected_per_category * len(CATEGORIES):
+        raise CategoryDetectorProjectionError(f"Unexpected task count in {split} projection")
+    return tuple(records)
 
 
 def _budget(category: str, difficulty: str) -> int:
