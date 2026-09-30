@@ -1,8 +1,10 @@
 import asyncio
 import hashlib
 import json
+import math
 import os
 import pickle
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -23,13 +25,18 @@ from adaptive_llm_gateway.errors import (
     IncompatibleFeatureSchemaError,
     PredictorArtifactChecksumError,
 )
-from adaptive_llm_gateway.models import InferenceResponse
+from adaptive_llm_gateway.models import InferenceRequest, InferenceResponse
+from adaptive_llm_gateway.providers.gateway_config import CANDIDATE_MODELS
+from adaptive_llm_gateway.routing.features import ProductionRequestFeatureExtractor
+from adaptive_llm_gateway.routing.policy import CostAwareRoutingPolicy
 from adaptive_llm_gateway.routing.predictor import (
     PRODUCTION_PREDICTOR_SHA256,
     PRODUCTION_QUALITY_THRESHOLD,
     ProductionQualityPredictorArtifactMetadata,
+    SklearnQualityPredictor,
     load_trusted_quality_artifact,
 )
+from adaptive_llm_gateway.routing.service import RoutingDecisionService
 
 ROOT = Path(__file__).resolve().parents[1]
 PRODUCTION_ARTIFACT = ROOT / "deploy" / "router"
@@ -90,6 +97,43 @@ def test_wrong_production_candidate_set_is_rejected(tmp_path):
     _rewrite_metadata(directory, lambda value: value["known_candidate_ids"].pop())
     with pytest.raises(CorruptPredictorArtifactError):
         load_trusted_quality_artifact(directory)
+
+
+def test_tracked_predictor_routes_synthetic_request_deterministically():
+    request = InferenceRequest(
+        prompt="Compare the supplied options and return one concise answer.",
+        max_output_tokens=160,
+        temperature=0,
+    )
+    extractor = ProductionRequestFeatureExtractor()
+    features = extractor.extract(request, category_hint="qa")
+    predictor = SklearnQualityPredictor.from_trusted_artifact(PRODUCTION_ARTIFACT)
+    predictions = predictor.predict(features, CANDIDATE_MODELS)
+    probabilities = {
+        item.model_id: item.predicted_acceptability for item in predictions
+    }
+    assert tuple(probabilities) == tuple(
+        candidate.model_id for candidate in CANDIDATE_MODELS
+    )
+    assert all(math.isfinite(value) and 0 <= value <= 1 for value in probabilities.values())
+
+    service = RoutingDecisionService(
+        predictor,
+        feature_extractor=extractor,
+        policy=CostAwareRoutingPolicy(),
+    )
+    first = service.route(
+        request, CANDIDATE_MODELS, 0.80, category_hint="qa"
+    )
+    second = service.route(
+        request, CANDIDATE_MODELS, 0.80, category_hint="qa"
+    )
+    assert first == second
+    assert first.selected_model_id in probabilities
+    assert first.selected_predicted_acceptability == probabilities[first.selected_model_id]
+    assert first.threshold_satisfied is (first.qualifying_candidate_count > 0)
+    assert first.fallback_used is (not first.threshold_satisfied)
+    assert first.quality_threshold == 0.80
 
 
 def _adaptive_app():
@@ -383,3 +427,24 @@ def test_production_environment_is_placeholder_only_and_not_copied():
     assert "local_dev_only" not in template
     assert "COPY ." not in dockerfile
     assert ".env.production" not in dockerfile
+
+
+def test_ci_secret_scan_matches_key_shapes_without_benign_hyphens():
+    workflow = (ROOT / ".github" / "workflows" / "test.yml").read_text()
+    expression = (
+        r"(sk-[A-Za-z0-9_-]{20,}|vercel_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16})"
+    )
+    assert expression in workflow
+    pattern = re.compile(expression)
+    assert all(
+        pattern.search(value) is None
+        for value in ("risk-matrix", "task-detection", "sk-short")
+    )
+    assert all(
+        pattern.search(value) is not None
+        for value in (
+            "sk-" + "abcdefghijklmnopqrstuvwx",
+            "vercel_" + "abcdefghijklmnopqrst",
+            "AKIA" + "ABCDEFGHIJKLMNOP",
+        )
+    )

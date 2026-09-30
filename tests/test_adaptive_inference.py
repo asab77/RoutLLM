@@ -6,8 +6,6 @@ import shutil
 import subprocess
 import sys
 from decimal import Decimal
-from pathlib import Path
-from uuid import UUID
 
 import pytest
 from pydantic import ValidationError
@@ -43,10 +41,6 @@ from adaptive_llm_gateway.routing.policy import (
 )
 from adaptive_llm_gateway.routing.predictor import ARTIFACT_METADATA_FILENAME
 from adaptive_llm_gateway.routing.service import RoutingDecisionService
-from adaptive_llm_gateway.routing.train_predictor import build_predictor_artifact
-
-ROOT = Path("benchmark-results")
-RUN_ID = UUID("61707aba-5ab2-4c16-8ec3-eed74555d69c")
 
 
 def model(
@@ -162,13 +156,6 @@ def request():
     return InferenceRequest(prompt="small controlled request", max_output_tokens=8)
 
 
-@pytest.fixture(scope="module")
-def built_artifact(tmp_path_factory):
-    directory = tmp_path_factory.mktemp("adaptive-quality-artifact")
-    build_predictor_artifact(ROOT, RUN_ID, directory)
-    return directory
-
-
 @pytest.mark.asyncio
 async def test_adaptive_service_reuses_explicit_execution_and_preserves_metadata():
     calls = []
@@ -268,14 +255,14 @@ async def test_explicit_inference_never_invokes_adaptive_router():
 
 
 @pytest.mark.asyncio
-async def test_category_validation_has_no_default_or_inference(built_artifact):
+async def test_category_validation_has_no_default_or_inference(deployed_production_artifact):
     calls = []
     models = tuple(
         item.model_copy(update={"provider": "recording"})
         for item in CANDIDATE_MODELS
     )
     service = AdaptiveInferenceService.from_trusted_artifact(
-        inference_service(models, calls), built_artifact
+        inference_service(models, calls), deployed_production_artifact
     )
     with pytest.raises(MissingRoutingCategoryError):
         await service.generate(
@@ -364,11 +351,11 @@ async def test_ineligible_registry_candidate_fails_before_routing_or_provider(
 
 
 @pytest.mark.asyncio
-async def test_unsupported_predictor_candidate_is_not_silently_dropped(built_artifact):
+async def test_unsupported_predictor_candidate_is_not_silently_dropped(deployed_production_artifact):
     calls = []
     unknown = model("new-compatible-provider-model")
     service = AdaptiveInferenceService.from_trusted_artifact(
-        inference_service((unknown,), calls), built_artifact
+        inference_service((unknown,), calls), deployed_production_artifact
     )
     with pytest.raises(UnsupportedPredictorCandidateError):
         await service.generate(
@@ -379,14 +366,14 @@ async def test_unsupported_predictor_candidate_is_not_silently_dropped(built_art
 
 
 @pytest.mark.asyncio
-async def test_configured_trusted_artifact_loads_and_routes(built_artifact):
+async def test_configured_trusted_artifact_loads_and_routes(deployed_production_artifact):
     calls = []
     models = tuple(
         item.model_copy(update={"provider": "recording"})
         for item in CANDIDATE_MODELS
     )
     service = AdaptiveInferenceService.from_trusted_artifact(
-        inference_service(models, calls), built_artifact
+        inference_service(models, calls), deployed_production_artifact
     )
     result = await service.generate(
         request(), category="qa", quality_threshold=0.5,
@@ -401,18 +388,18 @@ async def test_configured_trusted_artifact_loads_and_routes(built_artifact):
     ("incompatible", IncompatibleArtifactFormatError),
 ])
 def test_artifact_configuration_failures_occur_before_provider_execution(
-    built_artifact, tmp_path, kind, error
+    deployed_production_artifact, tmp_path, kind, error
 ):
     calls = []
     target = tmp_path / kind
     if kind != "missing":
-        shutil.copytree(built_artifact, target)
+        shutil.copytree(deployed_production_artifact, target)
         metadata = target / ARTIFACT_METADATA_FILENAME
         if kind == "corrupt":
             metadata.write_text("not-json")
         else:
             values = json.loads(metadata.read_text())
-            values["artifact_format_version"] = "999"
+            values["runtime_compatibility"]["scikit_learn_version"] = "0.0"
             metadata.write_text(json.dumps(values))
     with pytest.raises(error):
         AdaptiveInferenceService.from_trusted_artifact(

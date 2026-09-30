@@ -38,6 +38,7 @@ def evidence():
     return load_grouped_oof_evidence()
 
 
+@pytest.mark.local_evidence
 def test_frozen_hashes_and_formulation_provenance(analysis):
     report, _ = analysis
     provenance = report["provenance"]
@@ -50,6 +51,7 @@ def test_frozen_hashes_and_formulation_provenance(analysis):
     assert "upstream_provider_pin" not in NO_PIN_REPRESENTATION.features
 
 
+@pytest.mark.local_evidence
 def test_grouped_oof_source_is_reproduced_without_full_fit_evidence(analysis):
     provenance = analysis[0]["provenance"]
     assert "grouped OOF" in provenance["prediction_source"]
@@ -58,6 +60,7 @@ def test_grouped_oof_source_is_reproduced_without_full_fit_evidence(analysis):
     assert provenance["final_full_data_artifact_used_as_evidence"] is False
 
 
+@pytest.mark.local_evidence
 def test_exact_oof_shape_and_groups(analysis):
     provenance = analysis[0]["provenance"]
     assert provenance["prediction_rows"] == 224
@@ -68,6 +71,7 @@ def test_exact_oof_shape_and_groups(analysis):
     assert provenance["grouping_key"] == "task_id"
 
 
+@pytest.mark.local_evidence
 def test_approved_baseline_metrics_reproduce(analysis):
     baseline = analysis[0]["baseline_reproduction"]
     assert baseline["status"] == "PASS"
@@ -80,6 +84,7 @@ def test_approved_baseline_metrics_reproduce(analysis):
     assert baseline["pairwise_ranking_accuracy"] == pytest.approx(115 / 126)
 
 
+@pytest.mark.local_evidence
 def test_global_calibration_metrics_and_slope_are_finite(analysis):
     calibration = analysis[0]["calibration"]
     assert calibration["global_metrics"]["brier_score"] == pytest.approx(0.129855392134)
@@ -92,6 +97,7 @@ def test_global_calibration_metrics_and_slope_are_finite(analysis):
     ("equal_width_10_bins", 0.032252514199, 0.158916141277),
     ("equal_frequency_10_bins", 0.05652680565, 0.173322383352),
 ])
+@pytest.mark.local_evidence
 def test_ece_mce_are_deterministic(analysis, name, ece, mce):
     value = analysis[0]["calibration"][name]
     assert value["ece"] == pytest.approx(ece, abs=1e-12)
@@ -122,6 +128,7 @@ def test_quantile_bins_partition_every_valid_row():
     assert max(item["count"] for item in result["bins"]) <= 3
 
 
+@pytest.mark.local_evidence
 def test_candidate_diagnostics_preserve_actual_counts(analysis):
     diagnostics = analysis[0]["candidate_diagnostics"]
     assert {name: value["rows"] for name, value in diagnostics.items()} == {
@@ -133,6 +140,7 @@ def test_candidate_diagnostics_preserve_actual_counts(analysis):
     assert all("at most 56 request groups" in value["warning"] for value in diagnostics.values())
 
 
+@pytest.mark.local_evidence
 def test_category_diagnostics_are_canonical_and_small_sample_limited(analysis):
     diagnostics = analysis[0]["category_diagnostics"]
     assert set(diagnostics) == {
@@ -144,6 +152,7 @@ def test_category_diagnostics_are_canonical_and_small_sample_limited(analysis):
     assert sum(value["valid_candidate_labels"] for value in diagnostics.values()) == 216
 
 
+@pytest.mark.local_evidence
 def test_threshold_grids_are_frozen_and_deterministic(analysis):
     routing = analysis[0]["routing"]
     assert tuple(routing["coarse_threshold_grid"]) == THRESHOLDS
@@ -151,6 +160,7 @@ def test_threshold_grids_are_frozen_and_deterministic(analysis):
     assert FINE_THRESHOLDS == (0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95)
 
 
+@pytest.mark.local_evidence
 def test_routing_missing_labels_keep_cost_and_leave_quality_denominator(analysis):
     for summary in analysis[0]["routing"]["coarse"].values():
         assert summary["requests_routed"] == 56
@@ -159,6 +169,7 @@ def test_routing_missing_labels_keep_cost_and_leave_quality_denominator(analysis
         assert Decimal(summary["total_projected_cost_usd"]) > 0
 
 
+@pytest.mark.local_evidence
 def test_canonical_policy_and_projected_cost_are_reused(evidence):
     dataset, records, _, _ = evidence
     selections = route_at_threshold(dataset, records, 0.8)
@@ -173,12 +184,14 @@ def test_canonical_policy_and_projected_cost_are_reused(evidence):
     assert "CandidatePrediction" in source
 
 
+@pytest.mark.local_evidence
 def test_distribution_fallback_and_threshold_counts_are_complete(analysis):
     for summary in analysis[0]["routing"]["fine"].values():
         assert sum(summary["selected_model_distribution"].values()) == 56
         assert summary["fallback_count"] + summary["threshold_met_count"] == 56
 
 
+@pytest.mark.local_evidence
 def test_grouped_bootstrap_is_deterministic_and_request_level(evidence):
     dataset, records, _, _ = evidence
     selections = {"0.80": route_at_threshold(dataset, records, 0.8)}
@@ -189,6 +202,7 @@ def test_grouped_bootstrap_is_deterministic_and_request_level(evidence):
     assert first["replicates"] == 100
 
 
+@pytest.mark.local_evidence
 def test_analysis_bootstrap_contract_and_intervals(analysis):
     uncertainty = analysis[0]["grouped_uncertainty"]
     assert uncertainty["seed"] == BOOTSTRAP_SEED
@@ -198,6 +212,7 @@ def test_analysis_bootstrap_contract_and_intervals(analysis):
         assert all(len(interval) == 2 and interval[0] <= interval[1] for interval in metrics.values())
 
 
+@pytest.mark.local_evidence
 def test_baselines_are_matched_and_oracle_is_analysis_only(analysis):
     baselines = analysis[0]["baselines"]
     assert {"ALWAYS_CHEAPEST", "RULE_BASED_V1", "FOLD_LOCAL_ALWAYS_STRONGEST", "ORACLE_CHEAPEST_ACCEPTABLE"} <= set(baselines["policies"])
@@ -208,6 +223,7 @@ def test_baselines_are_matched_and_oracle_is_analysis_only(analysis):
     assert "not deployable" in baselines["oracle_warning"]
 
 
+@pytest.mark.local_evidence
 def test_frontier_requires_comparable_coverage_and_selects_no_winner(analysis):
     result = analysis[0]["frontier"]
     assert "equal valid-selected-label counts" in result["coverage_comparison_rule"]
@@ -224,12 +240,14 @@ def test_frontier_dominance_logic_unit_case():
     assert frontier(data)["non_dominated_thresholds"] == ["a", "c"]
 
 
+@pytest.mark.local_evidence
 def test_threshold_stability_flags_descriptive_brittle_regions(analysis):
     stability = analysis[0]["threshold_stability"]
     assert stability["brittle_intervals"] == ["0.50->0.55", "0.65->0.70", "0.85->0.90"]
     assert all("flagged_brittle" in item for item in stability["adjacent_fine_thresholds"])
 
 
+@pytest.mark.local_evidence
 def test_platt_comparison_has_no_group_leakage_and_same_rows(analysis):
     experiment = analysis[0]["post_hoc_calibration"]
     assert experiment["status"] == "EXPLORATORY_ONLY"
@@ -239,6 +257,7 @@ def test_platt_comparison_has_no_group_leakage_and_same_rows(analysis):
     assert set(experiment["routing_on_same_evaluation_predictions"]) == {f"{value:.2f}" for value in THRESHOLDS}
 
 
+@pytest.mark.local_evidence
 def test_platt_does_not_improve_proper_losses_or_ece(analysis):
     experiment = analysis[0]["post_hoc_calibration"]
     assert experiment["cross_fitted_platt_metrics"]["log_loss"] > experiment["raw_metrics"]["log_loss"]
@@ -248,6 +267,7 @@ def test_platt_does_not_improve_proper_losses_or_ece(analysis):
     assert experiment["production_predictor_replaced"] is False
 
 
+@pytest.mark.local_evidence
 def test_isotonic_skip_reason_and_feasibility_are_explicit(analysis):
     experiment = analysis[0]["post_hoc_calibration"]
     assert experiment["isotonic"].startswith("SKIPPED:")
@@ -255,6 +275,7 @@ def test_isotonic_skip_reason_and_feasibility_are_explicit(analysis):
     assert "exploratory" in experiment["feasibility_conclusion"]
 
 
+@pytest.mark.local_evidence
 def test_policy_conclusion_is_allowed_and_restrained(analysis):
     decision = analysis[0]["policy_decision"]
     assert decision["conclusion"] in POLICY_CONCLUSIONS
@@ -264,6 +285,7 @@ def test_policy_conclusion_is_allowed_and_restrained(analysis):
     assert decision["Q7_coarse_quality_modes"].startswith("No")
 
 
+@pytest.mark.local_evidence
 def test_quality_modes_remain_analysis_only(analysis):
     quality_modes = analysis[0]["quality_modes"]
     assert quality_modes["implemented"] is False
@@ -289,6 +311,7 @@ def test_analysis_has_no_provider_telemetry_or_full_fit_predictor_dependency():
     assert "upstream_provider_pin" in source  # only the explicit leakage guard
 
 
+@pytest.mark.local_evidence
 def test_generated_artifact_schema_and_privacy(analysis):
     report, path = analysis
     assert json.loads(path.read_text()) == report
@@ -302,6 +325,7 @@ def test_generated_artifact_schema_and_privacy(analysis):
         assert forbidden not in text
 
 
+@pytest.mark.local_evidence
 def test_deterministic_analysis_rerun_is_byte_identical(analysis, tmp_path):
     _, first_path = analysis
     second_path = tmp_path / "second.json"

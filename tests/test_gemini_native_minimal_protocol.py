@@ -157,6 +157,7 @@ def test_protocol_17_readiness_manifest_allowances_and_costs():
     assert costs["full_train"]["total_worst_case_cost_usd"] == "4.57766875"
 
 
+@pytest.mark.local_evidence
 def test_protocol_17_artifacts_and_historical_inputs_are_hash_identified():
     expected = {
         PROTOCOL_14: "f132c1eec6b1a231f6ce5ea50702b59a03e76af7d44359ba614fa0ed4ae6e565",

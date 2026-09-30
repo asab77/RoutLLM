@@ -1,10 +1,13 @@
 from collections import Counter
 
+import pytest
+
 from adaptive_llm_gateway.routing.phase9_dev_validation import (
     PREDICTOR_SHA256, THRESHOLD, _predict, analyze, load_dev_evidence,
 )
 
 
+@pytest.mark.local_evidence
 def test_dev_evidence_preserves_all_missing_labels():
     dataset, _, manifest, _ = load_dev_evidence()
     assert manifest["configuration"]["execution_split"] == "development"
@@ -15,6 +18,7 @@ def test_dev_evidence_preserves_all_missing_labels():
                if row.label_status == "missing")
 
 
+@pytest.mark.local_evidence
 def test_frozen_predictor_generates_one_prediction_per_dev_pair():
     dataset, _, _, _ = load_dev_evidence()
     records = _predict(dataset)
@@ -22,6 +26,7 @@ def test_frozen_predictor_generates_one_prediction_per_dev_pair():
     assert len({(item["task_id"], item["candidate_id"]) for item in records}) == 168
 
 
+@pytest.mark.local_evidence
 def test_dev_analysis_uses_only_frozen_threshold_and_predictor():
     report = analyze()
     assert THRESHOLD == 0.80

@@ -1,3 +1,6 @@
+import shutil
+from pathlib import Path
+
 import pytest
 
 from adaptive_llm_gateway.models import ModelConfig
@@ -47,6 +50,17 @@ def model() -> ModelConfig:
         output_cost_per_1m_tokens="0.60",
         context_window=4096,
     )
+
+
+@pytest.fixture
+def deployed_production_artifact(tmp_path: Path) -> Path:
+    """Return a writable copy of the tracked artifact shipped in production."""
+    source = Path(__file__).resolve().parents[1] / "deploy" / "router"
+    target = tmp_path / "deployed-router"
+    target.mkdir()
+    for name in ("predictor.pkl", "metadata.json"):
+        shutil.copy2(source / name, target / name)
+    return target
 
 
 def pytest_addoption(parser):

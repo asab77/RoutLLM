@@ -2,6 +2,7 @@ import json
 import socket
 
 import numpy as np
+import pytest
 
 from adaptive_llm_gateway.experiments import category_detector as experiment
 
@@ -47,6 +48,7 @@ def test_narrow_boundary_correction_uses_operation_semantics():
     ) == "structured_json"
 
 
+@pytest.mark.local_evidence
 def test_train_only_boundary_correction_improves_target_without_other_regressions(tmp_path):
     previous_root = tmp_path / "previous"
     experiment.run_train_stage(output_root=previous_root)
@@ -80,6 +82,7 @@ def test_pipeline_predictions_are_deterministic():
     assert np.array_equal(first.predict_proba(texts), second.predict_proba(texts))
 
 
+@pytest.mark.local_evidence
 def test_train_stage_is_offline_grouped_and_reproducible(tmp_path, monkeypatch):
     def network_forbidden(*args, **kwargs):
         raise AssertionError("network access is forbidden")

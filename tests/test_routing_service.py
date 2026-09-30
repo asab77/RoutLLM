@@ -107,16 +107,18 @@ class RecordingPolicy(CostAwareRoutingPolicy):
 
 
 @pytest.fixture(scope="module")
-def real_artifact(tmp_path_factory):
+def historical_artifact(tmp_path_factory):
     directory = tmp_path_factory.mktemp("phase-8d-artifact")
     build_predictor_artifact(ROOT, __import__("uuid").UUID(RUN_ID), directory)
     return directory
 
 
 @pytest.fixture(scope="module")
-def validation_report(real_artifact, tmp_path_factory):
+def validation_report(historical_artifact, tmp_path_factory):
     report_path = tmp_path_factory.mktemp("phase-8d-report") / "report.json"
-    return validate_production_routing_path(real_artifact, report_path=report_path)
+    return validate_production_routing_path(
+        historical_artifact, report_path=report_path
+    )
 
 
 def test_orchestration_calls_extractor_predictor_once_and_policy_once():
@@ -152,8 +154,12 @@ def test_valid_category_and_provenance_reach_predictor_without_inference():
     assert received.category_provenance is CategoryProvenance.INFERRED
 
 
-def test_missing_and_malformed_categories_fail_without_inference(real_artifact):
-    predictor = SklearnQualityPredictor.from_trusted_artifact(real_artifact)
+def test_missing_and_malformed_categories_fail_without_inference(
+    deployed_production_artifact,
+):
+    predictor = SklearnQualityPredictor.from_trusted_artifact(
+        deployed_production_artifact
+    )
     service = RoutingDecisionService(predictor)
     with pytest.raises(MissingRoutingCategoryError):
         service.route(request(), CANDIDATE_MODELS, 0.5)
@@ -161,8 +167,12 @@ def test_missing_and_malformed_categories_fail_without_inference(real_artifact):
         service.route(request(), CANDIDATE_MODELS, 0.5, category_hint="not-a-category")
 
 
-def test_real_artifact_supports_known_candidates_and_rejects_unknown(real_artifact):
-    predictor = SklearnQualityPredictor.from_trusted_artifact(real_artifact)
+def test_deployed_artifact_supports_known_candidates_and_rejects_unknown(
+    deployed_production_artifact,
+):
+    predictor = SklearnQualityPredictor.from_trusted_artifact(
+        deployed_production_artifact
+    )
     service = RoutingDecisionService(predictor)
     decision = service.route(
         request(), CANDIDATE_MODELS, 0.5, category_hint="qa"
@@ -173,9 +183,13 @@ def test_real_artifact_supports_known_candidates_and_rejects_unknown(real_artifa
         service.route(request(), (unknown,), 0.5, category_hint="qa")
 
 
-def test_empty_candidate_set_uses_existing_phase_8a_error(real_artifact):
+def test_empty_candidate_set_uses_existing_phase_8a_error(
+    deployed_production_artifact,
+):
     service = RoutingDecisionService(
-        SklearnQualityPredictor.from_trusted_artifact(real_artifact)
+        SklearnQualityPredictor.from_trusted_artifact(
+            deployed_production_artifact
+        )
     )
     with pytest.raises(NoEligibleCandidatesError):
         service.route(request(), (), 0.5, category_hint="qa")
@@ -321,16 +335,19 @@ def test_duplicate_or_missing_predictor_outputs_fail_typed():
         )
 
 
-def test_real_artifact_build_load_and_route_are_local(real_artifact):
-    assert (real_artifact / ARTIFACT_METADATA_FILENAME).is_file()
-    assert (real_artifact / ARTIFACT_MODEL_FILENAME).is_file()
-    predictor = SklearnQualityPredictor.from_trusted_artifact(real_artifact)
+def test_deployed_artifact_load_and_route_are_local(deployed_production_artifact):
+    assert (deployed_production_artifact / ARTIFACT_METADATA_FILENAME).is_file()
+    assert (deployed_production_artifact / ARTIFACT_MODEL_FILENAME).is_file()
+    predictor = SklearnQualityPredictor.from_trusted_artifact(
+        deployed_production_artifact
+    )
     decision = RoutingDecisionService(predictor).route(
         request(), CANDIDATE_MODELS, 0.5, category_hint="qa"
     )
     assert decision.selected_model_id in {item.model_id for item in CANDIDATE_MODELS}
 
 
+@pytest.mark.local_evidence
 def test_full_reference_prediction_and_decision_parity(validation_report):
     assert validation_report["reference_requests"] == 56
     assert validation_report["candidate_predictions"] == 224
@@ -345,6 +362,7 @@ def test_full_reference_prediction_and_decision_parity(validation_report):
         assert validation_report[name] == 336
 
 
+@pytest.mark.local_evidence
 def test_reference_validation_is_deterministic_and_order_independent(validation_report):
     assert validation_report["repeated_run_deterministic"] is True
     assert validation_report["candidate_order_independent"] is True
@@ -355,30 +373,37 @@ def test_reference_validation_is_deterministic_and_order_independent(validation_
     )
 
 
-def test_validation_report_generation_is_deterministic(real_artifact, tmp_path):
+@pytest.mark.local_evidence
+def test_validation_report_generation_is_deterministic(
+    historical_artifact, tmp_path
+):
     first_path = tmp_path / "first.json"
     second_path = tmp_path / "second.json"
-    first = validate_production_routing_path(real_artifact, report_path=first_path)
-    second = validate_production_routing_path(real_artifact, report_path=second_path)
+    first = validate_production_routing_path(
+        historical_artifact, report_path=first_path
+    )
+    second = validate_production_routing_path(
+        historical_artifact, report_path=second_path
+    )
     assert first == second
     assert hashlib.sha256(first_path.read_bytes()).digest() == hashlib.sha256(
         second_path.read_bytes()
     ).digest()
 
 
-def test_artifact_failure_modes_remain_typed(real_artifact, tmp_path):
+def test_artifact_failure_modes_remain_typed(deployed_production_artifact, tmp_path):
     with pytest.raises(PredictorArtifactNotFoundError):
         SklearnQualityPredictor.from_trusted_artifact(tmp_path / "missing")
     corrupt = tmp_path / "corrupt"
-    shutil.copytree(real_artifact, corrupt)
+    shutil.copytree(deployed_production_artifact, corrupt)
     (corrupt / ARTIFACT_METADATA_FILENAME).write_text("not-json")
     with pytest.raises(CorruptPredictorArtifactError):
         SklearnQualityPredictor.from_trusted_artifact(corrupt)
     incompatible = tmp_path / "incompatible"
-    shutil.copytree(real_artifact, incompatible)
+    shutil.copytree(deployed_production_artifact, incompatible)
     metadata_path = incompatible / ARTIFACT_METADATA_FILENAME
     metadata = json.loads(metadata_path.read_text())
-    metadata["artifact_format_version"] = "999"
+    metadata["runtime_compatibility"]["scikit_learn_version"] = "0.0"
     metadata_path.write_text(json.dumps(metadata))
     with pytest.raises(IncompatibleArtifactFormatError):
         SklearnQualityPredictor.from_trusted_artifact(incompatible)

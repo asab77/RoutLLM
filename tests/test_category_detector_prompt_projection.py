@@ -14,6 +14,7 @@ ARTIFACT_ROOT = Path("artifacts/routing-benchmark-v1")
     ("split", "expected_total", "expected_per_category"),
     (("train", 140, 20), ("dev", 42, 6)),
 )
+@pytest.mark.local_evidence
 def test_projection_has_exact_count_balance_and_unique_ids(
     split, expected_total, expected_per_category,
 ):
@@ -37,6 +38,7 @@ def test_projection_has_exact_count_balance_and_unique_ids(
     ("split", "manifest_name"),
     (("train", "train-manifest.json"), ("dev", "development-manifest.json")),
 )
+@pytest.mark.local_evidence
 def test_projection_ids_and_categories_match_existing_split_manifest(split, manifest_name):
     records = benchmark.export_category_detector_prompts(split)
     manifest = json.loads((ARTIFACT_ROOT / manifest_name).read_text(encoding="utf-8"))
@@ -46,6 +48,7 @@ def test_projection_ids_and_categories_match_existing_split_manifest(split, mani
     assert actual == expected
 
 
+@pytest.mark.local_evidence
 def test_projection_rejects_duplicate_task_ids(tmp_path):
     manifest = json.loads((ARTIFACT_ROOT / "train-manifest.json").read_text(encoding="utf-8"))
     manifest["tasks"][1]["task_id"] = manifest["tasks"][0]["task_id"]

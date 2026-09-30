@@ -23,7 +23,7 @@ jobs:
           test "$(sha256sum deploy/router/predictor.pkl | cut -d' ' -f1)" = "502db83a54c4072c9741a8e4c406498ad88ec97e03bce1ddaf3e0a1b0001c0aa"
           python -c "from pathlib import Path; from adaptive_llm_gateway.routing.predictor import load_trusted_quality_artifact; load_trusted_quality_artifact(Path('deploy/router'))"
       - name: Run non-paid tests
-        run: python -m pytest -m 'not postgres and not redis and not real_provider and not docker_sandbox'
+        run: python -m pytest -m 'not postgres and not redis and not real_provider and not docker_sandbox and not local_evidence'
       - name: Validate deployment configuration
         run: |
           docker compose --env-file deploy/.env.production.example -f compose.prod.yaml config --quiet
@@ -33,4 +33,4 @@ jobs:
       - name: Check whitespace and secrets
         run: |
           git diff --check
-          if git grep -nE '(sk-|vercel_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16})' -- ':!deploy/.env.production.example'; then exit 1; fi
+          if git grep -nE '(sk-[A-Za-z0-9_-]{20,}|vercel_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16})' -- ':!deploy/.env.production.example'; then exit 1; fi

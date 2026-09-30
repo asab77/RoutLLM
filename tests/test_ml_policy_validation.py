@@ -13,6 +13,7 @@ from adaptive_llm_gateway.routing.ml_diagnostics import (
 from adaptive_llm_gateway.routing.ml_experiment import THRESHOLDS, select_cost_aware_candidate
 from adaptive_llm_gateway.routing.ml_features import (
     FORBIDDEN_PREDICTIVE_FIELDS,
+    MLExperimentRow,
     build_outer_folds,
     load_ml_dataset,
 )
@@ -38,6 +39,38 @@ def validation():
     return run_policy_validation(RESULT_ROOT, RUN_ID)
 
 
+def _synthetic_row(candidate_id: str, output_cost: str, realized_cost: str):
+    return MLExperimentRow(
+        task_id="synthetic-task",
+        candidate_id=candidate_id,
+        category="qa",
+        features={
+            "category": "qa",
+            "candidate_id": candidate_id,
+            "upstream_provider_pin": "offline",
+            "reasoning_effort": "none",
+            "prompt_characters": 40.0,
+            "approximate_input_tokens": 10.0,
+            "requested_max_output_tokens": 20.0,
+            "constraint_indicator_count": 0.0,
+            "reasoning_indicator_count": 0.0,
+            "configured_input_cost_per_1m_tokens": 1.0,
+            "configured_output_cost_per_1m_tokens": float(output_cost),
+            "context_window": 4096.0,
+            "effective_max_output_tokens": 20.0,
+            "contains_code": False,
+            "requests_structured_output": False,
+            "supports_temperature": True,
+        },
+        label_status="valid",
+        acceptable=True,
+        analysis_difficulty="easy",
+        realized_cost_usd=Decimal(realized_cost),
+        latency_ms=1,
+    )
+
+
+@pytest.mark.local_evidence
 def test_exact_phase_7b_folds_are_reused(dataset, validation):
     _, results = validation
     stored = json.loads((PHASE_7 / "fold-assignments.json").read_text())["folds"]
@@ -46,6 +79,7 @@ def test_exact_phase_7b_folds_are_reused(dataset, validation):
     assert results["integrity"]["phase_7b_folds_reused_exactly"] is True
 
 
+@pytest.mark.local_evidence
 def test_full_frontier_evaluates_all_56_requests(validation):
     _, results = validation
     for variant in (FULL_ADDITIVE, CATEGORY_CANDIDATE_INTERACTION):
@@ -54,15 +88,16 @@ def test_full_frontier_evaluates_all_56_requests(validation):
             assert summary["selected_rows"] == 56
 
 
+@pytest.mark.local_evidence
 def test_threshold_grid_is_frozen(validation):
     _, results = validation
     assert THRESHOLDS == (0.50, 0.60, 0.70, 0.80, 0.90, 0.95)
     assert results["frontier"]["threshold_grid"] == list(THRESHOLDS)
 
 
-def test_selector_uses_projected_pre_generation_cost(dataset):
-    task_id = dataset.rows[0].task_id
-    rows = [row for row in dataset.rows if row.task_id == task_id]
+def test_selector_uses_projected_pre_generation_cost():
+    task_id = "synthetic-task"
+    rows = [_synthetic_row("cheap", "1", "9"), _synthetic_row("expensive", "5", "1")]
     records = [{"candidate_id": row.candidate_id, "predicted_probability": 0.8}
                for row in rows]
     index = {(row.task_id, row.candidate_id): row for row in rows}
@@ -72,9 +107,9 @@ def test_selector_uses_projected_pre_generation_cost(dataset):
     assert fallback is False
 
 
-def test_realized_cost_cannot_change_selection(dataset):
-    task_id = dataset.rows[0].task_id
-    rows = [row for row in dataset.rows if row.task_id == task_id][:2]
+def test_realized_cost_cannot_change_selection():
+    task_id = "synthetic-task"
+    rows = [_synthetic_row("cheap", "1", "9"), _synthetic_row("expensive", "5", "1")]
     records = [{"candidate_id": row.candidate_id, "predicted_probability": 0.8}
                for row in rows]
     first_index = {(row.task_id, row.candidate_id): row for row in rows}
@@ -86,6 +121,7 @@ def test_realized_cost_cannot_change_selection(dataset):
     assert first["candidate_id"] == second["candidate_id"]
 
 
+@pytest.mark.local_evidence
 def test_missing_selected_labels_are_visible_and_not_negative(validation):
     _, results = validation
     summary = results["frontier"]["variants"][CATEGORY_CANDIDATE_INTERACTION]["0.50"]
@@ -123,6 +159,7 @@ def test_pareto_logic_is_coverage_aware():
     assert compare_policy_points(first, second) == "incomparable_coverage"
 
 
+@pytest.mark.local_evidence
 def test_fold_accounting_covers_each_request_once(validation):
     _, results = validation
     for variant in results["stability"]["variants"].values():
@@ -132,6 +169,7 @@ def test_fold_accounting_covers_each_request_once(validation):
                        for item in threshold["folds"]) == 56
 
 
+@pytest.mark.local_evidence
 def test_each_outer_fold_contains_exactly_14_requests(validation):
     _, results = validation
     assert results["stability"]["fold_request_count"] == 14
@@ -140,6 +178,7 @@ def test_each_outer_fold_contains_exactly_14_requests(validation):
             assert all(item["requests"] == 14 for item in threshold["folds"])
 
 
+@pytest.mark.local_evidence
 def test_category_routing_accounts_for_all_seven_categories(validation):
     _, results = validation
     categories = results["categories"]["categories"]
@@ -150,6 +189,7 @@ def test_category_routing_accounts_for_all_seven_categories(validation):
     assert len(categories) * results["categories"]["category_request_count"] == 56
 
 
+@pytest.mark.local_evidence
 def test_each_category_contains_exactly_eight_requests(validation):
     _, results = validation
     for category in results["categories"]["categories"].values():
@@ -169,6 +209,7 @@ def test_no_category_representation_has_no_forbidden_fields():
     assert not set(NO_CATEGORY_REPRESENTATION.features) & FORBIDDEN_PREDICTIVE_FIELDS
 
 
+@pytest.mark.local_evidence
 def test_rule_vs_interaction_disagreement_accounting(validation):
     _, results = validation
     comparisons = results["rules"]["ml_vs_rule"][
@@ -178,6 +219,7 @@ def test_rule_vs_interaction_disagreement_accounting(validation):
         assert sum(comparison["disagreement_outcomes"].values()) == comparison["disagreement_count"]
 
 
+@pytest.mark.local_evidence
 def test_oracle_opportunity_accounting(validation):
     _, results = validation
     for threshold in results["oracle"]["thresholds"].values():
@@ -186,6 +228,7 @@ def test_oracle_opportunity_accounting(validation):
         assert len(threshold["details"]) == 56
 
 
+@pytest.mark.local_evidence
 def test_artifacts_are_deterministic_and_protected_artifacts_unchanged(validation):
     paths, _ = validation
     new_before = {name: hashlib.sha256(path.read_bytes()).hexdigest()

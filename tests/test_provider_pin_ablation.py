@@ -45,6 +45,7 @@ def ablation():
     return run_ablation(ROOT, RUN_ID)
 
 
+@pytest.mark.local_evidence
 def test_accepted_baseline_reproduces(ablation):
     _, result = ablation
     reproduction = result["baseline_reproduction"]
@@ -52,6 +53,7 @@ def test_accepted_baseline_reproduces(ablation):
     assert reproduction["exactly_reproduced_at_stored_precision"] is True
 
 
+@pytest.mark.local_evidence
 def test_exact_phase_7_grouped_folds_are_reused(dataset, generated):
     _, audit, _, folds = generated
     assert folds == build_outer_folds(dataset)
@@ -61,6 +63,7 @@ def test_exact_phase_7_grouped_folds_are_reused(dataset, generated):
         ]
 
 
+@pytest.mark.local_evidence
 def test_exact_labels_and_missing_statuses_are_reused(dataset, generated):
     records, _, _, _ = generated
     expected = {
@@ -110,6 +113,7 @@ def test_all_other_predictive_features_keep_order_and_interaction():
     ].boolean
 
 
+@pytest.mark.local_evidence
 def test_preprocessing_and_logistic_regression_are_reused(generated):
     _, audits, coefficients, _ = generated
     assert set(audits) == {
@@ -143,6 +147,7 @@ def test_analysis_has_no_provider_execution_dependency():
     assert "InferenceService" not in source
 
 
+@pytest.mark.local_evidence
 def test_metrics_and_generated_artifacts_are_deterministic(ablation):
     first_paths, first_result = ablation
     first_hashes = {
@@ -158,12 +163,14 @@ def test_metrics_and_generated_artifacts_are_deterministic(ablation):
     assert first_hashes == second_hashes
 
 
+@pytest.mark.local_evidence
 def test_routing_threshold_grid_is_unchanged(ablation):
     _, result = ablation
     assert THRESHOLDS == (0.50, 0.60, 0.70, 0.80, 0.90, 0.95)
     assert result["routing"]["threshold_grid"] == list(THRESHOLDS)
 
 
+@pytest.mark.local_evidence
 def test_projected_cost_totals_use_the_governed_row_property(dataset, ablation):
     _, result = ablation
     index = {(row.task_id, row.candidate_id): row for row in dataset.rows}
@@ -179,6 +186,7 @@ def test_projected_cost_totals_use_the_governed_row_property(dataset, ablation):
             assert Decimal(summary["total_projected_cost_usd"]) == expected
 
 
+@pytest.mark.local_evidence
 def test_candidate_provider_mapping_is_deterministic_and_one_to_one(dataset):
     first = provider_pin_mapping(dataset)
     assert first == provider_pin_mapping(dataset)
@@ -188,6 +196,7 @@ def test_candidate_provider_mapping_is_deterministic_and_one_to_one(dataset):
     assert {entry["rows"] for entry in first["frequency_table"]} == {56}
 
 
+@pytest.mark.local_evidence
 def test_ranking_and_decision_accounting_cover_every_request(ablation):
     _, result = ablation
     ranking = result["ranking"]
@@ -202,6 +211,7 @@ def test_ranking_and_decision_accounting_cover_every_request(ablation):
             )
 
 
+@pytest.mark.local_evidence
 def test_ablation_is_supported_only_as_a_phase_8c_candidate(ablation):
     _, result = ablation
     decision = result["decision_framework"]

@@ -136,6 +136,7 @@ def test_all_variants_reuse_same_grouped_outer_folds_and_predict_missing(synthet
             assert set(entry["test_task_ids"]) == set(assignment.task_ids)
 
 
+@pytest.mark.local_evidence
 def test_pairwise_ranking_counts_correct_incorrect_and_ties(real_dataset):
     task_id = disagreement_tasks(real_dataset)[0]
     rows = [row for row in real_dataset.rows if row.task_id == task_id]
@@ -163,10 +164,12 @@ def test_pairwise_ranking_counts_correct_incorrect_and_ties(real_dataset):
     assert tied["pairwise"]["tie_adjusted_accuracy"] == 0.5
 
 
+@pytest.mark.local_evidence
 def test_frozen_dataset_has_exactly_39_disagreement_requests(real_dataset):
     assert len(disagreement_tasks(real_dataset)) == 39
 
 
+@pytest.mark.local_evidence
 def test_candidate_probability_distributions_account_for_every_request(real_diagnostics):
     _, results = real_diagnostics
     probabilities = results["probabilities"]["by_variant_and_candidate"]
@@ -177,6 +180,7 @@ def test_candidate_probability_distributions_account_for_every_request(real_diag
                    for summary in probabilities[variant].values())
 
 
+@pytest.mark.local_evidence
 def test_rule_comparison_accounting_is_complete(real_diagnostics):
     _, results = real_diagnostics
     rules = results["rules"]
@@ -189,6 +193,7 @@ def test_rule_comparison_accounting_is_complete(real_diagnostics):
             assert sum(comparison["disagreement_outcomes"].values()) == comparison["disagreement_count"]
 
 
+@pytest.mark.local_evidence
 def test_gemini_diagnostic_accounting_is_complete(real_dataset, real_diagnostics):
     _, results = real_diagnostics
     gemini = results["gemini"]
@@ -205,6 +210,7 @@ def test_gemini_diagnostic_accounting_is_complete(real_dataset, real_diagnostics
     )
 
 
+@pytest.mark.local_evidence
 def test_artifacts_are_deterministic_and_phase_7b_artifacts_unchanged(real_diagnostics):
     paths, _ = real_diagnostics
     phase7 = RESULT_ROOT / str(RUN_ID) / "phase-7"

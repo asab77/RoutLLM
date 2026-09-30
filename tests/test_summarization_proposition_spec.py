@@ -172,6 +172,7 @@ def test_new_dataset_changes_semantics_without_mutating_v11_or_split():
     assert old_other == new_other
 
 
+@pytest.mark.local_evidence
 def test_historical_foundation_phase7_dev_final_and_astra_artifacts_are_immutable():
     assert sha("benchmarks/datasets/foundation-v2.json") == FOUNDATION_V2_SHA
     assert sha("benchmarks/datasets/foundation-v3.json") == FOUNDATION_V3_SHA

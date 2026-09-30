@@ -49,6 +49,7 @@ def test_dataset_content_and_split_are_unchanged():
     assert hashlib.sha256((DEFAULT_PROTOCOL_DIR / "split-manifest.json").read_bytes()).hexdigest() == SPLIT_SHA
 
 
+@pytest.mark.local_evidence
 def test_historical_pilot_and_failed_astra_evidence_are_immutable():
     if not OLD_PILOT.exists() or not FAILED_ASTRA_VALIDATION.exists():
         pytest.skip("historical local evidence is unavailable")
@@ -113,6 +114,7 @@ def test_allowance_policy_is_typed_deterministic_and_has_no_slug_branching():
     assert all(value not in source for value in ("gemini", "luna", "sonnet", "nemotron"))
 
 
+@pytest.mark.local_evidence
 def test_all_seven_stored_missing_cases_reproduce_as_budget_exhaustion():
     if not OLD_PILOT.exists():
         pytest.skip("historical pilot artifacts are local generated evidence")

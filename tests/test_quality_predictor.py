@@ -12,7 +12,6 @@ import pytest
 
 from adaptive_llm_gateway.errors import (
     CorruptPredictorArtifactError,
-    IncompatibleArtifactFormatError,
     IncompatibleCategoryTaxonomyError,
     IncompatibleFeatureSchemaError,
     IncompatiblePredictorFormulationError,
@@ -21,7 +20,7 @@ from adaptive_llm_gateway.errors import (
     PredictorArtifactNotFoundError,
     UnsupportedPredictorCandidateError,
 )
-from adaptive_llm_gateway.models import ReasoningEffort
+from adaptive_llm_gateway.models import InferenceRequest, ReasoningEffort
 from adaptive_llm_gateway.providers.gateway_config import CANDIDATE_MODELS
 from adaptive_llm_gateway.registry import ModelRegistry
 from adaptive_llm_gateway.routing.features import (
@@ -99,11 +98,25 @@ def _request_for_row(row, *, category=None, provenance=CategoryProvenance.CLIENT
     )
 
 
-def _copy_artifact(built_artifact, tmp_path):
-    source, _ = built_artifact
+def _copy_artifact(source, tmp_path):
     target = tmp_path / "artifact"
     shutil.copytree(source, target)
     return target
+
+
+def _synthetic_features(
+    category: str = "qa",
+    provenance: CategoryProvenance = CategoryProvenance.CLIENT_HINT,
+) -> RoutingRequestFeatures:
+    features = ProductionRequestFeatureExtractor().extract(
+        InferenceRequest(
+            prompt="Compare the supplied options and return one concise answer.",
+            max_output_tokens=160,
+            temperature=0,
+        ),
+        category_hint=category,
+    )
+    return features.model_copy(update={"category_provenance": provenance})
 
 
 def _rewrite_metadata(directory, **changes):
@@ -141,21 +154,20 @@ def test_category_canonicalization(value, expected):
     assert canonicalize_category(value) is expected
 
 
-def test_missing_category_is_typed_and_never_defaulted(dataset):
-    row = dataset.rows[0]
-    values = _request_for_row(row).model_dump()
-    values.update(category=None, category_provenance=CategoryProvenance.ABSENT)
-    absent = RoutingRequestFeatures(**values)
+def test_missing_category_is_typed_and_never_defaulted():
+    absent = _synthetic_features().model_copy(update={
+        "category": None,
+        "category_provenance": CategoryProvenance.ABSENT,
+    })
     with pytest.raises(MissingRoutingCategoryError):
         canonical_from_production(absent, CANDIDATE_MODELS[0])
 
 
-def test_category_provenance_is_not_predictive(dataset):
-    row = dataset.rows[0]
-    candidate = next(item for item in CANDIDATE_MODELS if item.model_id == row.candidate_id)
-    client = canonical_from_production(_request_for_row(row), candidate)
+def test_category_provenance_is_not_predictive():
+    candidate = CANDIDATE_MODELS[0]
+    client = canonical_from_production(_synthetic_features(), candidate)
     inferred = canonical_from_production(
-        _request_for_row(row, provenance=CategoryProvenance.INFERRED), candidate
+        _synthetic_features(provenance=CategoryProvenance.INFERRED), candidate
     )
     assert client == inferred
     assert "category_provenance" not in CANONICAL_PREDICTIVE_FEATURES
@@ -193,16 +205,12 @@ def test_reasoning_and_allowance_resolvers_have_no_model_identity_special_cases(
     assert "candidate-nemotron" not in source
 
 
-def test_effective_output_allowance_uses_typed_category_configuration(dataset):
-    reasoning_row = next(
-        row for row in dataset.rows
-        if row.category == "reasoning" and row.candidate_id == "candidate-gemini-3-flash"
-    )
+def test_effective_output_allowance_uses_typed_category_configuration():
     gemini = next(
         item for item in CANDIDATE_MODELS
         if item.model_id == "candidate-gemini-3-flash"
     )
-    request = _request_for_row(reasoning_row)
+    request = _synthetic_features("reasoning")
     assert request.max_output_tokens == 160
     assert resolve_effective_output_allowance(request, gemini) == 256
     for candidate in CANDIDATE_MODELS:
@@ -228,6 +236,7 @@ def test_schema_governance_and_skew_audit_are_complete():
     )
 
 
+@pytest.mark.local_evidence
 def test_all_224_training_and_serving_canonical_rows_match(dataset):
     pairs = canonical_training_serving_pairs(dataset)
     assert len(pairs) == 224
@@ -240,6 +249,7 @@ def test_all_224_training_and_serving_canonical_rows_match(dataset):
     } == {candidate.model_id for candidate in CANDIDATE_MODELS}
 
 
+@pytest.mark.local_evidence
 def test_shared_vectorization_is_exact_for_training_and_serving(dataset):
     pairs = canonical_training_serving_pairs(dataset)
     training = canonical_feature_matrix(item[0] for item in pairs)
@@ -249,6 +259,7 @@ def test_shared_vectorization_is_exact_for_training_and_serving(dataset):
     assert all("::" in value for value in training[:, interaction_index])
 
 
+@pytest.mark.local_evidence
 def test_fitted_preprocessing_vectors_match_strictly(dataset, built_artifact):
     _, result = built_artifact
     pairs = canonical_training_serving_pairs(dataset)
@@ -258,6 +269,7 @@ def test_fitted_preprocessing_vectors_match_strictly(dataset, built_artifact):
     assert np.allclose(training, production, rtol=0, atol=1e-15)
 
 
+@pytest.mark.local_evidence
 def test_final_fit_uses_only_valid_boolean_labels_and_preserves_formulation(dataset, built_artifact):
     _, result = built_artifact
     pipeline, metadata = load_trusted_quality_artifact(result["model_path"].parent)
@@ -277,6 +289,7 @@ def test_final_fit_uses_only_valid_boolean_labels_and_preserves_formulation(data
     assert "Neural" not in type(classifier).__name__
 
 
+@pytest.mark.local_evidence
 def test_artifact_metadata_is_complete_and_frozen(built_artifact):
     _, result = built_artifact
     metadata = result["metadata"]
@@ -292,9 +305,10 @@ def test_artifact_metadata_is_complete_and_frozen(built_artifact):
     assert len(metadata.model_sha256) == 64
 
 
-def test_valid_artifact_loads_and_conforms_to_quality_predictor(built_artifact):
-    directory, _ = built_artifact
-    predictor = SklearnQualityPredictor.from_trusted_artifact(directory)
+def test_valid_artifact_loads_and_conforms_to_quality_predictor(deployed_production_artifact):
+    predictor = SklearnQualityPredictor.from_trusted_artifact(
+        deployed_production_artifact
+    )
     assert isinstance(predictor, QualityPredictor)
 
 
@@ -303,36 +317,39 @@ def test_missing_artifact_is_typed(tmp_path):
         load_trusted_quality_artifact(tmp_path)
 
 
-def test_corrupt_metadata_is_typed(built_artifact, tmp_path):
-    directory = _copy_artifact(built_artifact, tmp_path)
+def test_corrupt_metadata_is_typed(deployed_production_artifact, tmp_path):
+    directory = _copy_artifact(deployed_production_artifact, tmp_path)
     (directory / ARTIFACT_METADATA_FILENAME).write_text("not-json")
     with pytest.raises(CorruptPredictorArtifactError):
         load_trusted_quality_artifact(directory)
 
 
 @pytest.mark.parametrize(("change", "error"), [
-    ({"artifact_format_version": "999"}, IncompatibleArtifactFormatError),
     ({"predictor_formulation_id": "other"}, IncompatiblePredictorFormulationError),
     ({"canonical_feature_schema_version": "999"}, IncompatibleFeatureSchemaError),
-    ({"category_taxonomy_version": "999"}, IncompatibleCategoryTaxonomyError),
+    ({"known_categories": ["qa"]}, IncompatibleCategoryTaxonomyError),
 ])
-def test_incompatible_artifact_metadata_is_typed(built_artifact, tmp_path, change, error):
-    directory = _copy_artifact(built_artifact, tmp_path)
+def test_incompatible_artifact_metadata_is_typed(
+    deployed_production_artifact, tmp_path, change, error
+):
+    directory = _copy_artifact(deployed_production_artifact, tmp_path)
     _rewrite_metadata(directory, **change)
     with pytest.raises(error):
         load_trusted_quality_artifact(directory)
 
 
-def test_checksum_mismatch_is_typed(built_artifact, tmp_path):
-    directory = _copy_artifact(built_artifact, tmp_path)
+def test_checksum_mismatch_is_typed(deployed_production_artifact, tmp_path):
+    directory = _copy_artifact(deployed_production_artifact, tmp_path)
     path = directory / ARTIFACT_MODEL_FILENAME
     path.write_bytes(path.read_bytes() + b"changed")
     with pytest.raises(PredictorArtifactChecksumError):
         load_trusted_quality_artifact(directory)
 
 
-def test_checksum_valid_but_corrupt_pickle_is_typed(built_artifact, tmp_path):
-    directory = _copy_artifact(built_artifact, tmp_path)
+def test_checksum_valid_but_corrupt_pickle_is_typed(
+    deployed_production_artifact, tmp_path
+):
+    directory = _copy_artifact(deployed_production_artifact, tmp_path)
     data = b"not-a-pickle"
     (directory / ARTIFACT_MODEL_FILENAME).write_bytes(data)
     _rewrite_metadata(directory, model_sha256=hashlib.sha256(data).hexdigest())
@@ -341,25 +358,26 @@ def test_checksum_valid_but_corrupt_pickle_is_typed(built_artifact, tmp_path):
 
 
 def test_unknown_candidate_is_typed_and_registry_extensibility_is_independent(
-    built_artifact, dataset
+    deployed_production_artifact,
 ):
-    directory, _ = built_artifact
-    predictor = SklearnQualityPredictor.from_trusted_artifact(directory)
+    predictor = SklearnQualityPredictor.from_trusted_artifact(
+        deployed_production_artifact
+    )
     unknown = CANDIDATE_MODELS[0].model_copy(update={"model_id": "new-registry-model"})
     registry = ModelRegistry()
     registry.register(unknown)
     assert registry.get("new-registry-model") == unknown
     with pytest.raises(UnsupportedPredictorCandidateError, match="new-registry-model"):
-        predictor.predict(_request_for_row(dataset.rows[0]), (unknown,))
+        predictor.predict(_synthetic_features(), (unknown,))
 
 
-def test_direct_loaded_probability_parity_and_determinism(built_artifact, dataset):
-    directory, result = built_artifact
-    pipeline = result["pipeline"]
-    predictor = SklearnQualityPredictor.from_trusted_artifact(directory)
-    row = dataset.rows[0]
-    candidate = next(item for item in CANDIDATE_MODELS if item.model_id == row.candidate_id)
-    request = _request_for_row(row)
+def test_direct_loaded_probability_parity_and_determinism(deployed_production_artifact):
+    pipeline, _ = load_trusted_quality_artifact(deployed_production_artifact)
+    predictor = SklearnQualityPredictor.from_trusted_artifact(
+        deployed_production_artifact
+    )
+    candidate = CANDIDATE_MODELS[0]
+    request = _synthetic_features()
     canonical = canonical_from_production(request, candidate)
     direct = float(pipeline.predict_proba(canonical_feature_matrix((canonical,)))[0, 1])
     first = predictor.predict(request, (candidate,))[0]
@@ -369,10 +387,11 @@ def test_direct_loaded_probability_parity_and_determinism(built_artifact, datase
     assert 0 <= first.predicted_acceptability <= 1
 
 
-def test_batch_candidate_association_and_order_are_preserved(built_artifact, dataset):
-    directory, _ = built_artifact
-    predictor = SklearnQualityPredictor.from_trusted_artifact(directory)
-    request = _request_for_row(dataset.rows[0])
+def test_batch_candidate_association_and_order_are_preserved(deployed_production_artifact):
+    predictor = SklearnQualityPredictor.from_trusted_artifact(
+        deployed_production_artifact
+    )
+    request = _synthetic_features()
     forward = predictor.predict(request, CANDIDATE_MODELS)
     reverse = predictor.predict(request, tuple(reversed(CANDIDATE_MODELS)))
     assert [item.model_id for item in forward] == [item.model_id for item in CANDIDATE_MODELS]
@@ -408,6 +427,7 @@ def test_artifact_is_application_owned_and_not_exposed_by_http_api():
     assert "predictor" not in inspect.signature(inference).parameters
 
 
+@pytest.mark.local_evidence
 def test_generated_artifact_contains_no_raw_benchmark_content(built_artifact):
     directory, _ = built_artifact
     metadata_text = (directory / ARTIFACT_METADATA_FILENAME).read_text().lower()

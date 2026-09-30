@@ -1,3 +1,5 @@
+import pytest
+
 from adaptive_llm_gateway.models import InferenceRequest
 from adaptive_llm_gateway.routing.bounded_features import (
     BOUNDED_FEATURE_NAMES,
@@ -35,6 +37,7 @@ def test_comparison_structure_count_uses_pre_generation_text_only():
     assert result.comparison_structure_count == 4
 
 
+@pytest.mark.local_evidence
 def test_bounded_experiment_is_train_only_and_rejects_the_augmentation(tmp_path):
     report = analyze(tmp_path)
     assert tuple(report["features"]["tested"]) == BOUNDED_FEATURE_NAMES

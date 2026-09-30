@@ -369,6 +369,7 @@ def test_repeated_build_is_byte_identical(tmp_path):
     assert first_files == second_files
 
 
+@pytest.mark.local_evidence
 def test_canonical_hashes_match_written_artifacts():
     dataset = load_dataset(DEFAULT_DATASET)
     identities = json.loads(Path("artifacts/routing-benchmark-v1/identities.json").read_text())

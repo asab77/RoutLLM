@@ -288,6 +288,7 @@ async def test_material_veto_ambiguity_and_deterministic_precedence(tmp_path):
     assert result["details"]["failure_type"] == "DETERMINISTIC_TASK_FAILURE"
 
 
+@pytest.mark.local_evidence
 def test_historical_replay_prepares_69_blind_requests_without_execution():
     replay = prepare_historical_replay(specification())
     assert len(replay) == 69

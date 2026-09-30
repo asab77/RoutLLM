@@ -7,7 +7,6 @@ import sys
 from contextlib import asynccontextmanager
 from decimal import Decimal
 from pathlib import Path
-from uuid import UUID
 
 import httpx
 import pytest
@@ -47,10 +46,6 @@ from adaptive_llm_gateway.routing.predictor import (
     SklearnQualityPredictor,
 )
 from adaptive_llm_gateway.routing.service import RoutingDecisionService
-from adaptive_llm_gateway.routing.train_predictor import build_predictor_artifact
-
-ROOT = Path("benchmark-results")
-RUN_ID = UUID("61707aba-5ab2-4c16-8ec3-eed74555d69c")
 
 
 def model(model_id, *, price="1", enabled=True, provider="fake"):
@@ -143,13 +138,6 @@ def assert_error(response, status, code):
     assert response.json()["request_id"] == response.headers["x-request-id"]
 
 
-@pytest.fixture(scope="module")
-def built_artifact(tmp_path_factory):
-    directory = tmp_path_factory.mktemp("adaptive-http-artifact")
-    build_predictor_artifact(ROOT, RUN_ID, directory)
-    return directory
-
-
 def test_config_absent_and_blank_pair_disable_adaptive(monkeypatch):
     assert AdaptiveRoutingConfig.from_environment().enabled is False
     monkeypatch.setenv(ADAPTIVE_ARTIFACT_PATH_ENV, "  ")
@@ -187,21 +175,21 @@ def test_runtime_config_contains_no_request_policy_or_machine_path():
     assert "/Users/" not in source
 
 
-def test_runtime_construction_rejects_unknown_candidate(built_artifact):
+def test_runtime_construction_rejects_unknown_candidate(deployed_production_artifact):
     calls = []
     config = AdaptiveRoutingConfig(
-        artifact_path=built_artifact, candidate_model_ids=("unknown",)
+        artifact_path=deployed_production_artifact, candidate_model_ids=("unknown",)
     )
     with pytest.raises(ModelNotFoundError):
         build_adaptive_runtime(explicit_service((model("known"),), calls), config)
     assert calls == []
 
 
-def test_runtime_construction_rejects_predictor_unsupported_candidate(built_artifact):
+def test_runtime_construction_rejects_predictor_unsupported_candidate(deployed_production_artifact):
     calls = []
     unknown = model("registered-but-untrained")
     config = AdaptiveRoutingConfig(
-        artifact_path=built_artifact,
+        artifact_path=deployed_production_artifact,
         candidate_model_ids=(unknown.model_id,),
     )
     with pytest.raises(UnsupportedPredictorCandidateError):
@@ -215,18 +203,18 @@ def test_runtime_construction_rejects_predictor_unsupported_candidate(built_arti
     ("incompatible", IncompatibleArtifactFormatError),
 ])
 def test_artifact_startup_failures_are_typed_and_make_no_provider_calls(
-    built_artifact, tmp_path, kind, error
+    deployed_production_artifact, tmp_path, kind, error
 ):
     calls = []
     target = tmp_path / kind
     if kind != "missing":
-        shutil.copytree(built_artifact, target)
+        shutil.copytree(deployed_production_artifact, target)
         metadata_path = target / ARTIFACT_METADATA_FILENAME
         if kind == "corrupt":
             metadata_path.write_text("not-json")
         else:
             metadata = json.loads(metadata_path.read_text())
-            metadata["artifact_format_version"] = "999"
+            metadata["runtime_compatibility"]["scikit_learn_version"] = "0.0"
             metadata_path.write_text(json.dumps(metadata))
     candidate = CANDIDATE_MODELS[0].model_copy(update={"provider": "fake"})
     config = AdaptiveRoutingConfig(
@@ -238,14 +226,14 @@ def test_artifact_startup_failures_are_typed_and_make_no_provider_calls(
 
 
 def test_valid_artifact_loads_once_and_runtime_needs_no_foundation(
-    built_artifact, monkeypatch
+    deployed_production_artifact, monkeypatch
 ):
     calls = []
     candidates = tuple(
         item.model_copy(update={"provider": "fake"}) for item in CANDIDATE_MODELS[:2]
     )
     config = AdaptiveRoutingConfig(
-        artifact_path=built_artifact,
+        artifact_path=deployed_production_artifact,
         candidate_model_ids=tuple(item.model_id for item in candidates),
     )
     load_calls = 0
