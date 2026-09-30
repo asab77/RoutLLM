@@ -22,6 +22,10 @@ from adaptive_llm_gateway.application.adaptive_config import (
     AdaptiveRuntime,
     build_adaptive_runtime,
 )
+from adaptive_llm_gateway.application.chat import (
+    ChatConfiguration,
+    build_chat_orchestration_service,
+)
 from adaptive_llm_gateway.application.service import InferenceService
 from adaptive_llm_gateway.bootstrap import create_development_service
 from adaptive_llm_gateway.errors import (
@@ -32,6 +36,7 @@ from adaptive_llm_gateway.errors import (
     GatewayError,
     GatewayErrorCategory,
     InferenceDeadlineExceededError,
+    InvalidActivityCursorError,
     InvalidQualityThresholdError,
     MissingRoutingCategoryError,
     ModelDisabledError,
@@ -71,6 +76,7 @@ _ERRORS = {
     NoEligibleCandidatesError: (503, "adaptive_routing_unavailable", "Adaptive inference is unavailable."),
     InvalidQualityThresholdError: (422, "invalid_adaptive_request", "The adaptive routing request is invalid."),
     RequestLimitExceededError: (422, "invalid_request", "The request exceeds the configured production limits."),
+    InvalidActivityCursorError: (422, "invalid_activity_cursor", "The activity cursor is invalid."),
     MissingRoutingCategoryError: (422, "invalid_adaptive_request", "The adaptive routing request is invalid."),
     EvaluationNotFoundError: (404, "evaluation_not_found", "The benchmark evaluation was not found."),
     EvaluationArtifactError: (422, "evaluation_artifact_invalid", "The benchmark evaluation artifact is invalid."),
@@ -111,6 +117,7 @@ def create_app(
     rate_limiter: InferenceRateLimiter | None = None,
     observability: Observability | None = None,
     request_limits: RequestLimitSettings | None = None,
+    default_model_id: str | None = None,
 ) -> FastAPI:
     configured_observability = observability or Observability(
         ObservabilitySettings.from_environment()
@@ -144,6 +151,11 @@ def create_app(
                 application.state.adaptive_runtime = build_adaptive_runtime(
                     configured_service, config
                 )
+                application.state.chat_service = build_chat_orchestration_service(
+                    configured_service,
+                    ChatConfiguration.from_environment(),
+                    application.state.adaptive_runtime,
+                )
                 application.state.initialized = True
                 try:
                     yield
@@ -160,6 +172,14 @@ def create_app(
     app.state.inference_service.observability = configured_observability
     app.state.adaptive_runtime = adaptive_runtime
     app.state.adaptive_required = adaptive_runtime is not None
+    app.state.chat_service = (
+        build_chat_orchestration_service(
+            app.state.inference_service,
+            ChatConfiguration(default_model_id=default_model_id),
+            adaptive_runtime,
+        )
+        if default_model_id is not None else None
+    )
     app.state.rate_limiter = rate_limiter or DisabledRateLimiter()
     app.state.observability = configured_observability
     app.state.request_limits = request_limits or RequestLimitSettings.from_environment()

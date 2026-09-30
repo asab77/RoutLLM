@@ -516,6 +516,7 @@ def test_application_lifespan_reads_environment_configuration_once(monkeypatch):
 
     monkeypatch.setenv(ADAPTIVE_ARTIFACT_PATH_ENV, "trusted/artifact")
     monkeypatch.setenv(ADAPTIVE_CANDIDATES_ENV, "configured")
+    monkeypatch.setenv("ROUTELLM_DEFAULT_MODEL_ID", "configured")
     monkeypatch.setattr(app_module, "application_service", configured_service)
     monkeypatch.setattr(app_module, "build_adaptive_runtime", configured_runtime)
     application = create_app()

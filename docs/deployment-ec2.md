@@ -6,10 +6,13 @@ FINAL, training, or evaluation workflow.
 
 ## Architecture and prerequisites
 
-Internet traffic reaches Caddy. Caddy proxies to one private Uvicorn worker; the
+Internet traffic reaches Caddy. The Caddy image contains the reproducibly built
+React static assets and serves the dashboard itself; same-origin `/v1/*`,
+`/health`, and `/ready` requests are proxied to one private Uvicorn worker. The
 app reaches PostgreSQL and ephemeral Redis on a private Docker network and Vercel
 AI Gateway over outbound HTTPS. Never expose ports 8000, 5432, 6379, 9090, or
-3000. Only Caddy publishes host ports.
+3000. Only Caddy publishes host ports. Node is used only in the image build and
+is not a production service or runtime dependency.
 
 The current domainless path needs the existing EC2 instance, EBS root volume,
 security group, and public address. It adds no Elastic IP, load balancer, Route
@@ -34,7 +37,9 @@ chmod 0600 deploy/.env.production
 The real file stays outside Git, is never copied into the image, and must be
 owned by the deployment user. Replace every `REPLACE_...` value. Common settings,
 including demo auth, gateway, database, Redis/rate-limit, metrics, router, and
-input-limit settings, are required in both modes. `ROUTELLM_DOMAIN` and
+input-limit settings, are required in both modes. Set
+`ROUTELLM_DEFAULT_MODEL_ID` deliberately to an enabled registry model; startup
+fails safely if it is missing or invalid. `ROUTELLM_DOMAIN` and
 `ACME_EMAIL` are Mode B only and may be deleted from the Mode A host file. Mode A
 has no mode-specific environment variable.
 
@@ -57,6 +62,10 @@ the instance's current public IPv4 address or public EC2 hostname. It is intende
 for temporary, attended portfolio demonstrations: HTTP does not encrypt Basic
 Auth credentials or inference traffic in transit. Do not use it on an untrusted
 network or for sensitive prompts. Stop the instance when the demo is not needed.
+The dashboard and all `/v1/*` API routes require the existing Basic Auth
+credentials. `/health` and `/ready` remain unauthenticated for operational
+probes. Public metrics, benchmark, schema, and documentation routes return 404;
+authorized Prometheus access remains available only inside the app container.
 
 Permit inbound TCP port 80 in the EC2 security group. Port 443 is not needed for
 Mode A. Do not add any other public application or data-store port.
@@ -96,7 +105,8 @@ docker compose --env-file deploy/.env.production -f compose.prod.yaml up -d app 
 ```
 
 Caddy obtains and renews certificates and redirects HTTP to HTTPS. Mode B is the
-intended path for a stable public deployment.
+intended path for a stable public deployment. It uses the same auth scope as
+Mode A, with credentials and inference traffic protected by TLS.
 
 ## Zero-provider verification
 
@@ -108,11 +118,14 @@ docker compose --env-file deploy/.env.production -f compose.prod.yaml -f compose
 docker compose --env-file deploy/.env.production -f compose.prod.yaml -f compose.demo.yaml run --rm migrate python -m alembic current
 curl -fsS "$ROUTELLM_URL/health"
 curl -fsS "$ROUTELLM_URL/ready"
-curl -fsS "$ROUTELLM_URL/v1/models"
+curl -o /dev/null -sS -w '%{http_code}\n' "$ROUTELLM_URL/"
+curl -u "$DEMO_AUTH_USER" -fsS "$ROUTELLM_URL/" | grep -F '<div id="root"></div>'
+curl -u "$DEMO_AUTH_USER" -fsS "$ROUTELLM_URL/v1/models"
 curl -o /dev/null -sS -w '%{http_code}\n' "$ROUTELLM_URL/metrics"
 curl -u "$DEMO_AUTH_USER" -H 'Content-Type: application/json' \
-  -d '{"model_id":"fake-small","prompt":"deployment smoke","max_output_tokens":2}' \
-  "$ROUTELLM_URL/v1/inference"
+  -d '{"prompt":"deployment smoke","routing_mode":"auto","max_output_tokens":2}' \
+  "$ROUTELLM_URL/v1/chat"
+curl -u "$DEMO_AUTH_USER" -fsS "$ROUTELLM_URL/v1/activity?limit=5"
 ```
 
 The public metrics request must return 404. Inspect authorized metrics and the
@@ -126,7 +139,16 @@ docker compose --env-file deploy/.env.production -f compose.prod.yaml -f compose
   python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8000/v1/metrics/summary').read().decode())"
 ```
 
-Confirm fake inference appears in telemetry. Review Compose logs for structured
+The unauthenticated dashboard request must return 401 and the public metrics
+request must return 404. The browser and API share one origin, so CORS is neither
+configured nor required. Unknown `/v1/*` routes are always sent to FastAPI and
+can never fall back to the SPA. Non-API client-side routes fall back to
+`index.html` after authentication.
+
+The normal migration command upgrades an existing `0002` database through the
+request-activity `0003` migration before the application is recreated. Confirm
+the offline chat request appears in `/v1/activity` and low-level telemetry.
+Review Compose logs for structured
 JSON events and absence of prompts, credentials, or provider bodies. Verify the
 host exposes only port 80 in Mode A, or 80/443 in Mode B. A rate-limit test may
 temporarily lower the client quota and use only `fake-small`; restore it afterward.

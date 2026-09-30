@@ -233,8 +233,17 @@ HTTP request. Aggregates cover all history; per-model breakdowns are deferred.
 | `GET /v1/models` | Enabled models with registered adapters |
 | `POST /v1/inference` | Async generation using explicit `model_id` |
 | `POST /v1/inference/adaptive` | Configured adaptive routing with optional validation/escalation |
+| `POST /v1/chat` | Frontend orchestration: configured direct AUTO or explicit-category MANUAL |
+| `GET /v1/activity` | Bounded newest-first request activity with opaque cursor pagination |
 | `GET /v1/metrics/summary` | Aggregate persisted telemetry |
 | `GET /v1/benchmarks/{run_id}/summary` | Read a previously generated evaluation summary |
+
+`POST /v1/chat` requires the trusted server setting
+`ROUTELLM_DEFAULT_MODEL_ID`, which must name an enabled registered model. In
+`auto` mode that model is called directly; no category is inferred and category or
+validation fields are rejected. In `manual` mode the caller supplies one canonical
+category and the existing adaptive router is used, with optional deterministic
+validation. The server-owned adaptive quality threshold remains 0.80.
 
 Discovery intentionally exposes only model ID, provider, and context window.
 Provider model names and pricing stay out of discovery; cost is returned per

@@ -213,8 +213,14 @@ def test_dockerfile_and_build_context_are_production_only():
     assert '"--workers", "1"' in dockerfile
     assert '"--forwarded-allow-ips", "172.30.0.2"' in dockerfile
     assert "--reload" not in dockerfile
+    assert "FROM node:24.9.0-alpine AS frontend-build" in dockerfile
+    assert "RUN npm ci" in dockerfile
+    assert "RUN npm run build" in dockerfile
+    assert "FROM caddy:2.10.2-alpine AS edge" in dockerfile
+    assert "COPY --from=frontend-build /build/frontend/dist /srv" in dockerfile
     assert "COPY --chown=routellm:routellm deploy/router" in dockerfile
     assert "artifacts" in dockerignore and "benchmark-results" in dockerignore
+    assert "frontend/node_modules" in dockerignore and "frontend/dist" in dockerignore
     assert ".env" in dockerignore and "!deploy/router/**" in dockerignore
 
 
@@ -276,6 +282,9 @@ def test_production_compose_is_private_persistent_and_restartable():
     assert services["caddy"]["restart"] == "unless-stopped"
     assert all("healthcheck" in services[name] for name in ("app", "postgres", "redis"))
     assert services["migrate"]["image"] == services["app"]["image"]
+    assert services["app"]["build"]["target"] == "runtime"
+    assert services["migrate"]["build"]["target"] == "runtime"
+    assert services["caddy"]["build"]["target"] == "edge"
     assert services["migrate"]["command"][-2:] == ["upgrade", "head"]
     assert any("postgres_data" in item["source"] for item in services["postgres"]["volumes"])
     assert not services["redis"].get("volumes")
@@ -302,8 +311,12 @@ def test_domainless_edge_preserves_auth_blocking_and_proxy_security():
     assert caddy.startswith(":80 {")
     assert "{$ROUTELLM_DOMAIN}" not in caddy
     assert "{$ACME_EMAIL}" not in caddy
-    assert "basic_auth @paid" in caddy
-    assert "/v1/inference /v1/inference/adaptive" in caddy
+    assert "basic_auth {" in caddy
+    assert "@api path /v1 /v1/*" in caddy
+    assert "@probes path /health /ready" in caddy
+    assert "root * /srv" in caddy
+    assert "try_files {path} /index.html" in caddy
+    assert "file_server" in caddy
     for path in ("/metrics", "/v1/metrics/summary", "/v1/benchmarks/*", "/docs", "/redoc", "/openapi.json"):
         assert path in caddy
     assert "respond @protected 404" in caddy
@@ -315,13 +328,16 @@ def test_domain_https_edge_remains_configured_for_automatic_tls():
     caddy = (ROOT / "deploy" / "Caddyfile").read_text()
     assert "email {$ACME_EMAIL}" in caddy
     assert "{$ROUTELLM_DOMAIN} {" in caddy
-    assert "basic_auth @paid" in caddy
+    assert "basic_auth {" in caddy
+    assert "@api path /v1 /v1/*" in caddy
+    assert "root * /srv" in caddy
 
 
 def test_edge_policy_gates_paid_and_blocks_operational_routes():
     caddy = (ROOT / "deploy" / "Caddyfile").read_text()
-    assert "basic_auth @paid" in caddy
-    assert "/v1/inference /v1/inference/adaptive" in caddy
+    assert "basic_auth {" in caddy
+    assert "@api path /v1 /v1/*" in caddy
+    assert "@probes path /health /ready" in caddy
     for path in ("/metrics", "/v1/metrics/summary", "/v1/benchmarks/*", "/docs", "/redoc", "/openapi.json"):
         assert path in caddy
     assert "respond @protected 404" in caddy
@@ -363,6 +379,7 @@ def test_production_environment_is_placeholder_only_and_not_copied():
     dockerfile = (ROOT / "Dockerfile").read_text()
     assert "REPLACE_WITH" in template
     assert "AI_GATEWAY_API_KEY=REPLACE_WITH" in template
+    assert "ROUTELLM_DEFAULT_MODEL_ID=REPLACE_WITH_ENABLED_MODEL_ID" in template
     assert "local_dev_only" not in template
     assert "COPY ." not in dockerfile
     assert ".env.production" not in dockerfile

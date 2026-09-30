@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import BigInteger, Boolean, CheckConstraint, DateTime, Double, Index, Numeric, String, Uuid
+from sqlalchemy import BigInteger, Boolean, CheckConstraint, DateTime, Double, Index, Numeric, String, Uuid, desc
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -70,4 +70,38 @@ class AdaptiveExecutionTelemetry(Base):
     validator_version: Mapped[str | None] = mapped_column(String(64))
     validation_duration_ms: Mapped[float] = mapped_column(Double)
     failure_codes: Mapped[str | None] = mapped_column(String(512))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class ChatActivity(Base):
+    __tablename__ = "chat_activity"
+    __table_args__ = (
+        CheckConstraint("attempt_count IS NULL OR (attempt_count > 0 AND attempt_count <= 3)", name="ck_chat_activity_attempt_count"),
+        CheckConstraint("input_tokens IS NULL OR input_tokens >= 0", name="ck_chat_activity_input_tokens"),
+        CheckConstraint("output_tokens IS NULL OR output_tokens >= 0", name="ck_chat_activity_output_tokens"),
+        CheckConstraint("latency_ms IS NULL OR latency_ms >= 0", name="ck_chat_activity_latency"),
+        CheckConstraint("estimated_cost_usd IS NULL OR estimated_cost_usd >= 0", name="ck_chat_activity_cost"),
+        Index("ix_chat_activity_created_id", desc("created_at"), desc("id")),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
+    request_id: Mapped[str] = mapped_column(String(128), unique=True)
+    execution_mode: Mapped[str] = mapped_column(String(16))
+    category: Mapped[str | None] = mapped_column(String(64))
+    category_source: Mapped[str | None] = mapped_column(String(16))
+    initial_model_id: Mapped[str | None] = mapped_column(String)
+    final_model_id: Mapped[str | None] = mapped_column(String)
+    provider: Mapped[str | None] = mapped_column(String)
+    routing_threshold_satisfied: Mapped[bool | None] = mapped_column(Boolean)
+    routing_fallback_used: Mapped[bool | None] = mapped_column(Boolean)
+    attempt_count: Mapped[int | None] = mapped_column(BigInteger)
+    escalated: Mapped[bool | None] = mapped_column(Boolean)
+    validation_outcome: Mapped[str | None] = mapped_column(String(32))
+    outcome: Mapped[str] = mapped_column(String(32))
+    error_category: Mapped[str | None] = mapped_column(String(64))
+    input_tokens: Mapped[int | None] = mapped_column(BigInteger)
+    output_tokens: Mapped[int | None] = mapped_column(BigInteger)
+    latency_ms: Mapped[float | None] = mapped_column(Double)
+    estimated_cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(asdecimal=True))
+    cost_complete: Mapped[bool] = mapped_column(Boolean)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

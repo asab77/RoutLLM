@@ -19,7 +19,7 @@ from sqlalchemy.pool import NullPool
 from adaptive_llm_gateway.persistence.config import DatabaseSettings
 from adaptive_llm_gateway.persistence.models import InferenceTelemetry
 from adaptive_llm_gateway.persistence.repository import PostgresTelemetryRepository
-from adaptive_llm_gateway.telemetry.contracts import TelemetryEvent
+from adaptive_llm_gateway.telemetry.contracts import ChatActivityRecord, TelemetryEvent
 
 pytestmark = pytest.mark.postgres
 
@@ -109,6 +109,47 @@ async def test_constraint_rollback_and_fresh_session_recovery(database):
         await repository.record(replace(event, id=uuid4(), input_tokens=-1))
     await repository.record(replace(event, id=uuid4()))
     assert (await repository.summary()).total_requests == 2
+
+
+@pytest.mark.asyncio
+async def test_chat_activity_roundtrip_unique_request_and_stable_cursor(database):
+    _, sessions = database
+    repository = PostgresTelemetryRepository(sessions)
+    created = datetime.now(timezone.utc)
+    rows = [ChatActivityRecord(
+        request_id=f"chat-{index}",
+        execution_mode="adaptive" if index == 1 else "direct",
+        category="coding" if index == 1 else None,
+        category_source="manual" if index == 1 else None,
+        initial_model_id="fake-small" if index == 1 else None,
+        final_model_id="fake-large" if index == 1 else "fake-small",
+        provider="fake",
+        routing_threshold_satisfied=True if index == 1 else None,
+        routing_fallback_used=False if index == 1 else None,
+        attempt_count=2 if index == 1 else 1,
+        escalated=index == 1,
+        validation_outcome="passed" if index == 1 else None,
+        outcome="returned",
+        input_tokens=3,
+        output_tokens=2,
+        latency_ms=12,
+        estimated_cost_usd=Decimal("0.000001950000000000000000000001"),
+        cost_complete=True,
+        created_at=created,
+    ) for index in range(3)]
+    for row in rows:
+        await repository.record_chat_activity(row)
+    first, more = await repository.list_chat_activity(limit=2, before=None)
+    second, final_more = await repository.list_chat_activity(
+        limit=2, before=(first[-1].created_at, first[-1].id)
+    )
+    assert more is True and final_more is False
+    assert len({item.request_id for item in first + second}) == 3
+    assert first[0].created_at == created
+    assert first[0].estimated_cost_usd == rows[0].estimated_cost_usd
+    assert "prompt" not in type(first[0]).model_fields
+    with pytest.raises(IntegrityError):
+        await repository.record_chat_activity(rows[0].model_copy(update={"id": uuid4()}))
 
 
 @pytest.mark.asyncio

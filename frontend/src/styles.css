@@ -156,9 +156,26 @@ details[open] > summary .when-open { display: inline; }
 .activity { max-width: 660px; margin: auto; padding: 55px 35px; }
 .activity h1 { font-size: 32px; line-height: 1.2; font-weight: 550; letter-spacing: -1px; }
 .activity p { color: var(--text-muted); }
+.activity-real { max-width: 1180px; width: 100%; margin: 0 auto; }
+.activity-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
+.activity-heading h1 { margin: 7px 0; }
+.activity-heading p { margin: 0; }
+.activity-state { padding: 32px 0; border-top: 1px solid var(--border); }
+.activity-table-wrap { overflow-x: auto; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.activity-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.activity-table th { color: var(--text-muted); font: 10px/1.4 ui-monospace, monospace; letter-spacing: .08em; text-align: left; text-transform: uppercase; }
+.activity-table th, .activity-table td { padding: 12px 10px; border-bottom: 1px solid var(--border); vertical-align: top; white-space: nowrap; }
+.activity-table tbody tr:last-child td { border-bottom: 0; }
+.activity-table td:first-child { white-space: normal; min-width: 145px; }
+.activity-table td:nth-child(4) { white-space: normal; min-width: 150px; }
+.activity-table code, .activity-table small { display: block; margin-top: 4px; color: var(--text-muted); font-size: 10px; }
+.activity-table .success { color: var(--success); }
+.activity-table .warning { color: var(--warning); }
+.load-more { margin-top: 20px; }
+.activity-inline-error { margin-top: 14px; color: var(--error) !important; }
 .text-button { background: none; border: 0; padding: 10px 0; color: var(--text); font-size: 12px; }
 @media (hover: hover) { .icon-button:hover, .recent button:hover, .sidebar nav button:hover, .suggestions button:hover, .new-chat:hover { background: var(--surface-elevated); color: var(--text); } }
 @media (max-width: 1150px) { .app { grid-template-columns: 212px minmax(0, 1fr); } .workspace-body.with-controls { grid-template-columns: minmax(0, 1fr) 270px; } .conversation, .composer-dock { padding-left: 25px; padding-right: 25px; } .topbar { padding: 0 24px; } }
 @media (max-width: 900px) { .app { grid-template-columns: 1fr; } .sidebar { display: none; } .sidebar-open { display: flex; position: fixed; z-index: 25; top: 76px; width: 248px; height: calc(100dvh - 76px); box-shadow: 15px 0 40px var(--shadow); } .menu-button { display: inline-grid; } .topbar { height: 76px; } .main, .workspace-body { min-height: calc(100dvh - 76px); } .welcome h1 { font-size: 39px; } }
-@media (max-width: 650px) { .topbar { padding: 0 14px; } .topbar-actions { gap: 12px; } .topbar-title { gap: 5px; font-size: 12px; } .topbar-title .muted { display: none; } .workspace-body.with-controls { grid-template-columns: minmax(0, 1fr); } .advanced-controls { grid-row: 1; border-left: 0; border-bottom: 1px solid var(--border); padding: 20px; } .conversation { padding: 26px 20px 20px; } .composer-dock { padding: 12px 15px; } .welcome { margin-top: 25px; } .welcome h1 { font-size: 33px; } .suggestions { flex-direction: column; align-items: flex-start; } .settings-popover { width: min(288px, calc(100vw - 28px)); } .trace-title { gap: 7px; } .route-action { font-size: 9px; gap: 4px; } .user-message { max-width: 92%; } .composer-bottom > span, .composer-help { font-size: 9px; } }
+@media (max-width: 650px) { .topbar { padding: 0 14px; } .topbar-actions { gap: 12px; } .topbar-title { gap: 5px; font-size: 12px; } .topbar-title .muted { display: none; } .workspace-body.with-controls { grid-template-columns: minmax(0, 1fr); } .advanced-controls { grid-row: 1; border-left: 0; border-bottom: 1px solid var(--border); padding: 20px; } .conversation { padding: 26px 20px 20px; } .composer-dock { padding: 12px 15px; } .welcome { margin-top: 25px; } .welcome h1 { font-size: 33px; } .suggestions { flex-direction: column; align-items: flex-start; } .settings-popover { width: min(288px, calc(100vw - 28px)); } .trace-title { gap: 7px; } .route-action { font-size: 9px; gap: 4px; } .user-message { max-width: 92%; } .composer-bottom > span, .composer-help { font-size: 9px; } .activity-real { padding: 30px 18px; } .activity-heading { gap: 12px; } .activity-table th:nth-child(3), .activity-table td:nth-child(3), .activity-table th:nth-child(6), .activity-table td:nth-child(6), .activity-table th:nth-child(7), .activity-table td:nth-child(7), .activity-table th:nth-child(9), .activity-table td:nth-child(9) { display: none; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }

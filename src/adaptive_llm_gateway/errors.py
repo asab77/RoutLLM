@@ -111,6 +111,10 @@ class RequestLimitExceededError(ValueError):
     """The public request exceeds trusted cost-safety bounds."""
 
 
+class InvalidActivityCursorError(ValueError):
+    """The public activity cursor is malformed or unsupported."""
+
+
 class DuplicateCandidatePredictionError(RoutingPolicyError):
     """More than one prediction was supplied for a model identifier."""
 

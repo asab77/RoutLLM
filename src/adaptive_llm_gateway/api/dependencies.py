@@ -2,6 +2,7 @@ from fastapi import Request
 
 from adaptive_llm_gateway.api.limits import RequestLimitSettings
 from adaptive_llm_gateway.application.adaptive_config import AdaptiveRuntime
+from adaptive_llm_gateway.application.chat import ChatOrchestrationService
 from adaptive_llm_gateway.application.service import InferenceService
 from adaptive_llm_gateway.errors import AdaptiveRoutingUnavailableError
 from adaptive_llm_gateway.evaluation.service import EvaluationService
@@ -25,6 +26,13 @@ async def get_adaptive_runtime(request: Request) -> AdaptiveRuntime:
             "adaptive routing is not configured"
         )
     return runtime
+
+
+async def get_chat_service(request: Request) -> ChatOrchestrationService:
+    service = request.app.state.chat_service
+    if service is None:
+        raise AdaptiveRoutingUnavailableError("chat orchestration is not configured")
+    return service
 
 
 async def get_rate_limiter(request: Request) -> InferenceRateLimiter:

@@ -1,4 +1,4 @@
-import type { AdaptiveResponse } from '../api/types';
+import type { ChatResponse, DirectChatResponse } from '../api/types';
 
 export const scenarios = [
   { id: 'normal', label: 'Threshold met', detail: 'A qualifying model is selected.' },
@@ -8,7 +8,7 @@ export const scenarios = [
 ] as const;
 export type Scenario = typeof scenarios[number]['id'];
 
-const normal: AdaptiveResponse = {
+const normal: DirectChatResponse = {
   text: 'Adaptive routing chooses a model for each request, balancing predicted acceptability with projected cost.\n\nWhen several models meet the routing threshold, RoutLLM selects the least expensive qualifying model. If none qualify, the fallback policy chooses the candidate with the highest predicted acceptability.\n\nThe result: one interface for your request, with the routing decision available beneath each answer.',
   model_id: 'candidate-nemotron-3.5-lightning',
   provider: 'vercel',
@@ -17,15 +17,10 @@ const normal: AdaptiveResponse = {
   latency_ms: 184,
   estimated_cost_usd: '0.00000135',
   request_id: 'sim-threshold-001',
-  routing: {
-    selected_model_id: 'candidate-nemotron-3.5-lightning',
-    threshold_satisfied: true,
-    fallback_used: false,
-    reason: 'quality_threshold_met',
-  },
+  execution_mode: 'direct',
 };
 
-export const fixtures: Record<Exclude<Scenario, 'error'>, AdaptiveResponse> = {
+export const fixtures: Record<Exclude<Scenario, 'error'>, ChatResponse> = {
   normal,
   fallback: {
     ...normal,
@@ -36,6 +31,9 @@ export const fixtures: Record<Exclude<Scenario, 'error'>, AdaptiveResponse> = {
     latency_ms: 426,
     estimated_cost_usd: '0.000074',
     request_id: 'sim-fallback-001',
+    execution_mode: 'adaptive',
+    category: 'coding',
+    category_source: 'manual',
     routing: {
       selected_model_id: 'candidate-claude-sonnet-5',
       threshold_satisfied: false,
@@ -52,6 +50,15 @@ export const fixtures: Record<Exclude<Scenario, 'error'>, AdaptiveResponse> = {
     latency_ms: 240,
     estimated_cost_usd: '0.0000037',
     request_id: 'sim-escalation-001',
+    execution_mode: 'adaptive',
+    category: 'reasoning',
+    category_source: 'manual',
+    routing: {
+      selected_model_id: 'candidate-nemotron-3.5-lightning',
+      threshold_satisfied: true,
+      fallback_used: false,
+      reason: 'quality_threshold_met',
+    },
     execution: {
       attempts: 2,
       escalated: true,

@@ -97,3 +97,52 @@ class AdaptiveExecutionTelemetryRepository(Protocol):
     async def record_adaptive_execution(
         self, event: AdaptiveExecutionTelemetry
     ) -> None: ...
+
+
+class ChatExecutionMode(StrEnum):
+    DIRECT = "direct"
+    ADAPTIVE = "adaptive"
+
+
+class ChatActivityOutcome(StrEnum):
+    RETURNED = "returned"
+    PROVIDER_FAILURE = "provider_failure"
+    VALIDATION_FAILED = "validation_failed"
+    DEADLINE_EXCEEDED = "deadline_exceeded"
+
+
+class ChatActivityRecord(DomainModel):
+    """One privacy-safe request-level summary for a /v1/chat execution."""
+
+    id: UUID = Field(default_factory=uuid4)
+    request_id: str = Field(min_length=1, max_length=128)
+    execution_mode: ChatExecutionMode
+    category: str | None = Field(default=None, max_length=64)
+    category_source: Literal["manual"] | None = None
+    initial_model_id: str | None = Field(default=None, min_length=1)
+    final_model_id: str | None = Field(default=None, min_length=1)
+    provider: str | None = Field(default=None, min_length=1)
+    routing_threshold_satisfied: bool | None = None
+    routing_fallback_used: bool | None = None
+    attempt_count: int | None = Field(default=None, gt=0, le=3)
+    escalated: bool | None = None
+    validation_outcome: str | None = Field(default=None, max_length=32)
+    outcome: ChatActivityOutcome
+    error_category: str | None = Field(default=None, max_length=64)
+    input_tokens: int | None = Field(default=None, ge=0)
+    output_tokens: int | None = Field(default=None, ge=0)
+    latency_ms: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    estimated_cost_usd: Decimal | None = Field(default=None, ge=0)
+    cost_complete: bool
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class ChatActivityRepository(Protocol):
+    async def record_chat_activity(self, event: ChatActivityRecord) -> None: ...
+
+    async def list_chat_activity(
+        self,
+        *,
+        limit: int,
+        before: tuple[datetime, UUID] | None,
+    ) -> tuple[list[ChatActivityRecord], bool]: ...

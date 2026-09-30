@@ -1,21 +1,38 @@
 :80 {
 	encode zstd gzip
 
-	@paid path /v1/inference /v1/inference/adaptive
-	basic_auth @paid {
-		{$DEMO_AUTH_USER} {$DEMO_AUTH_PASSWORD_HASH}
-	}
+	route {
+		@protected path /metrics /v1/metrics/summary /v1/benchmarks/* /docs /docs/* /redoc /redoc/* /openapi.json
+		respond @protected 404
 
-	@protected path /metrics /v1/metrics/summary /v1/benchmarks/* /docs /docs/* /redoc /redoc/* /openapi.json
-	respond @protected 404
+		@probes path /health /ready
+		reverse_proxy @probes app:8000 {
+			header_up -Forwarded
+			header_up -X-Forwarded-For
+			header_up X-Forwarded-For {remote_host}
+			header_up -X-Real-IP
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+			header_up X-Forwarded-Host {host}
+		}
 
-	reverse_proxy app:8000 {
-		header_up -Forwarded
-		header_up -X-Forwarded-For
-		header_up X-Forwarded-For {remote_host}
-		header_up -X-Real-IP
-		header_up X-Real-IP {remote_host}
-		header_up X-Forwarded-Proto {scheme}
-		header_up X-Forwarded-Host {host}
+		basic_auth {
+			{$DEMO_AUTH_USER} {$DEMO_AUTH_PASSWORD_HASH}
+		}
+
+		@api path /v1 /v1/*
+		reverse_proxy @api app:8000 {
+			header_up -Forwarded
+			header_up -X-Forwarded-For
+			header_up X-Forwarded-For {remote_host}
+			header_up -X-Real-IP
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+			header_up X-Forwarded-Host {host}
+		}
+
+		root * /srv
+		try_files {path} /index.html
+		file_server
 	}
 }

@@ -3,21 +3,23 @@ import logging
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from prometheus_client import CONTENT_TYPE_LATEST
 from starlette.responses import JSONResponse, Response
 
 from adaptive_llm_gateway.api.limits import RequestLimitSettings
 from adaptive_llm_gateway.application.adaptive_config import AdaptiveRuntime
+from adaptive_llm_gateway.application.chat import ChatOrchestrationService, ChatRoutingMode
 from adaptive_llm_gateway.application.service import InferenceService
 from adaptive_llm_gateway.errors import InvalidQualityThresholdError
 from adaptive_llm_gateway.evaluation.service import EvaluationService
 from adaptive_llm_gateway.observability import Observability
 from adaptive_llm_gateway.rate_limit import InferenceKind, InferenceRateLimiter
-from adaptive_llm_gateway.telemetry.query import TelemetryQueryService
+from adaptive_llm_gateway.telemetry.query import ChatActivityQueryService, TelemetryQueryService
 
 from .dependencies import (
     get_adaptive_runtime,
+    get_chat_service,
     get_evaluation_service,
     get_observability,
     get_rate_limiter,
@@ -27,7 +29,11 @@ from .dependencies import (
 from .schemas import (
     AdaptiveInferencePayload,
     AdaptiveInferenceResult,
+    ActivityItem,
+    ActivityPage,
     BenchmarkEvaluationSummary,
+    ChatPayload,
+    ChatResult,
     ErrorResponse,
     HealthResponse,
     InferencePayload,
@@ -44,6 +50,7 @@ router = APIRouter()
 Service = Annotated[InferenceService, Depends(get_service)]
 Evaluation = Annotated[EvaluationService, Depends(get_evaluation_service)]
 Adaptive = Annotated[AdaptiveRuntime, Depends(get_adaptive_runtime)]
+Chat = Annotated[ChatOrchestrationService, Depends(get_chat_service)]
 RateLimiter = Annotated[InferenceRateLimiter, Depends(get_rate_limiter)]
 Metrics = Annotated[Observability, Depends(get_observability)]
 RequestLimits = Annotated[RequestLimitSettings, Depends(get_request_limits)]
@@ -220,11 +227,92 @@ async def adaptive_inference(
     )
 
 
+@router.post(
+    "/v1/chat",
+    response_model=ChatResult,
+    response_model_exclude_none=True,
+    tags=["inference"],
+    responses={status: {"model": ErrorResponse} for status in (400, 403, 404, 422, 429, 502, 503, 504)},
+)
+async def chat_inference(
+    payload: ChatPayload,
+    request: Request,
+    chat: Chat,
+    rate_limiter: RateLimiter,
+    service: Service,
+    request_limits: RequestLimits,
+) -> ChatResult:
+    request_limits.validate_request(payload)
+    deadline = service.new_deadline()
+    kind = (
+        InferenceKind.EXPLICIT
+        if payload.routing_mode is ChatRoutingMode.AUTO
+        else InferenceKind.ADAPTIVE
+    )
+    await rate_limiter.admit(_effective_client(request), kind, deadline)
+    result = await chat.generate(
+        payload.to_domain(),
+        routing_mode=payload.routing_mode,
+        category=payload.category,
+        validation=payload.validation,
+        request_id=request.state.request_id,
+        deadline=deadline,
+    )
+    decision = result.routing_decision
+    execution = result.execution
+    return ChatResult(
+        **result.response.model_dump(),
+        request_id=request.state.request_id,
+        execution_mode=result.execution_mode,
+        category=result.category,
+        category_source=result.category_source,
+        routing=(
+            PublicRoutingMetadata(
+                selected_model_id=decision.selected_model_id,
+                threshold_satisfied=decision.threshold_satisfied,
+                fallback_used=decision.fallback_used,
+                reason=decision.reason,
+            )
+            if decision is not None else None
+        ),
+        execution=(
+            PublicExecutionMetadata(
+                attempts=len(execution.attempts),
+                escalated=execution.escalated,
+                validation_outcome="passed",
+                total_estimated_cost_usd=execution.total_estimated_cost_usd,
+                total_latency_ms=execution.total_latency_ms,
+            )
+            if execution is not None else None
+        ),
+    )
+
+
 @router.get("/v1/metrics/summary", response_model=MetricsSummary, tags=["metrics"],
             responses={503: {"model": ErrorResponse}})
 async def metrics_summary(service: Service) -> MetricsSummary:
     summary = await TelemetryQueryService(service.telemetry, service.telemetry_timeout).summary()
     return MetricsSummary(**summary.model_dump())
+
+
+@router.get(
+    "/v1/activity",
+    response_model=ActivityPage,
+    tags=["activity"],
+    responses={status: {"model": ErrorResponse} for status in (400, 422, 503)},
+)
+async def activity(
+    service: Service,
+    limit: Annotated[int, Query(ge=1, le=100)] = 25,
+    cursor: Annotated[str | None, Query(min_length=1, max_length=256)] = None,
+) -> ActivityPage:
+    page = await ChatActivityQueryService(
+        service.telemetry, service.telemetry_timeout
+    ).page(limit=limit, cursor=cursor)
+    return ActivityPage(
+        items=[ActivityItem(**item.model_dump()) for item in page.items],
+        next_cursor=page.next_cursor,
+    )
 
 
 @router.get("/v1/benchmarks/{run_id}/summary", response_model=BenchmarkEvaluationSummary,

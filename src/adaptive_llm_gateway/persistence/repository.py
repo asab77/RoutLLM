@@ -1,16 +1,18 @@
 from dataclasses import asdict
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from adaptive_llm_gateway.telemetry.contracts import (
     AdaptiveExecutionTelemetry,
+    ChatActivityRecord,
     TelemetryEvent,
     TelemetrySummary,
 )
 
 from .models import InferenceTelemetry as Row
 from .models import AdaptiveExecutionTelemetry as AdaptiveRow
+from .models import ChatActivity as ChatActivityRow
 
 
 class PostgresTelemetryRepository:
@@ -33,6 +35,62 @@ class PostgresTelemetryRepository:
         )
         async with self.sessions.begin() as session:
             session.add(AdaptiveRow(**values))
+
+    async def record_chat_activity(self, event: ChatActivityRecord) -> None:
+        values = event.model_dump(mode="python")
+        values["execution_mode"] = event.execution_mode.value
+        values["outcome"] = event.outcome.value
+        async with self.sessions.begin() as session:
+            session.add(ChatActivityRow(**values))
+
+    async def list_chat_activity(
+        self,
+        *,
+        limit: int,
+        before: tuple | None,
+    ) -> tuple[list[ChatActivityRecord], bool]:
+        statement = select(ChatActivityRow)
+        if before is not None:
+            created_at, row_id = before
+            statement = statement.where(or_(
+                ChatActivityRow.created_at < created_at,
+                and_(
+                    ChatActivityRow.created_at == created_at,
+                    ChatActivityRow.id < row_id,
+                ),
+            ))
+        statement = statement.order_by(
+            ChatActivityRow.created_at.desc(), ChatActivityRow.id.desc()
+        ).limit(limit + 1)
+        async with self.sessions() as session:
+            rows = list((await session.scalars(statement)).all())
+        has_more = len(rows) > limit
+        return [
+            ChatActivityRecord(
+                id=row.id,
+                request_id=row.request_id,
+                execution_mode=row.execution_mode,
+                category=row.category,
+                category_source=row.category_source,
+                initial_model_id=row.initial_model_id,
+                final_model_id=row.final_model_id,
+                provider=row.provider,
+                routing_threshold_satisfied=row.routing_threshold_satisfied,
+                routing_fallback_used=row.routing_fallback_used,
+                attempt_count=row.attempt_count,
+                escalated=row.escalated,
+                validation_outcome=row.validation_outcome,
+                outcome=row.outcome,
+                error_category=row.error_category,
+                input_tokens=row.input_tokens,
+                output_tokens=row.output_tokens,
+                latency_ms=row.latency_ms,
+                estimated_cost_usd=row.estimated_cost_usd,
+                cost_complete=row.cost_complete,
+                created_at=row.created_at,
+            )
+            for row in rows[:limit]
+        ], has_more
 
     async def summary(self) -> TelemetrySummary:
         statement = select(

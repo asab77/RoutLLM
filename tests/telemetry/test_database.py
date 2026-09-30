@@ -12,6 +12,7 @@ from pydantic import ValidationError
 from adaptive_llm_gateway.persistence.config import DatabaseSettings
 from adaptive_llm_gateway.persistence.models import (
     AdaptiveExecutionTelemetry as AdaptiveExecutionRow,
+    ChatActivity as ChatActivityRow,
     InferenceTelemetry,
 )
 from adaptive_llm_gateway.persistence.repository import PostgresTelemetryRepository
@@ -56,11 +57,13 @@ def test_migrations_load_and_render_postgres_ddl(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://test:unused@localhost/test")
     output = StringIO()
     config = Config("alembic.ini", output_buffer=output)
-    assert ScriptDirectory.from_config(config).get_current_head() == "0002"
+    assert ScriptDirectory.from_config(config).get_current_head() == "0003"
     command.upgrade(config, "head", sql=True)
     sql = output.getvalue()
     assert "CREATE TABLE inference_telemetry" in sql
     assert "CREATE TABLE adaptive_execution_telemetry" in sql
+    assert "CREATE TABLE chat_activity" in sql
+    assert "ix_chat_activity_created_id" in sql
     assert "NUMERIC" in sql and "TIMESTAMP WITH TIME ZONE" in sql
     assert "ix_telemetry_request_id" in sql
     assert "INSERT INTO alembic_version" in sql
@@ -80,6 +83,14 @@ def test_storage_schema_contains_no_raw_content():
     } & set(adaptive_columns.keys())
     assert adaptive_columns.cumulative_known_cost_usd.type.asdecimal
     assert adaptive_columns.cumulative_known_cost_usd.type.scale is None
+    activity_columns = ChatActivityRow.__table__.columns
+    assert not {
+        "prompt", "system_prompt", "response", "text", "exception",
+        "stack_trace", "provider_body", "authorization",
+    } & set(activity_columns.keys())
+    assert activity_columns.estimated_cost_usd.type.asdecimal
+    assert activity_columns.estimated_cost_usd.type.scale is None
+    assert activity_columns.request_id.unique
 
 
 def event():

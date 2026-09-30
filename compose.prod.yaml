@@ -19,6 +19,7 @@ x-app-environment: &app-environment
   RATE_LIMIT_ADAPTIVE_WEIGHT: ${RATE_LIMIT_ADAPTIVE_WEIGHT:-2}
   METRICS_ENABLED: ${METRICS_ENABLED:-true}
   METRICS_BEARER_TOKEN: ${METRICS_BEARER_TOKEN:?set METRICS_BEARER_TOKEN}
+  ROUTELLM_DEFAULT_MODEL_ID: ${ROUTELLM_DEFAULT_MODEL_ID:?set ROUTELLM_DEFAULT_MODEL_ID}
   ROUTELLM_ADAPTIVE_ARTIFACT_PATH: ${ROUTELLM_ADAPTIVE_ARTIFACT_PATH:-/app/deploy/router}
   ROUTELLM_ADAPTIVE_CANDIDATES: ${ROUTELLM_ADAPTIVE_CANDIDATES:-candidate-claude-sonnet-5,candidate-gemini-3-flash,candidate-gpt-6-luna,candidate-nemotron-3.5-lightning}
   ROUTELLM_MAX_PROMPT_CHARACTERS: ${ROUTELLM_MAX_PROMPT_CHARACTERS:-12000}
@@ -69,6 +70,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: runtime
     command: ["python", "-m", "alembic", "upgrade", "head"]
     environment: *app-environment
     depends_on:
@@ -89,6 +91,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: runtime
     environment: *app-environment
     depends_on:
       postgres:
@@ -115,7 +118,11 @@ services:
       backend: {}
 
   caddy:
-    image: caddy:2.10.2-alpine
+    image: routellm-edge:prod
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: edge
     environment:
       ROUTELLM_DOMAIN: ${ROUTELLM_DOMAIN:-}
       ACME_EMAIL: ${ACME_EMAIL:-}

@@ -30,6 +30,9 @@ def isolate_database_environment(monkeypatch, request):
     monkeypatch.delenv("TELEMETRY_TIMEOUT_SECONDS", raising=False)
     monkeypatch.delenv("ROUTELLM_ADAPTIVE_ARTIFACT_PATH", raising=False)
     monkeypatch.delenv("ROUTELLM_ADAPTIVE_CANDIDATES", raising=False)
+    # Ordinary application tests use the registered offline fake model. Tests
+    # for missing chat configuration explicitly delete this variable.
+    monkeypatch.setenv("ROUTELLM_DEFAULT_MODEL_ID", "fake-small")
     monkeypatch.delenv("ROUTELLM_MAX_PROMPT_CHARACTERS", raising=False)
     monkeypatch.delenv("ROUTELLM_MAX_OUTPUT_TOKENS", raising=False)
 

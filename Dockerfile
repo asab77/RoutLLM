@@ -1,3 +1,11 @@
+FROM node:24.9.0-alpine AS frontend-build
+
+WORKDIR /build/frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+
 FROM python:3.12.12-slim-bookworm AS dependencies
 
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
@@ -37,3 +45,7 @@ COPY --chown=routellm:routellm deploy/router ./deploy/router
 USER 10001:10001
 
 CMD ["python", "-m", "uvicorn", "adaptive_llm_gateway.api.app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--proxy-headers", "--forwarded-allow-ips", "172.30.0.2", "--no-access-log"]
+
+FROM caddy:2.10.2-alpine AS edge
+
+COPY --from=frontend-build /build/frontend/dist /srv

@@ -1,7 +1,14 @@
 from decimal import Decimal
+from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+from adaptive_llm_gateway.application.chat import (
+    CategorySource,
+    ChatExecutionMode,
+    ChatRoutingMode,
+)
 
 from adaptive_llm_gateway.evaluation.models import EvaluationSummary
 from adaptive_llm_gateway.models import (
@@ -90,6 +97,40 @@ class AdaptiveInferenceResult(InferenceResponse):
     execution: PublicExecutionMetadata | None = None
 
 
+class ChatPayload(InferenceRequest):
+    """Frontend chat intent with explicit direct/adaptive selection."""
+
+    routing_mode: ChatRoutingMode
+    category: RoutingCategory | None = None
+    validation: ValidationContract | None = None
+
+    @model_validator(mode="after")
+    def validate_mode_specific_fields(self) -> "ChatPayload":
+        if self.routing_mode is ChatRoutingMode.AUTO:
+            if self.category is not None or self.validation is not None:
+                raise ValueError("auto routing does not accept category or validation")
+        elif self.category is None:
+            raise ValueError("manual routing requires a category")
+        return self
+
+    def to_domain(self) -> InferenceRequest:
+        return InferenceRequest(
+            **self.model_dump(exclude={"routing_mode", "category", "validation"})
+        )
+
+
+class ChatResult(InferenceResponse):
+    termination_reason: TerminationReason = Field(
+        default=TerminationReason.UNKNOWN, exclude=True)
+    provider_termination_reason: str | None = Field(default=None, exclude=True)
+    request_id: str
+    execution_mode: ChatExecutionMode
+    category: RoutingCategory | None = None
+    category_source: CategorySource | None = None
+    routing: PublicRoutingMetadata | None = None
+    execution: PublicExecutionMetadata | None = None
+
+
 class PublicModel(BaseModel):
     """Intentionally omit pricing and provider-internal model names."""
 
@@ -118,3 +159,31 @@ class ErrorDetail(BaseModel):
 class ErrorResponse(BaseModel):
     error: ErrorDetail
     request_id: str
+
+
+class ActivityItem(BaseModel):
+    request_id: str
+    created_at: datetime
+    execution_mode: Literal["direct", "adaptive"]
+    category: RoutingCategory | None = None
+    category_source: Literal["manual"] | None = None
+    initial_model_id: str | None = None
+    final_model_id: str | None = None
+    provider: str | None = None
+    routing_threshold_satisfied: bool | None = None
+    routing_fallback_used: bool | None = None
+    attempt_count: int | None = None
+    escalated: bool | None = None
+    validation_outcome: str | None = None
+    outcome: Literal["returned", "provider_failure", "validation_failed", "deadline_exceeded"]
+    error_category: str | None = None
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    latency_ms: float | None = None
+    estimated_cost_usd: Decimal | None = None
+    cost_complete: bool
+
+
+class ActivityPage(BaseModel):
+    items: list[ActivityItem]
+    next_cursor: str | None = None
