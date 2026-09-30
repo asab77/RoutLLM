@@ -35,6 +35,18 @@ describe('production HTTP client', () => {
     });
   });
 
+  it('serializes an explicit MANUAL output contract without threshold or prompt mutation', async () => {
+    const fetcher = vi.fn().mockResolvedValue(reply(200, fixtures.fallback));
+    await createHttpClient(fetcher).infer({
+      prompt: 'Return YES or NO.', routing_mode: 'manual', category: 'classification',
+      validation: { format: 'label', allowed_labels: ['YES', 'NO'] },
+    });
+    expect(JSON.parse(fetcher.mock.calls[0][1].body)).toEqual({
+      prompt: 'Return YES or NO.', routing_mode: 'manual', category: 'classification',
+      validation: { format: 'label', allowed_labels: ['YES', 'NO'] },
+    });
+  });
+
   it('parses direct and adaptive responses without losing tiny decimal costs or route facts', async () => {
     const fetcher = vi.fn()
       .mockResolvedValueOnce(reply(200, fixtures.normal))
@@ -89,7 +101,10 @@ describe('production HTTP client', () => {
       request_id: 'safe-request-1',
     }));
     await expect(createHttpClient(fetcher).infer({ prompt: 'x', routing_mode: 'auto' }))
-      .rejects.toMatchObject({ kind: 'validation', requestId: 'safe-request-1' });
+      .rejects.toMatchObject({
+        kind: 'validation', requestId: 'safe-request-1',
+        message: 'Output contract was not satisfied after the available attempts.',
+      });
   });
 
   it('preserves a numeric Retry-After and ignores unsafe values', async () => {

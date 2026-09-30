@@ -4,6 +4,25 @@ export const categories = [
 ] as const;
 export type Category = typeof categories[number];
 
+export const jsonFieldTypes = [
+  'string', 'number', 'integer', 'boolean', 'object', 'array', 'null',
+] as const;
+export type JsonFieldType = typeof jsonFieldTypes[number];
+
+export interface LabelValidationContract {
+  format: 'label';
+  allowed_labels: string[];
+}
+
+export interface JsonObjectValidationContract {
+  format: 'json';
+  root_type: 'object';
+  required_fields: string[];
+  field_types?: Record<string, JsonFieldType>;
+}
+
+export type ValidationContract = LabelValidationContract | JsonObjectValidationContract;
+
 interface CommonChatRequest {
   prompt: string;
   system_prompt?: string | null;
@@ -20,7 +39,7 @@ export interface AutoChatRequest extends CommonChatRequest {
 export interface ManualChatRequest extends CommonChatRequest {
   routing_mode: 'manual';
   category: Category;
-  validation?: never;
+  validation?: ValidationContract;
 }
 
 export type ChatRequest = AutoChatRequest | ManualChatRequest;

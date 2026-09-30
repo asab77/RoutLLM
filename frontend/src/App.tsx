@@ -4,7 +4,8 @@ import type { InferenceError } from './api/client';
 import type { Category, ChatRequest, ChatResponse, InferenceClient } from './api/types';
 import { Header } from './components/Header';
 import { Settings } from './components/Settings';
-import { AdvancedControls, validGeneration } from './components/AdvancedControls';
+import { AdvancedControls, buildOutputContract, validGeneration } from './components/AdvancedControls';
+import type { ContractField } from './components/AdvancedControls';
 import { Composer } from './components/Composer';
 import { ResponsePanel } from './components/ResponsePanel';
 import { RequestError } from './components/RequestError';
@@ -24,6 +25,9 @@ export default function App({ client = productionClient }: { client?: InferenceC
   const [category, setCategory] = useState<Category | ''>('');
   const [tokens, setTokens] = useState('256');
   const [temperature, setTemperature] = useState('1.0');
+  const [contractEnabled, setContractEnabled] = useState(false);
+  const [labelText, setLabelText] = useState('');
+  const [contractFields, setContractFields] = useState<ContractField[]>([]);
   const [draft, setDraft] = useState('');
   const [turns, setTurns] = useState<Turn[]>([]);
   const [pending, setPending] = useState(false);
@@ -31,6 +35,15 @@ export default function App({ client = productionClient }: { client?: InferenceC
   const nextId = useRef(0);
   const composer = useRef<HTMLTextAreaElement>(null);
   const end = useRef<HTMLDivElement>(null);
+  const nextContractField = useRef(0);
+  const contract = buildOutputContract(contractEnabled, manual, category, labelText, contractFields);
+  const generationValid = validGeneration(tokens, temperature);
+  const routingValid = !manual || Boolean(category);
+  const contractValid = !contractEnabled || Boolean(contract.contract);
+  const settingsMessage = !generationValid ? 'Check token and temperature limits'
+    : !routingValid ? 'Select a task category'
+    : !contractValid ? 'Complete a valid output contract'
+    : undefined;
   useEffect(() => {
     if (turns.length && page === 'chat') end.current?.scrollIntoView?.({ block: 'end', behavior: 'instant' });
   }, [turns, page]);
@@ -41,13 +54,34 @@ export default function App({ client = productionClient }: { client?: InferenceC
     requestAnimationFrame(() => composer.current?.focus());
   }
 
+  function clearContract() {
+    setContractEnabled(false); setLabelText(''); setContractFields([]);
+  }
+
+  function changeManual(value: boolean) {
+    setManual(value);
+    if (!value) clearContract();
+  }
+
+  function changeCategory(value: Category | '') {
+    setCategory(value); clearContract();
+  }
+
+  function changeContractEnabled(value: boolean) {
+    setContractEnabled(value);
+    if (!value) { setLabelText(''); setContractFields([]); }
+    else if (category !== 'classification' && contractFields.length === 0) {
+      setContractFields([{ id: ++nextContractField.current, name: '', type: '' }]);
+    }
+  }
+
   async function send() {
-    if (busy.current || !draft.trim() || draft.length > 12_000 || !validGeneration(tokens, temperature) || (manual && !category)) return;
+    if (busy.current || !draft.trim() || draft.length > 12_000 || !validGeneration(tokens, temperature) || (manual && !category) || (contractEnabled && !contract.contract)) return;
     busy.current = true;
     setPending(true);
     const id = ++nextId.current;
     const request: ChatRequest = manual
-      ? { prompt: draft, routing_mode: 'manual', category: category as Category, max_output_tokens: Number(tokens), temperature: Number(temperature) }
+      ? { prompt: draft, routing_mode: 'manual', category: category as Category, max_output_tokens: Number(tokens), temperature: Number(temperature), ...(contract.contract ? { validation: contract.contract } : {}) }
       : { prompt: draft, routing_mode: 'auto', max_output_tokens: Number(tokens), temperature: Number(temperature) };
     const turn: Turn = { id, prompt: draft };
     setTurns(previous => [...previous, turn]);
@@ -81,10 +115,10 @@ export default function App({ client = productionClient }: { client?: InferenceC
               <div ref={end} className="conversation-end" />
             </div>
             <p className="sr-only" role="status">{pending ? 'Preparing response.' : turns.at(-1)?.error ? 'Request failed. No automatic retry.' : turns.length ? 'Response ready.' : ''}</p>
-            <Composer ref={composer} value={draft} onChange={setDraft} onSend={send} pending={pending} validSettings={validGeneration(tokens, temperature) && (!manual || Boolean(category))} onOpenControls={() => setAdvanced(true)} />
+            <Composer ref={composer} value={draft} onChange={setDraft} onSend={send} pending={pending} validSettings={generationValid && routingValid && contractValid} settingsMessage={settingsMessage} onOpenControls={() => setAdvanced(true)} />
           </>}
         </main>
-        {advanced && <AdvancedControls onClose={() => setAdvanced(false)} manual={manual} onManual={setManual} category={category} onCategory={setCategory} tokens={tokens} onTokens={setTokens} temperature={temperature} onTemperature={setTemperature} pending={pending} />}
+        {advanced && <AdvancedControls onClose={() => setAdvanced(false)} manual={manual} onManual={changeManual} category={category} onCategory={changeCategory} tokens={tokens} onTokens={setTokens} temperature={temperature} onTemperature={setTemperature} pending={pending} contractEnabled={contractEnabled} onContractEnabled={changeContractEnabled} labelText={labelText} onLabelText={setLabelText} contractFields={contractFields} onContractField={(id, change) => setContractFields(fields => fields.map(field => field.id === id ? { ...field, ...change } : field))} onAddContractField={() => setContractFields(fields => [...fields, { id: ++nextContractField.current, name: '', type: '' }])} onRemoveContractField={id => setContractFields(fields => fields.filter(field => field.id !== id))} contractError={contractEnabled ? contract.error : undefined} />}
       </div>
     </div>
   </div>;

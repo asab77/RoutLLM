@@ -54,7 +54,7 @@ export function fromHttpError(status: number, body?: ApiErrorBody, retryAfterSec
     case 504: return new InferenceError('deadline', 'The request took too long. Try again.', status, id);
     case 502:
       return body?.error.code === 'response_validation_failed'
-        ? new InferenceError('validation', 'No response passed the configured validation checks.', status, id)
+        ? new InferenceError('validation', 'Output contract was not satisfied after the available attempts.', status, id)
         : new InferenceError('upstream', 'The model service could not complete the request.', status, id);
     default: return new InferenceError('upstream', 'RoutLLM returned an unexpected error.', status, id);
   }

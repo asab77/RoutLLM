@@ -146,12 +146,23 @@ details[open] > summary .when-open { display: inline; }
 .task-detection small { color: var(--text-muted); font-size: 9px; }
 .field { margin-top: 20px; }
 .field label { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 12px; }
-.field input, .field select, .field output { display: block; width: 100%; padding: 8px 10px; font-size: 12px; }
+.field input, .field select, .field textarea, .field output { display: block; width: 100%; padding: 8px 10px; font-size: 12px; }
+.field textarea { resize: vertical; min-height: 82px; line-height: 1.45; }
 .field output { background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 6px; }
 .field-help { font-size: 10px; line-height: 1.7; margin: 8px 0 0; }
 [aria-invalid="true"] { border-color: var(--error); }
 .locked-setting { display: flex; justify-content: space-between; font-size: 12px; }
 .locked-setting span:last-child { color: var(--text-muted); }
+.output-contract > .field-help:first-of-type { margin: 0 0 14px; }
+.contract-toggle { display: flex; align-items: flex-start; gap: 7px; font-size: 11px; line-height: 1.5; margin-top: 14px; }
+.contract-toggle input { margin: 2px 0 0; flex: 0 0 auto; }
+.contract-fields { margin-top: 14px; }
+.contract-field { display: grid; grid-template-columns: minmax(0, 1fr) 105px; column-gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.contract-field .field { margin-top: 0; }
+.contract-field .field label { font-size: 10px; color: var(--text-muted); }
+.contract-field .remove-field { grid-column: 1 / -1; justify-self: start; color: var(--text-muted); padding: 7px 0 0; }
+.contract-fields .add-field { padding-bottom: 0; }
+.contract-error { color: var(--error); font-size: 10px; line-height: 1.5; margin: 10px 0 0; }
 .drawer-footnote { font-size: 10px; color: var(--text-muted); line-height: 1.7; }
 .activity { max-width: 660px; margin: auto; padding: 55px 35px; }
 .activity h1 { font-size: 32px; line-height: 1.2; font-weight: 550; letter-spacing: -1px; }
