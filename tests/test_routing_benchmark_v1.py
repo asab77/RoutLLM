@@ -306,14 +306,14 @@ def test_training_loader_and_normal_development_path_exclude_final(dataset, spli
     assert final_ids.isdisjoint(task.task_id for task in training.tasks + development.tasks)
 
 
-def test_final_execution_requires_explicit_gate_and_identities(dataset, split):
+def test_final_execution_requires_explicit_gate_and_verified_artifacts(dataset, split):
     with pytest.raises(ValueError, match="explicit"):
         select_execution_dataset(dataset, split, split="final")
-    with pytest.raises(ValueError, match="identities"):
+    with pytest.raises(ValueError, match="verified frozen"):
         select_execution_dataset(dataset, split, split="final", allow_final_evaluation=True)
-    final = select_execution_dataset(dataset, split, split="final", allow_final_evaluation=True,
-                                     predictor_sha256="a" * 64, policy_sha256="b" * 64)
-    assert len(final.tasks) == 42
+    with pytest.raises(ValueError, match="verified frozen"):
+        select_execution_dataset(dataset, split, split="final", allow_final_evaluation=True,
+                                 predictor_sha256="a" * 64, policy_sha256="b" * 64)
 
 
 def test_normal_benchmark_cli_rejects_final_execution(monkeypatch, capsys, tmp_path):
@@ -370,6 +370,7 @@ def test_repeated_build_is_byte_identical(tmp_path):
 
 
 @pytest.mark.local_evidence
+@pytest.mark.protected_final_data
 def test_canonical_hashes_match_written_artifacts():
     dataset = load_dataset(DEFAULT_DATASET)
     identities = json.loads(Path("artifacts/routing-benchmark-v1/identities.json").read_text())

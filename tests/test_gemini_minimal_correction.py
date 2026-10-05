@@ -72,6 +72,7 @@ def test_protocol_16_changes_only_gemini_reasoning_effort():
     assert new.model_copy(update={"reasoning_effort": old.reasoning_effort}) == old
 
 
+@pytest.mark.protected_final_data
 def test_protocol_16_allowances_and_protected_hashes_are_exact():
     _, models, _ = load_execution_protocol(PROTOCOL_16)
     model = gemini(models)
@@ -97,6 +98,7 @@ def test_protocol_16_allowances_and_protected_hashes_are_exact():
     assert sha(PROTOCOL_15) == "fd9f60ca01e912418ba9b54804ea9a6f92cd3b326fc17d489bb7e9e51cd5521d"
 
 
+@pytest.mark.protected_final_data
 def test_protocol_16_readiness_confirmation_and_cost_plan():
     protocol, models, digest = load_execution_protocol(PROTOCOL_16)
     readiness = load_pricing_readiness(

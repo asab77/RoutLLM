@@ -22,4 +22,4 @@ testpaths = ["tests"]
 asyncio_mode = "strict"
 asyncio_default_fixture_loop_scope = "function"
 addopts = "-m 'not real_provider'"
-markers = ["postgres: opt-in integration tests requiring TEST_DATABASE_URL", "redis: opt-in integration tests requiring TEST_REDIS_URL", "real_provider: opt-in paid gateway smoke test", "docker_sandbox: integration tests requiring the pinned local Docker image", "local_evidence: offline historical-evidence tests requiring intentionally untracked benchmark-results or routing-benchmark artifacts"]
+markers = ["postgres: opt-in integration tests requiring TEST_DATABASE_URL", "redis: opt-in integration tests requiring TEST_REDIS_URL", "real_provider: opt-in paid gateway smoke test", "docker_sandbox: integration tests requiring the pinned local Docker image", "local_evidence: offline historical-evidence tests requiring intentionally untracked benchmark-results or routing-benchmark artifacts", "protected_final_data: explicit opt-in tests that parse protected held-out benchmark content"]

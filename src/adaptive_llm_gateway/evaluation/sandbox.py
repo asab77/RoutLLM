@@ -212,7 +212,11 @@ class DockerPythonSandbox:
         return {"type": "docker-python", "image": self.image,
                 "evaluator_version": FUNCTIONAL_EVALUATOR_VERSION,
                 "network": "none", "memory": self.memory, "cpus": self.cpus,
-                "pids_limit": self.pids_limit, "timeout_seconds": self.timeout_seconds}
+                "pids_limit": self.pids_limit, "timeout_seconds": self.timeout_seconds,
+                "pull": "never", "read_only": True, "user": "65534:65534",
+                "cap_drop": ["ALL"], "no_new_privileges": True,
+                "tmpfs": "/tmp:rw,noexec,nosuid,nodev,size=16m",
+                "python_isolated": True, "python_no_site": True}
 
     def command(self, name: str) -> tuple[str, ...]:
         return (

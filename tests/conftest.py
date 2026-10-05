@@ -65,6 +65,9 @@ def deployed_production_artifact(tmp_path: Path) -> Path:
 
 def pytest_addoption(parser):
     parser.addoption("--run-real-provider", action="store_true", help="Allow explicitly selected paid gateway smoke test")
+    parser.addoption(
+        "--run-protected-final-data", action="store_true",
+        help="Allow tests explicitly marked as parsing protected held-out benchmark data")
 
 
 def pytest_collection_modifyitems(config, items):
@@ -72,3 +75,8 @@ def pytest_collection_modifyitems(config, items):
         for item in items:
             if item.get_closest_marker("real_provider"):
                 item.add_marker(pytest.mark.skip(reason="Paid test requires --run-real-provider and -m real_provider"))
+    if not config.getoption("--run-protected-final-data"):
+        for item in items:
+            if item.get_closest_marker("protected_final_data"):
+                item.add_marker(pytest.mark.skip(
+                    reason="Protected held-out data test requires --run-protected-final-data"))

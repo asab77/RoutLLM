@@ -1,0 +1,42 @@
+{
+  "candidate_portfolio": [
+    "candidate-nemotron-3.5-lightning",
+    "candidate-gpt-6-luna",
+    "candidate-gemini-3-flash",
+    "candidate-claude-sonnet-5"
+  ],
+  "fallback": {
+    "description": "When no candidate meets the threshold, select the highest predicted acceptability, then lowest projected cost, then lexicographically smallest candidate ID.",
+    "ordered_keys": [
+      "predicted_acceptability_descending",
+      "projected_cost_usd_ascending",
+      "candidate_id_ascending"
+    ]
+  },
+  "implementation_files": {
+    "src/adaptive_llm_gateway/pricing/calculator.py": "d3597a5eb132218a9604a19531cf801065d321334a2e030dc6e54b697343b815",
+    "src/adaptive_llm_gateway/routing/features.py": "d92f6d0a96a4d94eda01e8172c1d901920f3db4c382619b0852d38dbec40a9ec",
+    "src/adaptive_llm_gateway/routing/policy.py": "c7dd12ec3416800f1f8cce58ae96a37771a166c4f37aa7eac900c0e7a90d6dff",
+    "src/adaptive_llm_gateway/routing/quality_features.py": "57cf0dddcdec69402a9d9664924a11f39f654b0933eef19e966d03f3fc777f43"
+  },
+  "policy_id": "routellm-frozen-final-policy",
+  "policy_version": "1.0.0",
+  "predictor": {
+    "artifact": "artifacts/routing-quality/rb12-train-candidate-v1",
+    "sha256": "502db83a54c4072c9741a8e4c406498ad88ec97e03bce1ddaf3e0a1b0001c0aa"
+  },
+  "primary_fixed_baseline": "candidate-claude-sonnet-5",
+  "quality_threshold": "0.80",
+  "selection": {
+    "description": "Select the cheapest candidate whose predicted acceptability is at least 0.80.",
+    "ordered_keys": [
+      "projected_cost_usd_ascending",
+      "candidate_id_ascending"
+    ]
+  },
+  "serving_cost": {
+    "counterfactual_matrix_cost_excluded": true,
+    "evaluation_cost_excluded": true,
+    "selected_candidate_realized_inference_cost_only": true
+  }
+}

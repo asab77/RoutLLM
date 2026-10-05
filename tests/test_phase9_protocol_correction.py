@@ -44,12 +44,14 @@ def directory_sha256(root: Path) -> str:
     return digest.hexdigest()
 
 
+@pytest.mark.protected_final_data
 def test_dataset_content_and_split_are_unchanged():
     assert hashlib.sha256(DEFAULT_DATASET.read_bytes()).hexdigest() == DATASET_SHA
     assert hashlib.sha256((DEFAULT_PROTOCOL_DIR / "split-manifest.json").read_bytes()).hexdigest() == SPLIT_SHA
 
 
 @pytest.mark.local_evidence
+@pytest.mark.protected_final_data
 def test_historical_pilot_and_failed_astra_evidence_are_immutable():
     if not OLD_PILOT.exists() or not FAILED_ASTRA_VALIDATION.exists():
         pytest.skip("historical local evidence is unavailable")
@@ -115,6 +117,7 @@ def test_allowance_policy_is_typed_deterministic_and_has_no_slug_branching():
 
 
 @pytest.mark.local_evidence
+@pytest.mark.protected_final_data
 def test_all_seven_stored_missing_cases_reproduce_as_budget_exhaustion():
     if not OLD_PILOT.exists():
         pytest.skip("historical pilot artifacts are local generated evidence")
@@ -130,6 +133,7 @@ def test_all_seven_stored_missing_cases_reproduce_as_budget_exhaustion():
     assert {item["visible_tokens"] for item in diagnostics} == {0}
 
 
+@pytest.mark.protected_final_data
 def test_corrected_protocol_version_and_rerun_identity():
     dataset = load_dataset(DEFAULT_DATASET)
     split = build_split_manifest(dataset)

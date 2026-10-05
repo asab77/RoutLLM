@@ -61,10 +61,73 @@ def main() -> None:
                         default=DEFAULT_PROTOCOL_DIR / "split-manifest.json")
     parser.add_argument("--allow-final-evaluation", action="store_true",
                         help="Explicitly unlock the protected final-test split")
+    parser.add_argument("--authorize-final", action="store_true",
+                        help="Confirm independently approved one-time FINAL execution")
     parser.add_argument("--predictor-sha256")
     parser.add_argument("--policy-sha256")
+    parser.add_argument(
+        "--final-policy", type=Path,
+        default=Path("benchmarks/protocols/routing-benchmark-v1.2/final-policy-1.0.json"),
+    )
+    parser.add_argument(
+        "--final-authorization", type=Path,
+        default=Path(
+            "benchmarks/protocols/routing-benchmark-v1.2/final-execution-authorization.json"),
+    )
+    parser.add_argument(
+        "--final-results-root", type=Path,
+        default=Path("artifacts/routing-benchmark-v1/final-runs"),
+    )
     parser.add_argument("--allow-paid", action="store_true", help="Explicitly allow gateway calls that may incur charges")
     args = parser.parse_args()
+    final_verification = None
+    if args.split == "final":
+        if not args.allow_final_evaluation:
+            parser.error("Final-test execution requires the explicit final-evaluation gate")
+        # Import lazily so ordinary benchmark and test workflows do not load the
+        # FINAL harness or its ML dependencies.
+        from adaptive_llm_gateway.evaluation.final_harness import (
+            CANDIDATES, EXPECTED_REQUESTS, FinalPaths, sha256, verify_final_freeze,
+        )
+        from adaptive_llm_gateway.evaluation.final_ledgers import CandidateAttemptLedger
+        frozen_paths = FinalPaths(
+            policy=args.final_policy, authorization=args.final_authorization)
+        if not args.authorize_final:
+            parser.error("Final-test execution requires --authorize-final")
+        if args.limit != EXPECTED_REQUESTS or tuple(args.models) != CANDIDATES:
+            parser.error("FINAL requires exactly 42 requests and the frozen candidate order")
+        if args.protocol is None or args.pricing_readiness is None:
+            parser.error("FINAL requires the explicit frozen protocol and pricing readiness")
+        try:
+            supplied_identities = {
+                "dataset_sha256": sha256(args.dataset),
+                "split_manifest_sha256": sha256(args.split_manifest),
+                "protocol_sha256": sha256(args.protocol),
+            }
+            if args.pricing_readiness.resolve() != frozen_paths.pricing_readiness.resolve():
+                parser.error("FINAL pricing readiness path differs from the reviewed artifact")
+            if args.output.resolve() != args.final_results_root.resolve():
+                parser.error("FINAL output must equal --final-results-root")
+        except OSError as exc:
+            parser.error(str(exc))
+        try:
+            final_verification = verify_final_freeze(
+                paths=frozen_paths,
+                results_root=args.final_results_root,
+                explicit_authorization=args.authorize_final,
+                require_authorization=True,
+            )
+        except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+            parser.error(str(exc))
+        if (args.predictor_sha256 is not None
+                and args.predictor_sha256 != final_verification.identities["predictor_sha256"]):
+            parser.error("caller predictor checksum differs from the verified frozen artifact")
+        if (args.policy_sha256 is not None
+                and args.policy_sha256 != final_verification.policy_sha256):
+            parser.error("caller policy checksum differs from the verified frozen artifact")
+        for name, digest in supplied_identities.items():
+            if digest != final_verification.identities[name]:
+                parser.error(f"caller {name} differs from the verified frozen artifact")
     settings = GatewaySettings.from_environment()
     service = create_development_service()
     configure_gateway(service, settings)
@@ -113,8 +176,13 @@ def main() -> None:
                 dataset = select_execution_dataset(
                     dataset, split_manifest, split=args.split,
                     allow_final_evaluation=args.allow_final_evaluation,
-                    predictor_sha256=args.predictor_sha256,
-                    policy_sha256=args.policy_sha256,
+                    predictor_sha256=(
+                        final_verification.identities["predictor_sha256"]
+                        if final_verification is not None else args.predictor_sha256),
+                    policy_sha256=(
+                        final_verification.policy_sha256
+                        if final_verification is not None else args.policy_sha256),
+                    final_verification=final_verification,
                 )
             except (OSError, ValueError, json.JSONDecodeError) as exc:
                 parser.error(str(exc))
@@ -123,15 +191,32 @@ def main() -> None:
                                   "execution_split": args.split,
                                   "final_evaluation_explicitly_unlocked": bool(
                                       args.allow_final_evaluation)})
+            if final_verification is not None:
+                configuration.update({
+                    "final_experiment_identity": final_verification.experiment_identity,
+                    "final_policy_sha256": final_verification.policy_sha256,
+                    "final_authorization_status": final_verification.authorization_status,
+                    "final_execution_git_commit": final_verification.git_commit,
+                    "final_source_hashes": final_verification.source_hashes,
+                    "final_source_set_sha256": final_verification.source_set_sha256,
+                })
         execution_models = _model_overrides_from_validated_contract(
             protocol_models=protocol_execution_models,
             routing_benchmark_validated=routing_benchmark_validated,
             selected_model_ids=args.models,
         )
+        attempt_ledger = None
+        if final_verification is not None:
+            attempt_ledger = CandidateAttemptLedger(
+                args.final_results_root / ".final-ledgers"
+                / final_verification.experiment_identity / "candidate-attempts.json",
+                experiment_identity=final_verification.experiment_identity,
+            )
         runner = BenchmarkRunner(service, FileBenchmarkRepository(args.output),
                                  configuration=configuration,
                                  output_token_overrides=overrides,
-                                 model_configurations=execution_models)
+                                 model_configurations=execution_models,
+                                 attempt_ledger=attempt_ledger)
         run = asyncio.run(runner.run(dataset, args.models, limit=args.limit))
     except Exception:
         # Avoid emitting connection/provider exception details in a CLI traceback.

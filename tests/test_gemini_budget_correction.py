@@ -67,6 +67,7 @@ def test_protocol_14_is_immutable_and_15_has_only_the_approved_reserve_change():
     assert old["dataset_sha256"] == new["dataset_sha256"]
 
 
+@pytest.mark.protected_final_data
 def test_protocol_15_pricing_and_confirmation_dry_run_are_strict():
     protocol, models, digest = load_execution_protocol(PROTOCOL_15)
     readiness = load_pricing_readiness(

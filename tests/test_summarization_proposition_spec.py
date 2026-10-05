@@ -47,6 +47,7 @@ def specification():
     return build_specification()
 
 
+@pytest.mark.protected_final_data
 def test_specification_uses_canonical_foundation_definitions_and_stable_ids(specification):
     assert specification.specification_version == SPECIFICATION_VERSION == "1.0.0"
     assert len(specification.tasks) == 40
@@ -59,6 +60,7 @@ def test_specification_uses_canonical_foundation_definitions_and_stable_ids(spec
     assert all(len(task.applies_to) == 2 for task in foundation)
 
 
+@pytest.mark.protected_final_data
 def test_atomicity_reviews_are_explicit_and_splits_preserve_weight(specification):
     reviews = [review for task in specification.tasks for review in task.composite_reviews]
     assert Counter(review.decision for review in reviews) == {"split": 14, "retain": 1}
@@ -70,6 +72,7 @@ def test_atomicity_reviews_are_explicit_and_splits_preserve_weight(specification
         assert total == len(task.legacy_requirements)
 
 
+@pytest.mark.protected_final_data
 def test_weighted_coverage_is_exact_and_ambiguous_is_incomplete(specification):
     task = next(item for item in specification.tasks if len(item.propositions) > 3)
     entailed = {item.proposition_id: EntailmentVerdict.ENTAILED for item in task.propositions}
@@ -82,6 +85,7 @@ def test_weighted_coverage_is_exact_and_ambiguous_is_incomplete(specification):
     assert ambiguous.ambiguous_proposition_ids == (first,)
 
 
+@pytest.mark.protected_final_data
 def test_every_proposition_has_source_evidence_anchors_are_helpers(specification):
     propositions = [item for task in specification.tasks for item in task.propositions]
     assert all(item.source_evidence.quote.strip() for item in propositions)
@@ -91,6 +95,7 @@ def test_every_proposition_has_source_evidence_anchors_are_helpers(specification
                for anchor in item.deterministic_anchors)
 
 
+@pytest.mark.protected_final_data
 def test_equivalence_and_derivation_policies_are_directional_and_complete(specification):
     rules = [rule for task in specification.tasks for item in task.propositions
              for rule in item.derivations]
@@ -107,6 +112,7 @@ def test_equivalence_and_derivation_policies_are_directional_and_complete(specif
     assert {item.direction for item in equivalences} == {"alternative_satisfies_proposition"}
 
 
+@pytest.mark.protected_final_data
 def test_known_ambiguities_are_resolved_without_hiding_history(specification):
     resolutions = [item for task in specification.tasks for item in task.ambiguity_resolutions]
     assert len(resolutions) == 3  # Four versioned entries; Foundation V2/V3 share one definition.
@@ -130,6 +136,7 @@ def test_material_error_schema_requires_claim_evidence_category_and_materiality(
             materiality="material", reason="missing evidence")
 
 
+@pytest.mark.protected_final_data
 def test_validation_set_is_exact_balanced_enough_blind_and_diverse():
     inputs, labels = build_validation_set()
     assert len(inputs) == len(labels) == 24
@@ -151,6 +158,7 @@ def test_validation_set_is_exact_balanced_enough_blind_and_diverse():
                ("faulty", "misconfigured", "allowing", "40-minute outage")) == 0
 
 
+@pytest.mark.protected_final_data
 def test_written_validation_inputs_and_labels_are_separate():
     inputs = json.loads(VALIDATION_INPUT_PATH.read_text())
     labels = json.loads(VALIDATION_LABEL_PATH.read_text())
@@ -159,6 +167,7 @@ def test_written_validation_inputs_and_labels_are_separate():
     assert set(item["case_id"] for item in inputs["judge_inputs"]) == set(labels["expected_labels"])
 
 
+@pytest.mark.protected_final_data
 def test_new_dataset_changes_semantics_without_mutating_v11_or_split():
     old = load_dataset(Path("benchmarks/datasets/routing-benchmark-v1.json"))
     new = load_dataset(Path("benchmarks/datasets/routing-benchmark-v1.2.json"))
@@ -173,6 +182,7 @@ def test_new_dataset_changes_semantics_without_mutating_v11_or_split():
 
 
 @pytest.mark.local_evidence
+@pytest.mark.protected_final_data
 def test_historical_foundation_phase7_dev_final_and_astra_artifacts_are_immutable():
     assert sha("benchmarks/datasets/foundation-v2.json") == FOUNDATION_V2_SHA
     assert sha("benchmarks/datasets/foundation-v3.json") == FOUNDATION_V3_SHA

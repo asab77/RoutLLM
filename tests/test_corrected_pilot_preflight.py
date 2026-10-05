@@ -111,6 +111,7 @@ def test_pricing_readiness_is_exact_and_stale_status_fails_closed(tmp_path):
             candidate_models=models)
 
 
+@pytest.mark.protected_final_data
 def test_corrected_pilot_dry_run_reaches_paid_boundary_without_crossing_it():
     report = corrected_pilot_dry_run(
         protocol_path=PROTOCOL_V14,

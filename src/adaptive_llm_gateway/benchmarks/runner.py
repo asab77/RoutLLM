@@ -9,6 +9,7 @@ from adaptive_llm_gateway.providers.gateway_config import (
 )
 from adaptive_llm_gateway.registry import ModelRegistry
 from .features import extract_request_features
+from .features import build_request_feature_binding
 from .models import BenchmarkDataset, BenchmarkResult, BenchmarkRun
 from .protocol_audit import response_output_budget_exhaustion
 from .repository import BenchmarkRepository
@@ -18,7 +19,8 @@ class BenchmarkRunner:
     def __init__(self, service: InferenceService, repository: BenchmarkRepository,
                  *, configuration: dict | None = None,
                  output_token_overrides: dict[str, dict[str, int]] | None = None,
-                 model_configurations: dict[str, ModelConfig] | None = None) -> None:
+                 model_configurations: dict[str, ModelConfig] | None = None,
+                 attempt_ledger=None) -> None:
         # Separate orchestration instance deliberately has NO production telemetry sink.
         self.model_configurations = model_configurations or {}
         self.base_registry = service.registry
@@ -29,6 +31,7 @@ class BenchmarkRunner:
         self.repository = repository
         self.configuration = configuration or {}
         self.output_token_overrides = output_token_overrides or {}
+        self.attempt_ledger = attempt_ledger
         for model_id, task_limits in self.output_token_overrides.items():
             if not model_id or not isinstance(task_limits, dict) or not task_limits:
                 raise ValueError("Output-token overrides require model and task mappings")
@@ -80,8 +83,12 @@ class BenchmarkRunner:
             }
             for task in tasks
         }
-        request_features = {
-            task.task_id: extract_request_features(task).model_dump(mode="json") for task in tasks
+        extracted_features = {task.task_id: extract_request_features(task) for task in tasks}
+        request_features = {task_id: item.model_dump(mode="json")
+                            for task_id, item in extracted_features.items()}
+        request_feature_bindings = {
+            task.task_id: build_request_feature_binding(task, extracted_features[task.task_id])
+            for task in tasks
         }
         frozen_models = {
             model.model_id: {
@@ -108,18 +115,31 @@ class BenchmarkRunner:
                 "upstream_allowlists": UPSTREAM_PROVIDERS,
                 "request_feature_schema_version": "1.0.0",
                 "request_features": request_features,
+                "request_feature_bindings": request_feature_bindings,
                 "task_visible_output_requirements": {
                     task.task_id: task.max_output_tokens for task in tasks},
                 "effective_max_output_tokens": effective_output_limits,
                 "output_token_overrides": self.output_token_overrides,
                 "benchmark_model_configuration_override": bool(self.model_configurations),
                 "frozen_model_configuration": frozen_models})
+        if self.attempt_ledger is not None:
+            self.attempt_ledger.initialize(
+                run_id=run.run_id, task_bindings=request_feature_bindings,
+                candidate_ids=tuple(model.model_id for model in models))
         await self.repository.start(run)  # fail before paid calls if storage cannot be created
         try:
             for task in tasks:
                 for model in models:
                     started = perf_counter()
                     request_id = str(uuid4())
+                    if self.attempt_ledger is not None:
+                        reused = self.attempt_ledger.reusable(
+                            task.task_id, model.model_id, run.run_id)
+                        if reused is not None:
+                            await self.repository.record(reused)
+                            continue
+                        self.attempt_ledger.start(
+                            task.task_id, model.model_id, run.run_id, request_id)
                     try:
                         request = task.to_request().model_copy(update={
                             "max_output_tokens": effective_output_limits[task.task_id][model.model_id]})
@@ -154,6 +174,8 @@ class BenchmarkRunner:
                             latency_ms=(perf_counter() - started) * 1000)
                     # Storage failure aborts rather than continuing paid work with lost results.
                     await self.repository.record(result)
+                    if self.attempt_ledger is not None:
+                        self.attempt_ledger.finish(result)
             await self.repository.finish(run.run_id, "completed")
         except BaseException:
             await self.repository.finish(run.run_id, "aborted")

@@ -1,0 +1,46 @@
+{
+  "authorization": {
+    "authorized_by": null,
+    "authorized_on": null,
+    "final_paid_execution_authorized": false,
+    "pricing_reverified_by": null,
+    "pricing_reverified_on": null,
+    "status": "AWAITING_INDEPENDENT_REVIEW"
+  },
+  "call_limits": {
+    "candidate_calls": 168,
+    "candidate_retries": 0,
+    "semantic_judge_calls": 24,
+    "semantic_judge_retries": 0
+  },
+  "cost_budget_usd": {
+    "conservative_maximum": "1.55262531",
+    "expected": "0.80157315",
+    "repository_estimated_maximum": "1.41147755"
+  },
+  "evidence": {
+    "gemini_native_minimal_confirmation_status_sha256": "ac61336a0970842dce4483e742e03b4c56421c46e62c917f73ef08207bb865ca",
+    "pricing_readiness_sha256": "3acf8a22b1b679012d23738c94122163cddcf6cf10d7df4f8c395d2855aca9ef"
+  },
+  "experiment": {
+    "dataset_sha256": "1a9cadc2d557eacb4a7dce450100cdb495a2659c2862845ce9894cf0a7791005",
+    "evaluator_manifest_sha256": "7dfb5c29426520edcb2c64491c1d5f62fddfc3bdbb3869599378da781f35d413",
+    "final_manifest_sha256": "cca8f7f57df723f6f92624394c382544f972165d4087c69d4f3b1e402b43ef65",
+    "policy_sha256": "79da97dca54ffdff254122c7c0345a2136ebd7178cd18f8504757f4d0e31a8ba",
+    "predictor_sha256": "502db83a54c4072c9741a8e4c406498ad88ec97e03bce1ddaf3e0a1b0001c0aa",
+    "proposition_specification_sha256": "b5568b26d7fdce018e3cfef9020780645e12e02f488ab495b14a1e621dd62c1e",
+    "protocol_sha256": "b4cde3954a8ccd1b54684dcb62da303e7bc806248306464ae536b9ff717a0bd8",
+    "split_manifest_sha256": "98c639be29da4e11fdf48073d74e83805f16fdfb72b0102b5f5543213ab4960b"
+  },
+  "implementation": {
+    "git_commit": null,
+    "source_hashes": {},
+    "source_set_sha256": null
+  },
+  "notes": [
+    "This additive record does not alter the frozen Protocol 1.7 scientific identity.",
+    "Independent review must explicitly authorize the one-time paid FINAL execution before the harness can proceed.",
+    "Authorization remains invalid for paid execution until the reviewer binds it to a clean committed Git revision and the complete outcome-critical source hash set."
+  ],
+  "version": "1.0.0"
+}

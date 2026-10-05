@@ -36,21 +36,11 @@ MODEL_IDS = [
     "candidate-gemini-3-flash",
     "candidate-claude-sonnet-5",
 ]
-PREDICTOR_SHA256 = "502db83a54c4072c9741a8e4c406498ad88ec97e03bce1ddaf3e0a1b0001c0aa"
-POLICY_SHA256 = "c" * 64
-
-
 def selected_dataset(part: str | None):
     dataset = load_dataset(DATASET)
     if part is None:
         return dataset
     arguments = {}
-    if part == "final":
-        arguments = {
-            "allow_final_evaluation": True,
-            "predictor_sha256": PREDICTOR_SHA256,
-            "policy_sha256": POLICY_SHA256,
-        }
     return select_execution_dataset(
         dataset,
         json.loads(SPLIT.read_bytes()),
@@ -68,7 +58,8 @@ def protocol_17_overrides():
     )
 
 
-@pytest.mark.parametrize("part", [None, "train", "development", "final"])
+@pytest.mark.parametrize("part", [None, "train", "development"])
+@pytest.mark.protected_final_data
 def test_protocol_17_overrides_survive_full_and_split_selection(part):
     dataset = selected_dataset(part)
     overrides = protocol_17_overrides()
@@ -91,7 +82,7 @@ def test_renamed_subset_cannot_remove_validated_protocol_overrides():
     assert set(protocol_17_overrides()) == set(MODEL_IDS)
 
 
-@pytest.mark.parametrize("part", ["train", "development", "final"])
+@pytest.mark.parametrize("part", ["train", "development"])
 @pytest.mark.asyncio
 async def test_each_split_serializes_google_native_minimal_without_shared_reasoning(part):
     selected_dataset(part)  # Exercise validation, selection, and the FINAL gate.

@@ -121,6 +121,7 @@ async def test_protocol_17_preserves_authoritative_length_handling():
     assert error.value.diagnostics["termination_reason"] == "length"
 
 
+@pytest.mark.protected_final_data
 def test_protocol_17_readiness_manifest_allowances_and_costs():
     protocol, models, digest = load_execution_protocol(PROTOCOL_17)
     readiness = load_pricing_readiness(

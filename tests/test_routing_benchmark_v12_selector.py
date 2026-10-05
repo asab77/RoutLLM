@@ -33,16 +33,10 @@ def split():
 
 
 def select(dataset, split, part):
-    arguments = {}
-    if part == "final":
-        arguments = {
-            "allow_final_evaluation": True,
-            "predictor_sha256": "a" * 64,
-            "policy_sha256": "b" * 64,
-        }
-    return select_execution_dataset(dataset, split, split=part, **arguments)
+    return select_execution_dataset(dataset, split, split=part)
 
 
+@pytest.mark.protected_final_data
 def test_v12_is_an_explicit_supported_dataset(dataset_v12):
     validate_routing_benchmark(dataset_v12)
     assert (dataset_v12.name, dataset_v12.version) == (
@@ -52,8 +46,8 @@ def test_v12_is_an_explicit_supported_dataset(dataset_v12):
 @pytest.mark.parametrize(("part", "count", "per_category"), [
     ("train", 140, 20),
     ("development", 42, 6),
-    ("final", 42, 6),
 ])
+@pytest.mark.protected_final_data
 def test_v12_split_selection_is_exact(dataset_v12, split, part, count, per_category):
     selected = select(dataset_v12, split, part)
     assert len(selected.tasks) == count
@@ -66,12 +60,11 @@ def test_v12_split_selection_is_exact(dataset_v12, split, part, count, per_categ
         entry["task_id"] for entry in split["entries"] if entry["split"] == part}
 
 
+@pytest.mark.protected_final_data
 def test_v12_selected_splits_have_no_cross_contamination(dataset_v12, split):
     selected = {part: {task.task_id for task in select(dataset_v12, split, part).tasks}
-                for part in ("train", "development", "final")}
+                for part in ("train", "development")}
     assert selected["train"].isdisjoint(selected["development"])
-    assert selected["train"].isdisjoint(selected["final"])
-    assert selected["development"].isdisjoint(selected["final"])
 
 
 def test_v12_family_separation_remains_intact(split):
@@ -82,16 +75,19 @@ def test_v12_family_separation_remains_intact(split):
 
 
 @pytest.mark.parametrize("version", ["9.9.9", "v1.2", "1.2"])
+@pytest.mark.protected_final_data
 def test_unknown_or_malformed_versions_fail_closed(dataset_v12, version):
     with pytest.raises(ValueError, match="identity/version mismatch"):
         validate_routing_benchmark(dataset_v12.model_copy(update={"version": version}))
 
 
+@pytest.mark.protected_final_data
 def test_identity_mismatch_fails_closed(dataset_v12):
     with pytest.raises(ValueError, match="identity/version mismatch"):
         validate_routing_benchmark(dataset_v12.model_copy(update={"name": "other-benchmark"}))
 
 
+@pytest.mark.protected_final_data
 def test_supported_version_with_changed_content_hash_fails_closed(dataset_v12):
     tasks = list(dataset_v12.tasks)
     tasks[0] = tasks[0].model_copy(update={"prompt": tasks[0].prompt + " "})
@@ -99,6 +95,7 @@ def test_supported_version_with_changed_content_hash_fails_closed(dataset_v12):
         validate_routing_benchmark(dataset_v12.model_copy(update={"tasks": tuple(tasks)}))
 
 
+@pytest.mark.protected_final_data
 def test_historical_v11_selection_remains_supported(split):
     historical = load_dataset(DATASET_V11)
     validate_routing_benchmark(historical)

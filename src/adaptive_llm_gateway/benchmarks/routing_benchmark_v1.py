@@ -1706,21 +1706,25 @@ def validate_pilot_manifest(manifest: dict[str, Any], split_manifest: dict[str, 
         raise ValueError("Pilot call expectations are invalid")
 
 
-def _valid_identity(value: str | None) -> bool:
-    return bool(value and re.fullmatch(r"[0-9a-f]{64}", value))
-
-
 def select_execution_dataset(dataset: BenchmarkDataset, split_manifest: dict[str, Any], *,
                              split: Literal["train", "development", "final"],
                              allow_final_evaluation: bool = False,
                              predictor_sha256: str | None = None,
-                             policy_sha256: str | None = None) -> BenchmarkDataset:
+                             policy_sha256: str | None = None,
+                             final_verification=None) -> BenchmarkDataset:
     validate_routing_benchmark(dataset)
     validate_split_manifest(dataset, split_manifest)
     if split == "final" and not allow_final_evaluation:
         raise ValueError("Final-test execution requires the explicit final-evaluation gate")
-    if split == "final" and not (_valid_identity(predictor_sha256) and _valid_identity(policy_sha256)):
-        raise ValueError("Final-test execution requires frozen predictor and policy identities")
+    if split == "final":
+        from adaptive_llm_gateway.evaluation.final_harness import FreezeVerification
+        if (not isinstance(final_verification, FreezeVerification)
+                or final_verification.status != "READY"
+                or not final_verification.explicit_authorization
+                or final_verification.identities.get("predictor_sha256") != predictor_sha256
+                or final_verification.policy_sha256 != policy_sha256):
+            raise ValueError(
+                "Final-test execution requires verified frozen predictor, policy, and authorization")
     selected_ids = {entry["task_id"] for entry in split_manifest["entries"] if entry["split"] == split}
     selected = tuple(task for task in dataset.tasks if task.task_id in selected_ids)
     return BenchmarkDataset(name=f"{BENCHMARK_NAME}-{split}", version=BENCHMARK_VERSION, tasks=selected)
