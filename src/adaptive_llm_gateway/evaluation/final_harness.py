@@ -12,6 +12,7 @@ import hashlib
 import json
 import os
 import pickle
+import stat
 import subprocess
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
@@ -103,12 +104,116 @@ EXECUTION_SOURCE_PREFIX = "src/adaptive_llm_gateway/"
 SHADOWABLE_EXECUTION_SUFFIXES = frozenset({".py", ".pyi", ".json", ".toml", ".yaml", ".yml"})
 
 
+def _literal_absolute(path: Path) -> Path:
+    """Return an absolute lexical path without following filesystem symlinks."""
+    return Path(os.path.abspath(os.fspath(path)))
+
+
+def _verified_repository_root(repository_root: Path) -> Path:
+    root = _literal_absolute(repository_root)
+    try:
+        mode = root.lstat().st_mode
+    except FileNotFoundError as exc:
+        raise ValueError("FINAL repository root does not exist") from exc
+    if stat.S_ISLNK(mode) or not stat.S_ISDIR(mode):
+        raise ValueError("FINAL repository root must be a non-symlink directory")
+    if root.resolve(strict=True) != root:
+        raise ValueError("FINAL repository root must be supplied as its resolved directory")
+    return root
+
+
+def _literal_repository_path(
+    repository_root: Path,
+    relative: Path,
+    *,
+    leaf_kind: Literal["directory", "regular-file"],
+    require_leaf: bool = False,
+) -> Path:
+    """Validate a canonical repository-relative path without following symlinks."""
+    root = _verified_repository_root(repository_root)
+    if relative.is_absolute() or not relative.parts or ".." in relative.parts:
+        raise ValueError("FINAL canonical path must be repository-relative")
+    target = root.joinpath(relative)
+    try:
+        target.relative_to(root)
+    except ValueError as exc:
+        raise ValueError("FINAL canonical path escapes the repository root") from exc
+    for index in range(len(relative.parts)):
+        component = root.joinpath(*relative.parts[:index + 1])
+        try:
+            mode = component.lstat().st_mode
+        except FileNotFoundError:
+            if require_leaf:
+                raise ValueError("FINAL canonical path does not exist")
+            break
+        if stat.S_ISLNK(mode):
+            raise ValueError(f"FINAL canonical path contains a symlink: {component}")
+        is_leaf = index == len(relative.parts) - 1
+        expected_regular = is_leaf and leaf_kind == "regular-file"
+        if expected_regular:
+            if not stat.S_ISREG(mode):
+                raise ValueError("FINAL authorization must be a regular file")
+        elif not stat.S_ISDIR(mode):
+            raise ValueError(f"FINAL canonical directory component is not a directory: {component}")
+    return target
+
+
 def canonical_final_root(repository_root: Path = REPOSITORY_ROOT) -> Path:
-    return (repository_root / CANONICAL_FINAL_ROOT_RELATIVE).resolve()
+    return _literal_repository_path(
+        repository_root, CANONICAL_FINAL_ROOT_RELATIVE, leaf_kind="directory")
+
+
+def require_canonical_final_root(
+    supplied: Path | None = None,
+    *,
+    repository_root: Path = REPOSITORY_ROOT,
+) -> Path:
+    expected = canonical_final_root(repository_root)
+    if supplied is not None and _literal_absolute(supplied) != expected:
+        raise ValueError("FINAL root differs from the canonical experiment root")
+    return expected
+
+
+def ensure_canonical_final_root(repository_root: Path = REPOSITORY_ROOT) -> Path:
+    root = canonical_final_root(repository_root)
+    root.mkdir(parents=True, exist_ok=True)
+    return _literal_repository_path(
+        repository_root, CANONICAL_FINAL_ROOT_RELATIVE,
+        leaf_kind="directory", require_leaf=True)
 
 
 def canonical_authorization_path(repository_root: Path = REPOSITORY_ROOT) -> Path:
-    return (repository_root / CANONICAL_AUTHORIZATION_RELATIVE).resolve()
+    return _literal_repository_path(
+        repository_root, CANONICAL_AUTHORIZATION_RELATIVE,
+        leaf_kind="regular-file")
+
+
+def require_canonical_authorization_path(
+    supplied: Path | None = None,
+    *,
+    repository_root: Path = REPOSITORY_ROOT,
+) -> Path:
+    expected = _literal_repository_path(
+        repository_root, CANONICAL_AUTHORIZATION_RELATIVE,
+        leaf_kind="regular-file", require_leaf=True)
+    if supplied is not None and _literal_absolute(supplied) != expected:
+        raise ValueError("FINAL authorization must use the canonical tracked artifact")
+    return expected
+
+
+def _read_canonical_authorization(path: Path) -> dict[str, Any]:
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(path, flags)
+    try:
+        if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+            raise ValueError("FINAL authorization must be a regular file")
+        with os.fdopen(descriptor, "rb", closefd=False) as source:
+            value = json.load(source)
+    finally:
+        os.close(descriptor)
+    if not isinstance(value, dict):
+        raise ValueError(f"{path} must contain a JSON object")
+    return value
 
 
 def canonical_publication_directory(repository_root: Path, run_id: UUID) -> Path:
@@ -460,12 +565,10 @@ def verify_final_freeze(
     repository_root: Path = REPOSITORY_ROOT,
 ) -> FreezeVerification:
     """Verify bytes and operational authorization without parsing FINAL tasks."""
-    expected_root = canonical_final_root(repository_root)
-    resolved_root = expected_root if results_root is None else results_root.resolve()
-    if resolved_root != expected_root:
-        raise ValueError("FINAL root differs from the canonical experiment root")
-    if paths.authorization.resolve() != canonical_authorization_path(repository_root):
-        raise ValueError("FINAL authorization must use the canonical tracked artifact")
+    resolved_root = require_canonical_final_root(
+        results_root, repository_root=repository_root)
+    authorization_path = require_canonical_authorization_path(
+        paths.authorization, repository_root=repository_root)
     try:
         tracked_authorization = _git(
             repository_root, "ls-files", "--error-unmatch", "--",
@@ -561,7 +664,7 @@ def verify_final_freeze(
     if set(readiness_ids) != {*expectations.candidates, JUDGE_MODEL_ID}:
         raise ValueError("pricing readiness does not cover the frozen paid portfolio")
 
-    authorization = _read_object(paths.authorization)
+    authorization = _read_canonical_authorization(authorization_path)
     if authorization.get("version") != "1.0.0":
         raise ValueError("FINAL authorization schema version mismatch")
     if authorization.get("experiment") != {
@@ -1396,11 +1499,11 @@ def main() -> None:
     replay.add_argument("--authorize-final", action="store_true")
     args = parser.parse_args()
     paths = FinalPaths()
-    root = canonical_final_root()
-
     supplied_root = getattr(args, "root", None)
-    if supplied_root is not None and supplied_root.resolve() != root:
-        parser.error("FINAL root must equal the canonical experiment root")
+    try:
+        root = require_canonical_final_root(supplied_root)
+    except (OSError, ValueError) as exc:
+        parser.error(str(exc))
 
     if args.command == "preflight":
         report = verify_final_freeze(
@@ -1430,7 +1533,7 @@ def main() -> None:
         return
 
     output = canonical_publication_directory(REPOSITORY_ROOT, args.run_id)
-    if args.output is not None and args.output.resolve() != output:
+    if args.output is not None and _literal_absolute(args.output) != output:
         parser.error("FINAL publication output must use the canonical run directory")
     if (output / "final-results.json").is_file():
         paths_written = recover_results_publication(output)

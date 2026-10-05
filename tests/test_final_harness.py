@@ -19,6 +19,8 @@ from adaptive_llm_gateway.evaluation.final_harness import (
     BOUND_CONFIGURATION_FILES,
     CANONICAL_AUTHORIZATION_RELATIVE,
     CANDIDATES,
+    EXPECTED_CANDIDATE_CALLS,
+    MAXIMUM_JUDGE_CALLS,
     PRIMARY_BASELINE,
     CandidateObservation,
     FinalPaths,
@@ -34,12 +36,15 @@ from adaptive_llm_gateway.evaluation.final_harness import (
     build_final_results,
     canonical_authorization_path,
     canonical_final_root,
+    ensure_canonical_final_root,
     main,
     load_canonical_observations,
     outcome_critical_source_hashes,
     render_markdown,
     recover_results_publication,
     replay_router,
+    require_canonical_authorization_path,
+    require_canonical_final_root,
     validate_frozen_sandbox,
     validate_final_evaluation,
     verify_execution_provenance,
@@ -300,6 +305,123 @@ def test_final_freeze_rejects_copied_authorization(tmp_path):
             provenance_verifier=synthetic_provenance, repository_root=tmp_path)
 
 
+def test_canonical_final_root_accepts_only_real_directories(tmp_path):
+    expected = tmp_path / "artifacts/routing-benchmark-v1/final-runs"
+    assert canonical_final_root(tmp_path) == expected
+    assert ensure_canonical_final_root(tmp_path) == expected
+    assert expected.is_dir() and not expected.is_symlink()
+    assert require_canonical_final_root(expected, repository_root=tmp_path) == expected
+
+
+def test_canonical_final_root_rejects_symlinked_repository_root(tmp_path):
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    alias = tmp_path / "repository-alias"
+    alias.symlink_to(repository, target_is_directory=True)
+    with pytest.raises(ValueError, match="repository root must be a non-symlink directory"):
+        canonical_final_root(alias)
+
+
+def test_symlink_hardening_does_not_change_experiment_call_budgets(tmp_path):
+    candidate = CandidateAttemptLedger(
+        tmp_path / "candidate.json", experiment_identity="e" * 64)
+    semantic = SemanticAttemptLedger(
+        tmp_path / "semantic.json", experiment_identity="e" * 64,
+        evaluator_identity="v1", proposition_identity="p1", judge_identity="j1")
+    assert candidate.maximum_calls == EXPECTED_CANDIDATE_CALLS == 168
+    assert semantic.maximum_calls == MAXIMUM_JUDGE_CALLS == 24
+
+
+@pytest.mark.parametrize("symlink_component", [
+    "artifacts",
+    "artifacts/routing-benchmark-v1",
+    "artifacts/routing-benchmark-v1/final-runs",
+])
+@pytest.mark.parametrize("target_inside_repository", [False, True])
+def test_canonical_final_root_rejects_symlinked_components(
+        tmp_path, symlink_component, target_inside_repository):
+    component = tmp_path / symlink_component
+    component.parent.mkdir(parents=True, exist_ok=True)
+    target_parent = tmp_path if target_inside_repository else tmp_path.parent
+    target = target_parent / f"target-{component.name}-{target_inside_repository}"
+    target.mkdir(exist_ok=True)
+    component.symlink_to(target, target_is_directory=True)
+    with pytest.raises(ValueError, match="contains a symlink"):
+        canonical_final_root(tmp_path)
+
+
+def test_retargeted_final_root_remains_rejected(tmp_path):
+    link = tmp_path / "artifacts/routing-benchmark-v1/final-runs"
+    link.parent.mkdir(parents=True)
+    first = tmp_path / "external-a"
+    second = tmp_path / "external-b"
+    first.mkdir()
+    second.mkdir()
+    link.symlink_to(first, target_is_directory=True)
+    with pytest.raises(ValueError, match="contains a symlink"):
+        canonical_final_root(tmp_path)
+    link.unlink()
+    link.symlink_to(second, target_is_directory=True)
+    with pytest.raises(ValueError, match="contains a symlink"):
+        canonical_final_root(tmp_path)
+
+
+@pytest.mark.parametrize("external", [False, True])
+def test_canonical_authorization_symlink_is_rejected(tmp_path, external):
+    paths, expected, loader = freeze_fixture(tmp_path)
+    target = ((tmp_path.parent if external else tmp_path) /
+              f"alternate-authorization-{external}.json")
+    target.write_bytes(paths.authorization.read_bytes())
+    paths.authorization.unlink()
+    paths.authorization.symlink_to(target)
+    with pytest.raises(ValueError, match="contains a symlink"):
+        verify_final_freeze(
+            paths=paths, expectations=expected,
+            results_root=canonical_final_root(tmp_path),
+            explicit_authorization=True, protocol_loader=loader,
+            provenance_verifier=synthetic_provenance, repository_root=tmp_path)
+
+
+def test_canonical_authorization_parent_symlink_is_rejected(tmp_path):
+    paths, expected, loader = freeze_fixture(tmp_path)
+    canonical_parent = paths.authorization.parent
+    target = tmp_path / "relocated-protocol"
+    canonical_parent.rename(target)
+    canonical_parent.symlink_to(target, target_is_directory=True)
+    with pytest.raises(ValueError, match="contains a symlink"):
+        verify_final_freeze(
+            paths=paths, expectations=expected,
+            results_root=canonical_final_root(tmp_path),
+            explicit_authorization=True, protocol_loader=loader,
+            provenance_verifier=synthetic_provenance, repository_root=tmp_path)
+
+
+def test_clean_git_state_cannot_make_symlinked_authorization_acceptable(tmp_path):
+    paths, expected, loader = freeze_fixture(tmp_path)
+    external = tmp_path.parent / "clean-external-authorization.json"
+    external.write_bytes(paths.authorization.read_bytes())
+    paths.authorization.unlink()
+    paths.authorization.symlink_to(external)
+    subprocess.run(["git", "add", str(CANONICAL_AUTHORIZATION_RELATIVE)],
+                   cwd=tmp_path, check=True)
+    subprocess.run(["git", "-c", "user.email=test@example.invalid",
+                    "-c", "user.name=Synthetic Test", "commit", "-qm",
+                    "tracked authorization symlink"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "-c", "user.email=test@example.invalid",
+                    "-c", "user.name=Synthetic Test", "commit", "-qm",
+                    "track synthetic fixture"], cwd=tmp_path, check=True)
+    assert subprocess.run(
+        ["git", "status", "--porcelain=v1", "--untracked-files=all"],
+        cwd=tmp_path, check=True, capture_output=True, text=True).stdout == ""
+    with pytest.raises(ValueError, match="contains a symlink"):
+        verify_final_freeze(
+            paths=paths, expectations=expected,
+            results_root=canonical_final_root(tmp_path),
+            explicit_authorization=True, protocol_loader=loader,
+            provenance_verifier=synthetic_provenance, repository_root=tmp_path)
+
+
 def test_semantic_cli_rejects_alternate_root_before_provider_construction(
         tmp_path, monkeypatch):
     monkeypatch.setattr(
@@ -308,6 +430,29 @@ def test_semantic_cli_rejects_alternate_root_before_provider_construction(
             AssertionError("alternate root must fail before provider construction")))
     monkeypatch.setattr(sys, "argv", ["final_harness", "semantic-judge",
         "--root", str(tmp_path / "alternate"),
+        "--run-id", "00000000-0000-0000-0000-000000000001", "--dry-run"])
+    with pytest.raises(SystemExit):
+        main()
+
+
+def test_semantic_cli_rejects_symlinked_canonical_root_before_provider_construction(
+        tmp_path, monkeypatch):
+    from adaptive_llm_gateway.evaluation import final_harness
+
+    link = tmp_path / "artifacts/routing-benchmark-v1/final-runs"
+    link.parent.mkdir(parents=True)
+    target = tmp_path / "external-ledger"
+    target.mkdir()
+    link.symlink_to(target, target_is_directory=True)
+    original = require_canonical_final_root
+    monkeypatch.setattr(
+        final_harness, "require_canonical_final_root",
+        lambda supplied=None: original(supplied, repository_root=tmp_path))
+    monkeypatch.setattr(
+        final_harness, "VercelGatewayProvider",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("symlinked root must fail before provider construction")))
+    monkeypatch.setattr(sys, "argv", ["final_harness", "semantic-judge",
         "--run-id", "00000000-0000-0000-0000-000000000001", "--dry-run"])
     with pytest.raises(SystemExit):
         main()
@@ -332,6 +477,39 @@ def test_candidate_cli_rejects_alternate_root_before_provider_construction(
         "--protocol", str(protocol), "--pricing-readiness", str(readiness),
         "--split", "final", "--split-manifest", str(split),
         "--allow-final-evaluation", "--authorize-final", "--allow-paid"])
+    with pytest.raises(SystemExit):
+        benchmark_cli.main()
+
+
+def test_candidate_cli_rejects_symlinked_authorization_before_provider_construction(
+        tmp_path, monkeypatch):
+    from adaptive_llm_gateway.benchmarks import __main__ as benchmark_cli
+    from adaptive_llm_gateway.evaluation import final_harness
+
+    dataset = tmp_path / "dataset.json"
+    split = tmp_path / "split.json"
+    protocol = tmp_path / "protocol.json"
+    for path in (dataset, split, protocol):
+        write_json(path, {"synthetic": path.stem})
+    authorization = tmp_path / CANONICAL_AUTHORIZATION_RELATIVE
+    external = tmp_path / "external-authorization.json"
+    write_json(external, {"authorization": {"final_paid_execution_authorized": True}})
+    authorization.parent.mkdir(parents=True)
+    authorization.symlink_to(external)
+    original = require_canonical_authorization_path
+    monkeypatch.setattr(
+        final_harness, "require_canonical_authorization_path",
+        lambda supplied=None: original(supplied, repository_root=tmp_path))
+    monkeypatch.setattr(
+        benchmark_cli, "create_development_service",
+        lambda: (_ for _ in ()).throw(
+            AssertionError("symlinked authorization must fail before provider construction")))
+    readiness = FinalPaths().pricing_readiness
+    monkeypatch.setattr(sys, "argv", ["benchmarks", "--dataset", str(dataset),
+        "--models", *CANDIDATES, "--limit", "42", "--protocol", str(protocol),
+        "--pricing-readiness", str(readiness), "--split", "final",
+        "--split-manifest", str(split), "--allow-final-evaluation", "--authorize-final",
+        "--final-authorization", str(authorization), "--allow-paid"])
     with pytest.raises(SystemExit):
         benchmark_cli.main()
 
@@ -1090,6 +1268,14 @@ def test_full_synthetic_final_benchmark_cli_path_uses_only_fake_provider(
     monkeypatch.setattr(
         "adaptive_llm_gateway.evaluation.final_harness.canonical_final_root",
         lambda *_args, **_kwargs: output.resolve())
+
+    def ensure_output(*_args, **_kwargs):
+        output.mkdir(parents=True, exist_ok=True)
+        return output.resolve()
+
+    monkeypatch.setattr(
+        "adaptive_llm_gateway.evaluation.final_harness.ensure_canonical_final_root",
+        ensure_output)
     readiness = Path("benchmarks/protocols/routing-benchmark-v1.2/execution-readiness-1.7.json")
     monkeypatch.setattr(sys, "argv", ["benchmarks", "--dataset", str(dataset_path),
         "--models", *CANDIDATES, "--limit", "42", "--output", str(output),

@@ -84,11 +84,15 @@ def main() -> None:
         # FINAL harness or its ML dependencies.
         from adaptive_llm_gateway.evaluation.final_harness import (
             CANDIDATES, EXPECTED_REQUESTS, FinalPaths, canonical_final_root,
-            sha256, verify_final_freeze,
+            ensure_canonical_final_root, require_canonical_authorization_path,
+            require_canonical_final_root, sha256, verify_final_freeze,
         )
         from adaptive_llm_gateway.evaluation.final_ledgers import CandidateAttemptLedger
         frozen_paths = FinalPaths()
-        canonical_root = canonical_final_root()
+        try:
+            canonical_root = canonical_final_root()
+        except (OSError, ValueError) as exc:
+            parser.error(str(exc))
         if not args.authorize_final:
             parser.error("Final-test execution requires --authorize-final")
         if args.limit != EXPECTED_REQUESTS or tuple(args.models) != CANDIDATES:
@@ -105,15 +109,10 @@ def main() -> None:
                 parser.error("FINAL pricing readiness path differs from the reviewed artifact")
             if args.final_policy is not None and args.final_policy.resolve() != frozen_paths.policy.resolve():
                 parser.error("FINAL policy path differs from the canonical artifact")
-            if (args.final_authorization is not None
-                    and args.final_authorization.resolve() != frozen_paths.authorization.resolve()):
-                parser.error("FINAL authorization path differs from the canonical tracked artifact")
-            if args.output is not None and args.output.resolve() != canonical_root:
-                parser.error("FINAL output must equal the canonical experiment root")
-            if (args.final_results_root is not None
-                    and args.final_results_root.resolve() != canonical_root):
-                parser.error("FINAL results root must equal the canonical experiment root")
-        except OSError as exc:
+            require_canonical_authorization_path(args.final_authorization)
+            require_canonical_final_root(args.output)
+            require_canonical_final_root(args.final_results_root)
+        except (OSError, ValueError) as exc:
             parser.error(str(exc))
         args.output = canonical_root
         args.final_results_root = canonical_root
@@ -126,6 +125,12 @@ def main() -> None:
             )
         except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
             parser.error(str(exc))
+        try:
+            canonical_root = ensure_canonical_final_root()
+        except (OSError, ValueError) as exc:
+            parser.error(str(exc))
+        args.output = canonical_root
+        args.final_results_root = canonical_root
         if (args.predictor_sha256 is not None
                 and args.predictor_sha256 != final_verification.identities["predictor_sha256"]):
             parser.error("caller predictor checksum differs from the verified frozen artifact")
