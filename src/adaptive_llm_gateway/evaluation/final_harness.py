@@ -31,10 +31,6 @@ from adaptive_llm_gateway.benchmarks.features import (
 )
 from adaptive_llm_gateway.benchmarks.models import BenchmarkResult, BenchmarkRun
 from adaptive_llm_gateway.benchmarks.routing_benchmark_v1 import load_execution_protocol
-from adaptive_llm_gateway.benchmarks.routing_export import (
-    RoutingDatasetRow,
-    export_routing_dataset,
-)
 from adaptive_llm_gateway.benchmarks.summarization_spec import PropositionSpecification
 from adaptive_llm_gateway.evaluation.hybrid_judge import (
     HYBRID_JUDGE_PROMPT_VERSION,
@@ -90,33 +86,33 @@ CANDIDATES = (
     "candidate-claude-sonnet-5",
 )
 FROZEN_SANDBOX_CONFIGURATION = DockerPythonSandbox().configuration
-OUTCOME_CRITICAL_SOURCES = (
-    "src/adaptive_llm_gateway/application/service.py",
-    "src/adaptive_llm_gateway/benchmarks/__main__.py",
-    "src/adaptive_llm_gateway/benchmarks/features.py",
-    "src/adaptive_llm_gateway/benchmarks/models.py",
-    "src/adaptive_llm_gateway/benchmarks/repository.py",
-    "src/adaptive_llm_gateway/benchmarks/routing_benchmark_v1.py",
-    "src/adaptive_llm_gateway/benchmarks/routing_export.py",
-    "src/adaptive_llm_gateway/benchmarks/runner.py",
-    "src/adaptive_llm_gateway/evaluation/aggregation.py",
-    "src/adaptive_llm_gateway/evaluation/evaluators.py",
-    "src/adaptive_llm_gateway/evaluation/final_harness.py",
-    "src/adaptive_llm_gateway/evaluation/final_ledgers.py",
-    "src/adaptive_llm_gateway/evaluation/hybrid_judge.py",
-    "src/adaptive_llm_gateway/evaluation/models.py",
-    "src/adaptive_llm_gateway/evaluation/repository.py",
-    "src/adaptive_llm_gateway/evaluation/sandbox.py",
-    "src/adaptive_llm_gateway/evaluation/service.py",
-    "src/adaptive_llm_gateway/pricing/calculator.py",
-    "src/adaptive_llm_gateway/providers/gateway_config.py",
-    "src/adaptive_llm_gateway/providers/vercel.py",
-    "src/adaptive_llm_gateway/models/schemas.py",
-    "src/adaptive_llm_gateway/routing/features.py",
-    "src/adaptive_llm_gateway/routing/policy.py",
-    "src/adaptive_llm_gateway/routing/predictor.py",
-    "src/adaptive_llm_gateway/routing/quality_features.py",
+REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
+CANONICAL_FINAL_ROOT_RELATIVE = Path("artifacts/routing-benchmark-v1/final-runs")
+CANONICAL_AUTHORIZATION_RELATIVE = Path(
+    "benchmarks/protocols/routing-benchmark-v1.2/final-execution-authorization.json")
+BOUND_CONFIGURATION_FILES = (
+    "pyproject.toml",
+    "requirements.prod.lock",
+    "benchmarks/protocols/routing-benchmark-v1.2/final-policy-1.0.json",
+    "benchmarks/protocols/routing-benchmark-v1.2/protocol-1.7.json",
+    "benchmarks/protocols/routing-benchmark-v1.2/evaluator-manifest.json",
+    "benchmarks/protocols/routing-benchmark-v1.2/execution-readiness-1.7.json",
+    "benchmarks/specifications/summarization-propositions-v1.0.0.json",
 )
+EXECUTION_SOURCE_PREFIX = "src/adaptive_llm_gateway/"
+SHADOWABLE_EXECUTION_SUFFIXES = frozenset({".py", ".pyi", ".json", ".toml", ".yaml", ".yml"})
+
+
+def canonical_final_root(repository_root: Path = REPOSITORY_ROOT) -> Path:
+    return (repository_root / CANONICAL_FINAL_ROOT_RELATIVE).resolve()
+
+
+def canonical_authorization_path(repository_root: Path = REPOSITORY_ROOT) -> Path:
+    return (repository_root / CANONICAL_AUTHORIZATION_RELATIVE).resolve()
+
+
+def canonical_publication_directory(repository_root: Path, run_id: UUID) -> Path:
+    return canonical_final_root(repository_root) / str(run_id) / "publication"
 
 
 class FrozenExpectations(DomainModel):
@@ -134,19 +130,18 @@ class FrozenExpectations(DomainModel):
 
 
 class FinalPaths(DomainModel):
-    dataset: Path = Path("benchmarks/datasets/routing-benchmark-v1.2.json")
-    split: Path = Path("benchmarks/protocols/routing-benchmark-v1/split-manifest.json")
-    proposition: Path = Path("benchmarks/specifications/summarization-propositions-v1.0.0.json")
-    evaluator: Path = Path("benchmarks/protocols/routing-benchmark-v1.2/evaluator-manifest.json")
-    protocol: Path = Path("benchmarks/protocols/routing-benchmark-v1.2/protocol-1.7.json")
-    final_manifest: Path = Path("artifacts/routing-benchmark-v1/final-manifest.json")
-    predictor_directory: Path = Path("artifacts/routing-quality/rb12-train-candidate-v1")
-    policy: Path = Path("benchmarks/protocols/routing-benchmark-v1.2/final-policy-1.0.json")
-    pricing_readiness: Path = Path(
+    dataset: Path = REPOSITORY_ROOT / "benchmarks/datasets/routing-benchmark-v1.2.json"
+    split: Path = REPOSITORY_ROOT / "benchmarks/protocols/routing-benchmark-v1/split-manifest.json"
+    proposition: Path = REPOSITORY_ROOT / "benchmarks/specifications/summarization-propositions-v1.0.0.json"
+    evaluator: Path = REPOSITORY_ROOT / "benchmarks/protocols/routing-benchmark-v1.2/evaluator-manifest.json"
+    protocol: Path = REPOSITORY_ROOT / "benchmarks/protocols/routing-benchmark-v1.2/protocol-1.7.json"
+    final_manifest: Path = REPOSITORY_ROOT / "artifacts/routing-benchmark-v1/final-manifest.json"
+    predictor_directory: Path = REPOSITORY_ROOT / "artifacts/routing-quality/rb12-train-candidate-v1"
+    policy: Path = REPOSITORY_ROOT / "benchmarks/protocols/routing-benchmark-v1.2/final-policy-1.0.json"
+    pricing_readiness: Path = REPOSITORY_ROOT / (
         "benchmarks/protocols/routing-benchmark-v1.2/execution-readiness-1.7.json")
-    authorization: Path = Path(
-        "benchmarks/protocols/routing-benchmark-v1.2/final-execution-authorization.json")
-    confirmation_status: Path = Path(
+    authorization: Path = REPOSITORY_ROOT / CANONICAL_AUTHORIZATION_RELATIVE
+    confirmation_status: Path = REPOSITORY_ROOT / (
         "artifacts/routing-benchmark-v1/gemini-native-minimal-confirmations/"
         "8f8e90b3-2ca1-4f3d-a181-8cac7aca06f6/status.json")
 
@@ -298,12 +293,37 @@ def _canonical_digest(value: Any) -> str:
     return hashlib.sha256(payload.encode()).hexdigest()
 
 
+def _tracked_execution_files(repository_root: Path, *, revision: str | None = None) -> tuple[str, ...]:
+    if revision is None:
+        listing = _git(repository_root, "ls-files", "--", EXECUTION_SOURCE_PREFIX)
+    else:
+        listing = _git(
+            repository_root, "ls-tree", "-r", "--name-only", revision, "--",
+            EXECUTION_SOURCE_PREFIX)
+    package_files = {line for line in listing.splitlines() if line}
+    files = package_files | set(BOUND_CONFIGURATION_FILES)
+    files.discard(str(CANONICAL_AUTHORIZATION_RELATIVE))
+    return tuple(sorted(files))
+
+
+def _reject_untracked_execution_files(repository_root: Path, tracked: set[str]) -> None:
+    package_root = repository_root / EXECUTION_SOURCE_PREFIX
+    for path in package_root.rglob("*"):
+        if (not path.is_file() or path.suffix not in SHADOWABLE_EXECUTION_SUFFIXES
+                or "__pycache__" in path.parts):
+            continue
+        relative = path.relative_to(repository_root).as_posix()
+        if relative not in tracked:
+            raise ValueError(f"untracked execution file could shadow FINAL: {relative}")
+
+
 def outcome_critical_source_hashes(
-    repository_root: Path = Path("."),
-    sources: tuple[str, ...] = OUTCOME_CRITICAL_SOURCES,
+    repository_root: Path = REPOSITORY_ROOT,
+    sources: tuple[str, ...] | None = None,
 ) -> dict[str, str]:
+    selected = sources or _tracked_execution_files(repository_root)
     hashes = {}
-    for relative in sources:
+    for relative in selected:
         path = repository_root / relative
         if not path.is_file():
             raise ValueError(f"outcome-critical source is missing: {relative}")
@@ -328,20 +348,27 @@ def _git_bytes(repository_root: Path, *arguments: str) -> bytes:
 def verify_execution_provenance(
     authorization: dict[str, Any],
     *,
-    repository_root: Path = Path("."),
-    sources: tuple[str, ...] = OUTCOME_CRITICAL_SOURCES,
+    repository_root: Path = REPOSITORY_ROOT,
+    sources: tuple[str, ...] | None = None,
 ) -> tuple[str, dict[str, str], str]:
     """Require authorized bytes to be exactly the clean committed bytes executing."""
     if _git(repository_root, "status", "--porcelain=v1", "--untracked-files=all"):
         raise ValueError("FINAL paid execution requires a clean Git worktree")
     execution_commit = _git(repository_root, "rev-parse", "HEAD")
-    actual_hashes = outcome_critical_source_hashes(repository_root, sources)
+    selected = sources or _tracked_execution_files(repository_root)
+    tracked = set(_git(repository_root, "ls-files", "--", *selected).splitlines())
+    if tracked != set(selected):
+        raise ValueError("outcome-critical source set contains untracked files")
+    if sources is None:
+        _reject_untracked_execution_files(repository_root, tracked)
+    actual_hashes = outcome_critical_source_hashes(repository_root, selected)
     source_set_sha256 = _canonical_digest(actual_hashes)
     approved = authorization.get("implementation")
     if not isinstance(approved, dict):
         raise ValueError("FINAL authorization is not bound to an implementation")
     reviewed_commit = approved.get("git_commit")
     if (not isinstance(reviewed_commit, str) or not reviewed_commit
+            or approved.get("source_files") != list(actual_hashes)
             or approved.get("source_hashes") != actual_hashes
             or approved.get("source_set_sha256") != source_set_sha256):
         raise ValueError("executing implementation differs from authorized source identity")
@@ -351,19 +378,20 @@ def verify_execution_provenance(
     if ancestor.returncode != 0:
         raise ValueError("reviewed implementation commit is not an ancestor of execution HEAD")
     try:
+        reviewed_sources = sources or _tracked_execution_files(
+            repository_root, revision=reviewed_commit)
+        if reviewed_sources != selected:
+            raise ValueError("outcome-critical source file list changed after authorization")
         reviewed_hashes = {
             source: hashlib.sha256(
                 _git_bytes(repository_root, "show", f"{reviewed_commit}:{source}")).hexdigest()
-            for source in sources
+            for source in selected
         }
     except subprocess.CalledProcessError as exc:
         raise ValueError(
             "reviewed commit does not contain the complete outcome-critical source set") from exc
     if reviewed_hashes != actual_hashes:
         raise ValueError("outcome-critical source changed after authorization")
-    tracked = set(_git(repository_root, "ls-files", "--", *sources).splitlines())
-    if tracked != set(sources):
-        raise ValueError("outcome-critical source set contains untracked files")
     return execution_commit, actual_hashes, source_set_sha256
 
 
@@ -423,15 +451,29 @@ def verify_final_freeze(
     *,
     paths: FinalPaths = FinalPaths(),
     expectations: FrozenExpectations = FrozenExpectations(),
-    results_root: Path = Path("artifacts/routing-benchmark-v1/final-runs"),
+    results_root: Path | None = None,
     explicit_authorization: bool = False,
     require_authorization: bool = True,
     allowed_run_id: UUID | None = None,
     protocol_loader=load_execution_protocol,
     provenance_verifier=None,
-    repository_root: Path = Path("."),
+    repository_root: Path = REPOSITORY_ROOT,
 ) -> FreezeVerification:
     """Verify bytes and operational authorization without parsing FINAL tasks."""
+    expected_root = canonical_final_root(repository_root)
+    resolved_root = expected_root if results_root is None else results_root.resolve()
+    if resolved_root != expected_root:
+        raise ValueError("FINAL root differs from the canonical experiment root")
+    if paths.authorization.resolve() != canonical_authorization_path(repository_root):
+        raise ValueError("FINAL authorization must use the canonical tracked artifact")
+    try:
+        tracked_authorization = _git(
+            repository_root, "ls-files", "--error-unmatch", "--",
+            str(CANONICAL_AUTHORIZATION_RELATIVE))
+    except subprocess.CalledProcessError as exc:
+        raise ValueError("canonical FINAL authorization artifact is not tracked by Git") from exc
+    if tracked_authorization != str(CANONICAL_AUTHORIZATION_RELATIVE):
+        raise ValueError("canonical FINAL authorization artifact is not tracked by Git")
     actual = {
         "dataset_sha256": sha256(paths.dataset),
         "split_manifest_sha256": sha256(paths.split),
@@ -477,7 +519,10 @@ def verify_final_freeze(
             }):
         raise ValueError("frozen policy semantics mismatch")
     for implementation, digest in policy.implementation_files.items():
-        if sha256(Path(implementation)) != digest:
+        implementation_path = Path(implementation)
+        if not implementation_path.is_absolute():
+            implementation_path = repository_root / implementation_path
+        if sha256(implementation_path) != digest:
             raise ValueError(f"routing implementation hash mismatch: {implementation}")
 
     predictor_metadata = _read_object(paths.predictor_directory / "metadata.json")
@@ -501,7 +546,10 @@ def verify_final_freeze(
     if evaluator.get("version") != "1.3.0":
         raise ValueError("FINAL requires Evaluator 1.3")
     for implementation, digest in evaluator.get("implementation_files", {}).items():
-        if sha256(Path(implementation)) != digest:
+        implementation_path = Path(implementation)
+        if not implementation_path.is_absolute():
+            implementation_path = repository_root / implementation_path
+        if sha256(implementation_path) != digest:
             raise ValueError(f"evaluator implementation hash mismatch: {implementation}")
 
     readiness = _read_object(paths.pricing_readiness)
@@ -574,7 +622,7 @@ def verify_final_freeze(
             authorization, repository_root=repository_root)
     identity = _experiment_identity(expectations)
     duplicate = _completed_duplicate(
-        results_root, identity, allowed_run_id=allowed_run_id)
+        resolved_root, identity, allowed_run_id=allowed_run_id)
     if duplicate:
         raise ValueError("completed FINAL result already exists for this frozen experiment")
     return FreezeVerification(
@@ -750,10 +798,23 @@ def validate_final_evaluation(
             or configuration.get("semantic_judge") is not None):
         raise ValueError("FINAL evaluation configuration does not match Evaluator 1.3")
     evaluation_paths = tuple(sorted((directory / "evaluations").glob("*.json")))
+    result_paths = tuple(sorted((directory / "results").glob("*.json")))
     if len(evaluation_paths) != EXPECTED_CANDIDATE_CALLS:
         raise ValueError("FINAL evaluation rows are incomplete")
     evaluations = tuple(EvaluationResult.model_validate_json(path.read_bytes())
                         for path in evaluation_paths)
+    results = tuple(BenchmarkResult.model_validate_json(path.read_bytes())
+                    for path in result_paths)
+    result_by_id = {item.result_id: item for item in results}
+    if (len(results) != EXPECTED_CANDIDATE_CALLS
+            or len(result_by_id) != len(results)
+            or {item.benchmark_result_id for item in evaluations} != set(result_by_id)):
+        raise ValueError("FINAL evaluations do not match the canonical candidate results")
+    for item in evaluations:
+        result = result_by_id[item.benchmark_result_id]
+        if (item.run_id != run_id or item.task_id != result.task_id
+                or item.model_id != result.model_id):
+            raise ValueError("FINAL evaluation identity differs from its candidate result")
     if sum(item.evaluation_call_made for item in evaluations) != summary.judge_calls:
         raise ValueError("FINAL semantic-judge call accounting is inconsistent")
     if verification is not None:
@@ -776,6 +837,13 @@ def validate_final_evaluation(
         if (counts["pending"] or counts["started"]
                 or counts["completed"] + counts["failed"] != summary.judge_calls):
             raise ValueError("FINAL semantic-judge ledger is incomplete")
+        for item in evaluations:
+            if item.evaluation_call_made:
+                durable = ledger.reusable(item.task_id, item.model_id)
+                if (durable is None or durable.model_dump(mode="json")
+                        != item.model_dump(mode="json")):
+                    raise ValueError(
+                        "FINAL semantic evaluation differs from its durable ledger")
     return summary
 
 
@@ -786,25 +854,60 @@ def _routing_features(values: dict[str, JsonValue]) -> RoutingRequestFeatures:
     return RoutingRequestFeatures.model_validate(data)
 
 
-def _load_observations(export_path: Path) -> tuple[CandidateObservation, ...]:
-    rows = tuple(RoutingDatasetRow.model_validate_json(line)
-                 for line in export_path.read_bytes().splitlines() if line)
-    directory = export_path.parent
+def _result_cost(result: BenchmarkResult) -> Decimal | None:
+    if result.response is not None:
+        return result.response.estimated_cost_usd
+    value = result.error_details.get("estimated_cost_usd")
+    try:
+        cost = Decimal(str(value))
+    except Exception:
+        return None
+    return cost if cost.is_finite() and cost >= 0 else None
+
+
+def load_canonical_observations(
+    root: Path,
+    run: BenchmarkRun,
+) -> tuple[CandidateObservation, ...]:
+    """Rebuild replay rows from authoritative result and evaluation artifacts."""
+    directory = root / str(run.run_id)
+    result_paths = tuple(sorted((directory / "results").glob("*.json")))
+    evaluation_paths = tuple(sorted((directory / "evaluations").glob("*.json")))
+    results = tuple(BenchmarkResult.model_validate_json(path.read_bytes())
+                    for path in result_paths)
+    evaluations = tuple(EvaluationResult.model_validate_json(path.read_bytes())
+                        for path in evaluation_paths)
+    evaluation_by_result = {item.benchmark_result_id: item for item in evaluations}
+    if (len(results) != EXPECTED_CANDIDATE_CALLS
+            or len(evaluations) != EXPECTED_CANDIDATE_CALLS
+            or len(evaluation_by_result) != len(evaluations)
+            or set(evaluation_by_result) != {item.result_id for item in results}):
+        raise ValueError("canonical FINAL result/evaluation artifact set is incomplete")
+    tasks = {task.task_id: task for task in run.dataset.tasks}
+    snapshots = run.configuration.get("request_features")
+    bindings = run.configuration.get("request_feature_bindings")
+    if not isinstance(snapshots, dict) or not isinstance(bindings, dict):
+        raise ValueError("canonical FINAL feature snapshots are missing")
     observations = []
-    for row in rows:
-        evaluation = EvaluationResult.model_validate_json(
-            (directory / row.evaluation_path).read_bytes())
+    for result in sorted(results, key=lambda item: (item.task_id, item.model_id)):
+        evaluation = evaluation_by_result[result.result_id]
+        if (evaluation.run_id != run.run_id or evaluation.task_id != result.task_id
+                or evaluation.model_id != result.model_id):
+            raise ValueError("canonical FINAL evaluation does not match its candidate result")
+        task = tasks[result.task_id]
+        snapshot = RequestFeatures.model_validate(snapshots[result.task_id])
+        verify_request_feature_binding(task, snapshot, bindings[result.task_id])
         failure_type = evaluation.details.get("failure_type")
         observations.append(CandidateObservation(
-            task_id=row.task_id,
-            category=("structured_json" if row.request_features.category == "json"
-                      else str(row.request_features.category)),
-            model_id=row.candidate.internal_id,
-            request_features=row.request_features.model_dump(mode="json"),
-            provider_success=row.provider_outcome == "success",
-            evaluation_status=row.evaluation_status,
-            acceptable=row.acceptable,
-            realized_cost_usd=row.candidate_cost_usd,
+            task_id=result.task_id,
+            category=("structured_json" if snapshot.category == "json"
+                      else str(snapshot.category)),
+            model_id=result.model_id,
+            request_features=snapshot.model_dump(mode="json"),
+            provider_success=result.success,
+            evaluation_status=evaluation.evaluation_status,
+            acceptable=evaluation.acceptable,
+            realized_cost_usd=_result_cost(result),
             judge_failure=failure_type in {"PROVIDER_FAILURE", "MALFORMED_JUDGMENT"},
         ))
     return tuple(observations)
@@ -1275,11 +1378,10 @@ def main() -> None:
     preflight = sub.add_parser("preflight")
     preflight.add_argument("--authorize-final", action="store_true")
     preflight.add_argument("--require-authorization", action="store_true")
-    preflight.add_argument("--results-root", type=Path,
-                           default=Path("artifacts/routing-benchmark-v1/final-runs"))
+    preflight.add_argument("--results-root", type=Path)
 
     semantic = sub.add_parser("semantic-judge")
-    semantic.add_argument("--root", type=Path, required=True)
+    semantic.add_argument("--root", type=Path)
     semantic.add_argument("--run-id", type=UUID, required=True)
     semantic.add_argument("--dry-run", action="store_true")
     semantic.add_argument("--execute", action="store_true")
@@ -1288,12 +1390,17 @@ def main() -> None:
     semantic.add_argument("--sandbox-image", default=DEFAULT_SANDBOX_IMAGE)
 
     replay = sub.add_parser("replay")
-    replay.add_argument("--root", type=Path, required=True)
+    replay.add_argument("--root", type=Path)
     replay.add_argument("--run-id", type=UUID, required=True)
-    replay.add_argument("--output", type=Path, required=True)
+    replay.add_argument("--output", type=Path)
     replay.add_argument("--authorize-final", action="store_true")
     args = parser.parse_args()
     paths = FinalPaths()
+    root = canonical_final_root()
+
+    supplied_root = getattr(args, "root", None)
+    if supplied_root is not None and supplied_root.resolve() != root:
+        parser.error("FINAL root must equal the canonical experiment root")
 
     if args.command == "preflight":
         report = verify_final_freeze(
@@ -1312,31 +1419,32 @@ def main() -> None:
         if not (args.execute and args.allow_paid_judge and args.authorize_final):
             parser.error("paid semantic judging requires --execute, --allow-paid-judge, and --authorize-final")
         verification = verify_final_freeze(
-            paths=paths, results_root=args.root, explicit_authorization=True,
+            paths=paths, results_root=root, explicit_authorization=True,
             require_authorization=True, allowed_run_id=args.run_id)
-        validate_final_run(args.root, args.run_id, verification, paths)
+        validate_final_run(root, args.run_id, verification, paths)
         service, ledger, _ = asyncio.run(_prepare_semantic_evaluation(
-            args.root, args.run_id, paths, verification, args.sandbox_image))
-        _begin_semantic_judge_once(args.root, args.run_id)
+            root, args.run_id, paths, verification, args.sandbox_image))
+        _begin_semantic_judge_once(root, args.run_id)
         summary = asyncio.run(_semantic_evaluate(service, ledger, args.run_id))
-        _finish_semantic_judge(args.root, args.run_id, summary)
+        _finish_semantic_judge(root, args.run_id, summary)
         return
 
-    if (args.output / "final-results.json").is_file():
-        paths_written = recover_results_publication(args.output)
+    output = canonical_publication_directory(REPOSITORY_ROOT, args.run_id)
+    if args.output is not None and args.output.resolve() != output:
+        parser.error("FINAL publication output must use the canonical run directory")
+    if (output / "final-results.json").is_file():
+        paths_written = recover_results_publication(output)
         print(json.dumps({"final_results": str(paths_written[0]),
                           "report": str(paths_written[1]),
                           "publication_recovered": True}, sort_keys=True))
         return
 
     verification = verify_final_freeze(
-        paths=paths, results_root=args.root, explicit_authorization=args.authorize_final,
+        paths=paths, results_root=root, explicit_authorization=args.authorize_final,
         require_authorization=True, allowed_run_id=args.run_id)
-    run = validate_final_run(args.root, args.run_id, verification, paths)
-    export_path = args.root / str(args.run_id) / "routing-dataset.jsonl"
-    if not export_path.is_file():
-        export_path, _, _ = asyncio.run(export_routing_dataset(args.root, args.run_id))
-    observations = _load_observations(export_path)
+    run = validate_final_run(root, args.run_id, verification, paths)
+    summary = validate_final_evaluation(root, args.run_id, verification)
+    observations = load_canonical_observations(root, run)
     _, models, _ = load_execution_protocol(paths.protocol)
     selections = replay_router(
         observations,
@@ -1345,13 +1453,12 @@ def main() -> None:
         models=models,
         feature_bindings=run.configuration["request_feature_bindings"],
     )
-    summary = validate_final_evaluation(args.root, args.run_id, verification)
     results = build_final_results(
         verification=verification, observations=observations, selections=selections,
         judge_call_count=summary.judge_calls,
         judge_evaluation_cost_usd=summary.judge_evaluation_cost_usd,
         git_commit=verification.git_commit or "")
-    paths_written = write_results(results, args.output)
+    paths_written = write_results(results, output)
     print(json.dumps({"final_results": str(paths_written[0]),
                       "report": str(paths_written[1])}, sort_keys=True))
 

@@ -76,6 +76,7 @@ def test_protocol_17_overrides_survive_full_and_split_selection(part):
     assert gemini.output_token_policy.reasoning_headroom_tokens == 384
 
 
+@pytest.mark.protected_final_data
 def test_renamed_subset_cannot_remove_validated_protocol_overrides():
     development = selected_dataset("development")
     assert development.name == f"{BENCHMARK_NAME}-development"
@@ -84,6 +85,7 @@ def test_renamed_subset_cannot_remove_validated_protocol_overrides():
 
 @pytest.mark.parametrize("part", ["train", "development"])
 @pytest.mark.asyncio
+@pytest.mark.protected_final_data
 async def test_each_split_serializes_google_native_minimal_without_shared_reasoning(part):
     selected_dataset(part)  # Exercise validation, selection, and the FINAL gate.
     gemini = protocol_17_overrides()["candidate-gemini-3-flash"]

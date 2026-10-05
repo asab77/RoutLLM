@@ -36,12 +36,22 @@ reviewer explicitly authorizes it. Historical `protocol.json` and
 Authorization requires named same-day human approval plus named same-day pricing
 reverification; an older authorization fails closed. Paid execution additionally
 requires a clean Git worktree and an authorization record bound to the exact
-reviewed implementation commit and the complete outcome-critical source hash
-set. That reviewed commit must be an ancestor of the clean execution-time HEAD;
-every critical file must still be byte-identical. The run records the separate
+reviewed implementation commit and a deterministic hash manifest covering every
+tracked file under `src/adaptive_llm_gateway/`, the dependency lock/configuration,
+and the frozen runtime policy/protocol/evaluator configuration. That reviewed
+commit must be an ancestor of the clean execution-time HEAD; every bound file and
+the bound file list must still be byte-identical. Untracked execution files fail
+closed. The run records the separate
 execution-time commit. This permits a later authorization-only commit without a
 self-referential commit hash. The checked-in authorization intentionally has no
 implementation binding yet.
+
+The repository-derived canonical experiment root is
+`artifacts/routing-benchmark-v1/final-runs`. Candidate runs, both paid-attempt
+ledgers, duplicate detection, and publication state all live below that root.
+FINAL rejects caller-selected alternate roots. The only accepted authorization
+record is the tracked repository file
+`benchmarks/protocols/routing-benchmark-v1.2/final-execution-authorization.json`.
 
 ## Metrics
 
@@ -105,12 +115,8 @@ PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src .venv/bin/python \
   --split final \
   --split-manifest benchmarks/protocols/routing-benchmark-v1/split-manifest.json \
   --allow-final-evaluation --authorize-final \
-  --final-policy benchmarks/protocols/routing-benchmark-v1.2/final-policy-1.0.json \
-  --final-authorization benchmarks/protocols/routing-benchmark-v1.2/final-execution-authorization.json \
-  --final-results-root artifacts/routing-benchmark-v1/final-runs \
   --models candidate-nemotron-3.5-lightning candidate-gpt-6-luna candidate-gemini-3-flash candidate-claude-sonnet-5 \
   --limit 42 \
-  --output artifacts/routing-benchmark-v1/final-runs \
   --allow-paid
 ```
 
@@ -130,7 +136,6 @@ First confirm the zero-call plan:
 ```sh
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src .venv/bin/python \
   -m adaptive_llm_gateway.evaluation.final_harness semantic-judge \
-  --root artifacts/routing-benchmark-v1/final-runs \
   --run-id <RUN_ID> --dry-run
 ```
 
@@ -141,7 +146,6 @@ Only after the dry run and authorization gate pass:
 ```sh
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src .venv/bin/python \
   -m adaptive_llm_gateway.evaluation.final_harness semantic-judge \
-  --root artifacts/routing-benchmark-v1/final-runs \
   --run-id <RUN_ID> \
   --execute --allow-paid-judge --authorize-final
 ```
@@ -163,14 +167,14 @@ validated before the semantic ledger is initialized.
 ```sh
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src .venv/bin/python \
   -m adaptive_llm_gateway.evaluation.final_harness replay \
-  --root artifacts/routing-benchmark-v1/final-runs \
   --run-id <RUN_ID> \
-  --output artifacts/routing-benchmark-v1/final-results/<RUN_ID> \
   --authorize-final
 ```
 
-Replay makes zero provider calls. It verifies the predictor and policy, emits one
-selection per request, aggregates RoutLLM and all fixed models, labels the oracle
+Replay makes zero provider calls. It reconstructs outcome rows from the validated
+candidate-result and evaluation artifacts; `routing-dataset.jsonl` is never an
+authoritative input. It verifies the predictor and policy, emits one selection per
+request, aggregates RoutLLM and all fixed models, labels the oracle
 analysis-only, and writes `final-results.json` plus `final-report.md`. The resume
 statement is suppressed when cost is incomplete, N is not 42, category N is not
 six, or identity verification is not ready. Canonical JSON is the publication
@@ -181,7 +185,9 @@ routing.
 
 ## Protected-data test classification
 
-Do not run the nine legacy modules below wholesale. The safe nodes use only
+The default pytest marker expression excludes both `real_provider` and
+`protected_final_data`. Do not run the protected nodes below during ordinary
+development. The safe nodes use only
 protocol metadata, hashes, mocks, or synthetic objects; the unsafe nodes parse a
 protected routing dataset or invoke a dry-run path that loads it.
 
@@ -194,12 +200,12 @@ protected routing dataset or invoke a dry-run path that loads it.
   readiness/cost-plan nodes are unsafe.
 - `test_gemini_native_minimal_protocol.py`: protocol semantics and artifact-hash
   nodes are safe; readiness/allowance/cost nodes are unsafe.
-- `test_protocol_split_execution.py`: the first split-selection parametrization
-  parses the protected dataset. The remaining model-contract and unsupported
-  protocol nodes are safe.
-- `test_routing_benchmark_v1.py`: synthetic construction and validation nodes are
-  safe; `test_canonical_hashes_match_written_artifacts` and any node changed to
-  load a checked-in routing dataset are unsafe.
+- `test_protocol_split_execution.py`: every node that calls `selected_dataset`
+  is protected; model-contract and unsupported-protocol nodes remain safe.
+- `test_routing_benchmark_v1.py`: the complete module is protected because its
+  shared fixture constructs every canonical task record.
+- `test_hybrid_semantic_evaluator.py`: the complete module is protected because
+  its fixtures load the frozen proposition specification or canonical dataset.
 - `test_routing_benchmark_v12_selector.py`: nodes using the module-level
   `dataset_v12` fixture are unsafe. The Protocol 1.7 identity/contract node is
   safe.
@@ -213,6 +219,17 @@ protected routing dataset or invoke a dry-run path that loads it.
 `tests/test_final_harness.py` is the protected-data-free regression entry point
 for the FINAL harness. It constructs all tasks, results, ledgers, repositories,
 and Git histories synthetically.
+
+## Protected-data access incident
+
+Before the second harness repair, ordinary test infrastructure unintentionally
+instantiated all canonical benchmark records, including FINAL-assigned records.
+Their contents were not manually inspected or surfaced. At that time there were
+no FINAL model responses or evaluation labels, and FINAL remained excluded from
+training, DEV tuning, router fitting, threshold selection, and candidate/baseline
+selection. The test architecture now marks every canonical constructor/fixture as
+protected and excludes protected tests by default, so the normal safe suite cannot
+materialize protected FINAL records.
 
 ## Call and cost budget
 

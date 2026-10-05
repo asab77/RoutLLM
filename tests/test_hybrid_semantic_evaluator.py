@@ -22,6 +22,8 @@ from adaptive_llm_gateway.evaluation.service import EvaluationService
 from adaptive_llm_gateway.models import InferenceResponse, ModelConfig
 from adaptive_llm_gateway.errors import ProviderFailureError
 
+pytestmark = pytest.mark.protected_final_data
+
 SPEC_PATH = Path("benchmarks/specifications/summarization-propositions-v1.0.0.json")
 DATASET_PATH = Path("benchmarks/datasets/routing-benchmark-v1.2.json")
 VALIDATION_INPUT = Path("benchmarks/validation/summarization-proposition-validation-v1.0.0.json")

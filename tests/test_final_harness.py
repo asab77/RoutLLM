@@ -16,6 +16,8 @@ from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.pipeline import Pipeline
 
 from adaptive_llm_gateway.evaluation.final_harness import (
+    BOUND_CONFIGURATION_FILES,
+    CANONICAL_AUTHORIZATION_RELATIVE,
     CANDIDATES,
     PRIMARY_BASELINE,
     CandidateObservation,
@@ -30,7 +32,11 @@ from adaptive_llm_gateway.evaluation.final_harness import (
     _semantic_evaluate,
     aggregate_strategies,
     build_final_results,
+    canonical_authorization_path,
+    canonical_final_root,
     main,
+    load_canonical_observations,
+    outcome_critical_source_hashes,
     render_markdown,
     recover_results_publication,
     replay_router,
@@ -51,8 +57,14 @@ from adaptive_llm_gateway.benchmarks.features import (
     extract_request_features,
     verify_request_feature_binding,
 )
-from adaptive_llm_gateway.benchmarks.models import BenchmarkResult, BenchmarkTask
+from adaptive_llm_gateway.benchmarks.models import (
+    BenchmarkDataset,
+    BenchmarkResult,
+    BenchmarkRun,
+    BenchmarkTask,
+)
 from adaptive_llm_gateway.models import (
+    InferenceResponse,
     ModelCapabilities,
     ModelConfig,
     ReasoningBehavior,
@@ -139,7 +151,8 @@ def freeze_fixture(tmp_path, *, authorized=True):
     candidates = CANDIDATES
     files = {name: tmp_path / f"{name}.json" for name in (
         "dataset", "split", "proposition", "evaluator", "protocol",
-        "final_manifest", "pricing_readiness", "authorization", "confirmation")}
+        "final_manifest", "pricing_readiness", "confirmation")}
+    files["authorization"] = canonical_authorization_path(tmp_path)
     implementation = tmp_path / "implementation.py"
     implementation.write_text("FROZEN = True\n")
     routing_implementation = tmp_path / "routing_implementation.py"
@@ -228,6 +241,12 @@ def freeze_fixture(tmp_path, *, authorized=True):
             "gemini_native_minimal_confirmation_status_sha256": digest(files["confirmation"]),
         },
     })
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "add", str(files["authorization"].relative_to(tmp_path))],
+                   cwd=tmp_path, check=True)
+    subprocess.run(["git", "-c", "user.email=test@example.invalid",
+                    "-c", "user.name=Synthetic Test", "commit", "-qm", "authorization"],
+                   cwd=tmp_path, check=True)
     paths = FinalPaths(
         dataset=files["dataset"], split=files["split"],
         proposition=files["proposition"], evaluator=files["evaluator"],
@@ -244,20 +263,101 @@ def freeze_fixture(tmp_path, *, authorized=True):
 def test_freeze_verifier_accepts_exact_synthetic_state(tmp_path):
     paths, expected, loader = freeze_fixture(tmp_path)
     result = verify_final_freeze(
-        paths=paths, expectations=expected, results_root=tmp_path / "runs",
+        paths=paths, expectations=expected, results_root=canonical_final_root(tmp_path),
         explicit_authorization=True, protocol_loader=loader,
-        provenance_verifier=synthetic_provenance)
+        provenance_verifier=synthetic_provenance, repository_root=tmp_path)
     assert result.status == "READY" and result.provider_calls_made == 0
 
 
 def test_preflight_without_independent_authorization_is_blocked_but_zero_call(tmp_path):
     paths, expected, loader = freeze_fixture(tmp_path, authorized=False)
     result = verify_final_freeze(
-        paths=paths, expectations=expected, results_root=tmp_path / "runs",
-        require_authorization=False, protocol_loader=loader)
+        paths=paths, expectations=expected, results_root=canonical_final_root(tmp_path),
+        require_authorization=False, protocol_loader=loader, repository_root=tmp_path)
     assert result.status == "BLOCKED"
     assert result.authorization_status == "AWAITING_INDEPENDENT_REVIEW"
     assert result.provider_calls_made == 0
+
+
+def test_final_freeze_rejects_alternate_experiment_root(tmp_path):
+    paths, expected, loader = freeze_fixture(tmp_path)
+    with pytest.raises(ValueError, match="canonical experiment root"):
+        verify_final_freeze(
+            paths=paths, expectations=expected, results_root=tmp_path / "alternate",
+            explicit_authorization=True, protocol_loader=loader,
+            provenance_verifier=synthetic_provenance, repository_root=tmp_path)
+
+
+def test_final_freeze_rejects_copied_authorization(tmp_path):
+    paths, expected, loader = freeze_fixture(tmp_path)
+    copied = tmp_path / "copied-authorization.json"
+    copied.write_bytes(paths.authorization.read_bytes())
+    with pytest.raises(ValueError, match="canonical tracked artifact"):
+        verify_final_freeze(
+            paths=paths.model_copy(update={"authorization": copied}),
+            expectations=expected, results_root=canonical_final_root(tmp_path),
+            explicit_authorization=True, protocol_loader=loader,
+            provenance_verifier=synthetic_provenance, repository_root=tmp_path)
+
+
+def test_semantic_cli_rejects_alternate_root_before_provider_construction(
+        tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        "adaptive_llm_gateway.evaluation.final_harness.VercelGatewayProvider",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("alternate root must fail before provider construction")))
+    monkeypatch.setattr(sys, "argv", ["final_harness", "semantic-judge",
+        "--root", str(tmp_path / "alternate"),
+        "--run-id", "00000000-0000-0000-0000-000000000001", "--dry-run"])
+    with pytest.raises(SystemExit):
+        main()
+
+
+def test_candidate_cli_rejects_alternate_root_before_provider_construction(
+        tmp_path, monkeypatch):
+    from adaptive_llm_gateway.benchmarks import __main__ as benchmark_cli
+
+    dataset = tmp_path / "dataset.json"
+    split = tmp_path / "split.json"
+    protocol = tmp_path / "protocol.json"
+    for path in (dataset, split, protocol):
+        write_json(path, {"synthetic": path.stem})
+    monkeypatch.setattr(
+        benchmark_cli, "create_development_service",
+        lambda: (_ for _ in ()).throw(
+            AssertionError("alternate root must fail before provider construction")))
+    readiness = FinalPaths().pricing_readiness
+    monkeypatch.setattr(sys, "argv", ["benchmarks", "--dataset", str(dataset),
+        "--models", *CANDIDATES, "--limit", "42", "--output", str(tmp_path / "alternate"),
+        "--protocol", str(protocol), "--pricing-readiness", str(readiness),
+        "--split", "final", "--split-manifest", str(split),
+        "--allow-final-evaluation", "--authorize-final", "--allow-paid"])
+    with pytest.raises(SystemExit):
+        benchmark_cli.main()
+
+
+def test_candidate_cli_rejects_alternate_authorization_before_provider_construction(
+        tmp_path, monkeypatch):
+    from adaptive_llm_gateway.benchmarks import __main__ as benchmark_cli
+
+    dataset = tmp_path / "dataset.json"
+    split = tmp_path / "split.json"
+    protocol = tmp_path / "protocol.json"
+    copied_authorization = tmp_path / "authorization.json"
+    for path in (dataset, split, protocol, copied_authorization):
+        write_json(path, {"synthetic": path.stem})
+    monkeypatch.setattr(
+        benchmark_cli, "create_development_service",
+        lambda: (_ for _ in ()).throw(
+            AssertionError("alternate authorization must fail before provider construction")))
+    readiness = FinalPaths().pricing_readiness
+    monkeypatch.setattr(sys, "argv", ["benchmarks", "--dataset", str(dataset),
+        "--models", *CANDIDATES, "--limit", "42", "--protocol", str(protocol),
+        "--pricing-readiness", str(readiness), "--split", "final",
+        "--split-manifest", str(split), "--allow-final-evaluation", "--authorize-final",
+        "--final-authorization", str(copied_authorization), "--allow-paid"])
+    with pytest.raises(SystemExit):
+        benchmark_cli.main()
 
 
 @pytest.mark.parametrize("field", ["dataset", "policy", "predictor", "protocol"])
@@ -268,8 +368,9 @@ def test_freeze_verifier_rejects_identity_mismatch(tmp_path, field):
     target.write_bytes(target.read_bytes() + b"tampered")
     with pytest.raises(ValueError, match="identity mismatch"):
         verify_final_freeze(paths=paths, expectations=expected,
-            results_root=tmp_path / "runs", explicit_authorization=True,
-            protocol_loader=loader, provenance_verifier=synthetic_provenance)
+            results_root=canonical_final_root(tmp_path), explicit_authorization=True,
+            protocol_loader=loader, provenance_verifier=synthetic_provenance,
+            repository_root=tmp_path)
 
 
 @pytest.mark.parametrize("mismatch", ["threshold", "portfolio"])
@@ -283,16 +384,16 @@ def test_freeze_verifier_rejects_threshold_and_portfolio_mismatch(tmp_path, mism
     write_json(paths.predictor_directory / "metadata.json", value)
     with pytest.raises(ValueError, match="predictor approval metadata mismatch"):
         verify_final_freeze(paths=paths, expectations=expected,
-            results_root=tmp_path / "runs", explicit_authorization=True,
-            protocol_loader=loader)
+            results_root=canonical_final_root(tmp_path), explicit_authorization=True,
+            protocol_loader=loader, repository_root=tmp_path)
 
 
 def test_stale_readiness_and_missing_authorization_are_rejected(tmp_path):
     paths, expected, loader = freeze_fixture(tmp_path, authorized=False)
     with pytest.raises(ValueError, match="lacks same-day authorization"):
         verify_final_freeze(paths=paths, expectations=expected,
-            results_root=tmp_path / "runs", explicit_authorization=True,
-            protocol_loader=loader)
+            results_root=canonical_final_root(tmp_path), explicit_authorization=True,
+            protocol_loader=loader, repository_root=tmp_path)
 
 
 def test_evaluator_implementation_hash_mismatch_is_rejected(tmp_path):
@@ -302,42 +403,45 @@ def test_evaluator_implementation_hash_mismatch_is_rejected(tmp_path):
     implementation.write_text("FROZEN = False\n")
     with pytest.raises(ValueError, match="evaluator implementation hash mismatch"):
         verify_final_freeze(paths=paths, expectations=expected,
-            results_root=tmp_path / "runs", explicit_authorization=True,
-            protocol_loader=loader)
+            results_root=canonical_final_root(tmp_path), explicit_authorization=True,
+            protocol_loader=loader, repository_root=tmp_path)
     paths, expected, loader = freeze_fixture(tmp_path / "stale")
     value = json.loads(paths.pricing_readiness.read_text())
     value["status"] = "REQUIRES_REVERIFICATION"
     write_json(paths.pricing_readiness, value)
     with pytest.raises(ValueError, match="pricing readiness is stale"):
         verify_final_freeze(paths=paths, expectations=expected,
-            results_root=tmp_path / "stale-runs", explicit_authorization=True,
-            protocol_loader=loader)
+            results_root=canonical_final_root(tmp_path / "stale"),
+            explicit_authorization=True, protocol_loader=loader,
+            repository_root=tmp_path / "stale")
 
 
 def test_duplicate_completed_execution_is_rejected(tmp_path):
     paths, expected, loader = freeze_fixture(tmp_path)
     ready = verify_final_freeze(paths=paths, expectations=expected,
-        results_root=tmp_path / "runs", explicit_authorization=True,
-        protocol_loader=loader, provenance_verifier=synthetic_provenance)
+        results_root=canonical_final_root(tmp_path), explicit_authorization=True,
+        protocol_loader=loader, provenance_verifier=synthetic_provenance,
+        repository_root=tmp_path)
     run_id = UUID(int=1)
-    run = tmp_path / "runs" / str(run_id)
+    run = canonical_final_root(tmp_path) / str(run_id)
     write_json(run / "status.json", {"status": "completed"})
     write_json(run / "manifest.json", {"configuration": {
         "final_experiment_identity": ready.experiment_identity}})
     with pytest.raises(ValueError, match="already exists"):
         verify_final_freeze(paths=paths, expectations=expected,
-            results_root=tmp_path / "runs", explicit_authorization=True,
-            protocol_loader=loader, provenance_verifier=synthetic_provenance)
+            results_root=canonical_final_root(tmp_path), explicit_authorization=True,
+            protocol_loader=loader, provenance_verifier=synthetic_provenance,
+            repository_root=tmp_path)
     continued = verify_final_freeze(paths=paths, expectations=expected,
-        results_root=tmp_path / "runs", explicit_authorization=True,
+        results_root=canonical_final_root(tmp_path), explicit_authorization=True,
         allowed_run_id=run_id, protocol_loader=loader,
-        provenance_verifier=synthetic_provenance)
+        provenance_verifier=synthetic_provenance, repository_root=tmp_path)
     assert continued.status == "READY"
 
 
 def test_semantic_judge_dry_run_makes_zero_calls(monkeypatch, capsys):
     monkeypatch.setattr(sys, "argv", ["final_harness", "semantic-judge",
-        "--root", "unused", "--run-id", "00000000-0000-0000-0000-000000000001",
+        "--run-id", "00000000-0000-0000-0000-000000000001",
         "--dry-run"])
     main()
     assert json.loads(capsys.readouterr().out)["provider_calls_made"] == 0
@@ -651,8 +755,29 @@ def _authorized_source_identity(path, sources):
         ["git", "rev-parse", "HEAD"], cwd=path, check=True,
         capture_output=True, text=True).stdout.strip()
     hashes = {source: digest(path / source) for source in sources}
-    return {"implementation": {"git_commit": commit, "source_hashes": hashes,
+    return {"implementation": {"git_commit": commit, "source_files": list(hashes),
+                                "source_hashes": hashes,
                                 "source_set_sha256": _canonical_digest(hashes)}}
+
+
+def _initialize_execution_repository(path):
+    files = {name: f"synthetic {name}\n" for name in BOUND_CONFIGURATION_FILES}
+    files.update({
+        "src/adaptive_llm_gateway/__init__.py": "",
+        "src/adaptive_llm_gateway/bootstrap.py": "VALUE = 'bootstrap'\n",
+        "src/adaptive_llm_gateway/providers/resolver.py": "VALUE = 'resolver'\n",
+        "src/adaptive_llm_gateway/pricing/__init__.py": "VALUE = 'pricing'\n",
+        "src/adaptive_llm_gateway/benchmarks/summarization_spec.py": "VALUE = 'semantic'\n",
+    })
+    _initialize_git_repository(path, files)
+    hashes = outcome_critical_source_hashes(path)
+    commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=path, check=True,
+        capture_output=True, text=True).stdout.strip()
+    return {"implementation": {
+        "git_commit": commit, "source_files": list(hashes), "source_hashes": hashes,
+        "source_set_sha256": _canonical_digest(hashes),
+    }}
 
 
 def test_provenance_rejects_dirty_and_untracked_outcome_critical_sources(tmp_path):
@@ -698,6 +823,63 @@ def test_authorization_only_descendant_commit_preserves_reviewed_source_binding(
     assert execution_commit != reviewed_commit
 
 
+@pytest.mark.parametrize("relative", [
+    "src/adaptive_llm_gateway/bootstrap.py",
+    "src/adaptive_llm_gateway/providers/resolver.py",
+    "src/adaptive_llm_gateway/pricing/__init__.py",
+    "src/adaptive_llm_gateway/benchmarks/summarization_spec.py",
+])
+def test_complete_source_binding_rejects_runtime_module_mutation(tmp_path, relative):
+    authorization = _initialize_execution_repository(tmp_path)
+    (tmp_path / relative).write_text("VALUE = 'changed'\n")
+    subprocess.run(["git", "add", relative], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "changed"], cwd=tmp_path, check=True)
+    with pytest.raises(ValueError, match="differs from authorized"):
+        verify_execution_provenance(authorization, repository_root=tmp_path)
+
+
+def test_complete_source_binding_rejects_added_execution_file(tmp_path):
+    authorization = _initialize_execution_repository(tmp_path)
+    relative = "src/adaptive_llm_gateway/providers/new_adapter.py"
+    (tmp_path / relative).write_text("VALUE = 'new'\n")
+    subprocess.run(["git", "add", relative], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "add runtime file"], cwd=tmp_path, check=True)
+    with pytest.raises(ValueError, match="differs from authorized|file list changed"):
+        verify_execution_provenance(authorization, repository_root=tmp_path)
+
+
+def test_complete_source_binding_rejects_ignored_shadow_file(tmp_path):
+    authorization = _initialize_execution_repository(tmp_path)
+    relative = "src/adaptive_llm_gateway/providers/shadow.py"
+    (tmp_path / ".git/info/exclude").write_text(relative + "\n")
+    (tmp_path / relative).write_text("VALUE = 'shadow'\n")
+    with pytest.raises(ValueError, match="could shadow FINAL"):
+        verify_execution_provenance(authorization, repository_root=tmp_path)
+
+
+def test_complete_source_binding_rejects_deleted_execution_file(tmp_path):
+    authorization = _initialize_execution_repository(tmp_path)
+    relative = "src/adaptive_llm_gateway/providers/resolver.py"
+    (tmp_path / relative).unlink()
+    subprocess.run(["git", "add", "-u", relative], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "delete runtime file"], cwd=tmp_path, check=True)
+    with pytest.raises(ValueError, match="differs from authorized|file list changed"):
+        verify_execution_provenance(authorization, repository_root=tmp_path)
+
+
+def test_complete_source_binding_allows_authorization_only_descendant(tmp_path):
+    authorization = _initialize_execution_repository(tmp_path)
+    reviewed = authorization["implementation"]["git_commit"]
+    canonical = tmp_path / CANONICAL_AUTHORIZATION_RELATIVE
+    canonical.write_text('{"authorized":true}\n')
+    subprocess.run(["git", "add", str(CANONICAL_AUTHORIZATION_RELATIVE)],
+                   cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "authorize"], cwd=tmp_path, check=True)
+    execution, _, _ = verify_execution_provenance(
+        authorization, repository_root=tmp_path)
+    assert execution != reviewed
+
+
 def test_task_and_feature_binding_detects_task_and_snapshot_tampering():
     task = BenchmarkTask(task_id="synthetic", category="qa", prompt="Original prompt")
     snapshot = extract_request_features(task)
@@ -722,6 +904,85 @@ def test_replay_rejects_wrong_feature_extractor_identity(tmp_path):
         replay_router(rows, predictor_path=predictor,
             predictor_sha256=digest(predictor), models=models(),
             feature_bindings=bindings)
+
+
+def _canonical_artifact_fixture(root):
+    tasks = tuple(BenchmarkTask(
+        task_id=f"task-{index}", category="qa", prompt=f"Synthetic prompt {index}")
+        for index in range(42))
+    snapshots = {task.task_id: extract_request_features(task).model_dump(mode="json")
+                 for task in tasks}
+    bindings = {task.task_id: build_request_feature_binding(
+        task, extract_request_features(task)) for task in tasks}
+    run = BenchmarkRun(
+        dataset=BenchmarkDataset(name="synthetic", version="1", tasks=tasks),
+        dataset_sha256="synthetic", selected_task_ids=tuple(task.task_id for task in tasks),
+        models=models(), configuration={
+            "request_features": snapshots, "request_feature_bindings": bindings})
+    directory = root / str(run.run_id)
+    (directory / "results").mkdir(parents=True)
+    (directory / "evaluations").mkdir()
+    for task in tasks:
+        for index, candidate in enumerate(CANDIDATES):
+            result = BenchmarkResult(
+                run_id=run.run_id, request_id=f"{task.task_id}-{candidate}",
+                task_id=task.task_id, model_id=candidate, success=True, latency_ms=1,
+                response=InferenceResponse(
+                    text="synthetic", model_id=candidate, provider="fake",
+                    input_tokens=1, output_tokens=1, latency_ms=1,
+                    estimated_cost_usd=Decimal(index + 1) / 100))
+            evaluation = EvaluationResult(
+                benchmark_result_id=result.result_id, run_id=run.run_id,
+                task_id=task.task_id, model_id=candidate, evaluator_name="synthetic",
+                evaluator_version="1", quality_score=1 if index == 0 else 0,
+                acceptable_threshold=0.8, acceptable=index == 0,
+                reason="synthetic", evaluation_call_made=False)
+            (directory / "results" / f"{result.result_id}.json").write_text(
+                result.model_dump_json())
+            (directory / "evaluations" / f"{result.result_id}.json").write_text(
+                evaluation.model_dump_json())
+    return run
+
+
+def _selections_from_canonical_rows(rows):
+    selections = []
+    for task_id in sorted({row.task_id for row in rows}):
+        selected = next(row for row in rows
+                        if row.task_id == task_id and row.model_id == CANDIDATES[0])
+        selections.append(RouterSelection(
+            task_id=task_id, category=selected.category,
+            selected_model_id=selected.model_id, predicted_acceptability=0.9,
+            projected_cost_usd=Decimal("0.01"), threshold_satisfied=True,
+            fallback_used=False, provider_success=selected.provider_success,
+            evaluation_status=selected.evaluation_status, acceptable=selected.acceptable,
+            realized_cost_usd=selected.realized_cost_usd,
+            judge_failure=selected.judge_failure))
+    return tuple(selections)
+
+
+@pytest.mark.parametrize("tampering", [
+    {"acceptable": True},
+    {"provider_outcome": "success"},
+    {"candidate_cost_usd": "999"},
+    {"evaluation_status": "evaluated"},
+    {"candidate": {"internal_id": CANDIDATES[3]}},
+])
+def test_routing_export_tampering_cannot_change_canonical_x_or_y(tmp_path, tampering):
+    run = _canonical_artifact_fixture(tmp_path)
+    before = load_canonical_observations(tmp_path, run)
+    before_result = build_final_results(
+        verification=verification(), observations=before,
+        selections=_selections_from_canonical_rows(before), judge_call_count=0,
+        git_commit="b" * 40, generated_at=datetime(2030, 1, 1, tzinfo=timezone.utc))
+    cache = tmp_path / str(run.run_id) / "routing-dataset.jsonl"
+    cache.write_text(json.dumps({"task_id": "task-0", **tampering}) + "\n")
+    after = load_canonical_observations(tmp_path, run)
+    after_result = build_final_results(
+        verification=verification(), observations=after,
+        selections=_selections_from_canonical_rows(after), judge_call_count=0,
+        git_commit="b" * 40, generated_at=datetime(2030, 1, 1, tzinfo=timezone.utc))
+    assert before == after
+    assert before_result.primary_metrics == after_result.primary_metrics
 
 
 def test_report_publication_recovers_after_json_write_without_provider_work(tmp_path, monkeypatch):
@@ -766,7 +1027,7 @@ def test_dry_run_does_not_construct_provider(monkeypatch, capsys):
     monkeypatch.setattr(
         "adaptive_llm_gateway.evaluation.final_harness.VercelGatewayProvider", forbidden)
     monkeypatch.setattr(sys, "argv", ["final_harness", "semantic-judge",
-        "--root", "unused", "--run-id", "00000000-0000-0000-0000-000000000001",
+        "--run-id", "00000000-0000-0000-0000-000000000001",
         "--dry-run"])
     main()
     assert json.loads(capsys.readouterr().out)["provider_calls_made"] == 0
@@ -826,6 +1087,9 @@ def test_full_synthetic_final_benchmark_cli_path_uses_only_fake_provider(
     monkeypatch.setattr(
         "adaptive_llm_gateway.evaluation.final_harness.verify_final_freeze",
         lambda **_kwargs: verified)
+    monkeypatch.setattr(
+        "adaptive_llm_gateway.evaluation.final_harness.canonical_final_root",
+        lambda *_args, **_kwargs: output.resolve())
     readiness = Path("benchmarks/protocols/routing-benchmark-v1.2/execution-readiness-1.7.json")
     monkeypatch.setattr(sys, "argv", ["benchmarks", "--dataset", str(dataset_path),
         "--models", *CANDIDATES, "--limit", "42", "--output", str(output),

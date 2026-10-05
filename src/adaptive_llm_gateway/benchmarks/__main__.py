@@ -48,7 +48,7 @@ def main() -> None:
     parser.add_argument("--dataset", type=Path, default=Path("benchmarks/datasets/foundation-v1.json"))
     parser.add_argument("--models", nargs="+", default=["fake-small"])
     parser.add_argument("--limit", type=int, default=1)
-    parser.add_argument("--output", type=Path, default=Path("benchmark-results"))
+    parser.add_argument("--output", type=Path)
     parser.add_argument("--protocol", type=Path,
                         help="Frozen execution protocol containing candidate/task output overrides")
     parser.add_argument(
@@ -67,16 +67,12 @@ def main() -> None:
     parser.add_argument("--policy-sha256")
     parser.add_argument(
         "--final-policy", type=Path,
-        default=Path("benchmarks/protocols/routing-benchmark-v1.2/final-policy-1.0.json"),
     )
     parser.add_argument(
         "--final-authorization", type=Path,
-        default=Path(
-            "benchmarks/protocols/routing-benchmark-v1.2/final-execution-authorization.json"),
     )
     parser.add_argument(
         "--final-results-root", type=Path,
-        default=Path("artifacts/routing-benchmark-v1/final-runs"),
     )
     parser.add_argument("--allow-paid", action="store_true", help="Explicitly allow gateway calls that may incur charges")
     args = parser.parse_args()
@@ -87,11 +83,12 @@ def main() -> None:
         # Import lazily so ordinary benchmark and test workflows do not load the
         # FINAL harness or its ML dependencies.
         from adaptive_llm_gateway.evaluation.final_harness import (
-            CANDIDATES, EXPECTED_REQUESTS, FinalPaths, sha256, verify_final_freeze,
+            CANDIDATES, EXPECTED_REQUESTS, FinalPaths, canonical_final_root,
+            sha256, verify_final_freeze,
         )
         from adaptive_llm_gateway.evaluation.final_ledgers import CandidateAttemptLedger
-        frozen_paths = FinalPaths(
-            policy=args.final_policy, authorization=args.final_authorization)
+        frozen_paths = FinalPaths()
+        canonical_root = canonical_final_root()
         if not args.authorize_final:
             parser.error("Final-test execution requires --authorize-final")
         if args.limit != EXPECTED_REQUESTS or tuple(args.models) != CANDIDATES:
@@ -106,14 +103,24 @@ def main() -> None:
             }
             if args.pricing_readiness.resolve() != frozen_paths.pricing_readiness.resolve():
                 parser.error("FINAL pricing readiness path differs from the reviewed artifact")
-            if args.output.resolve() != args.final_results_root.resolve():
-                parser.error("FINAL output must equal --final-results-root")
+            if args.final_policy is not None and args.final_policy.resolve() != frozen_paths.policy.resolve():
+                parser.error("FINAL policy path differs from the canonical artifact")
+            if (args.final_authorization is not None
+                    and args.final_authorization.resolve() != frozen_paths.authorization.resolve()):
+                parser.error("FINAL authorization path differs from the canonical tracked artifact")
+            if args.output is not None and args.output.resolve() != canonical_root:
+                parser.error("FINAL output must equal the canonical experiment root")
+            if (args.final_results_root is not None
+                    and args.final_results_root.resolve() != canonical_root):
+                parser.error("FINAL results root must equal the canonical experiment root")
         except OSError as exc:
             parser.error(str(exc))
+        args.output = canonical_root
+        args.final_results_root = canonical_root
         try:
             final_verification = verify_final_freeze(
                 paths=frozen_paths,
-                results_root=args.final_results_root,
+                results_root=canonical_root,
                 explicit_authorization=args.authorize_final,
                 require_authorization=True,
             )
@@ -128,6 +135,8 @@ def main() -> None:
         for name, digest in supplied_identities.items():
             if digest != final_verification.identities[name]:
                 parser.error(f"caller {name} differs from the verified frozen artifact")
+    elif args.output is None:
+        args.output = Path("benchmark-results")
     settings = GatewaySettings.from_environment()
     service = create_development_service()
     configure_gateway(service, settings)

@@ -24,6 +24,9 @@ from adaptive_llm_gateway.benchmarks.routing_benchmark_v1 import (
 from adaptive_llm_gateway.evaluation.evaluators import evaluator_for
 
 
+pytestmark = pytest.mark.protected_final_data
+
+
 @pytest.fixture(scope="module")
 def dataset():
     return construct_dataset()
