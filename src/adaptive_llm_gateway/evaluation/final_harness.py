@@ -102,6 +102,20 @@ BOUND_CONFIGURATION_FILES = (
 )
 EXECUTION_SOURCE_PREFIX = "src/adaptive_llm_gateway/"
 SHADOWABLE_EXECUTION_SUFFIXES = frozenset({".py", ".pyi", ".json", ".toml", ".yaml", ".yml"})
+CONTINUATION_COMPATIBILITY_KEY = "candidate_collection_compatibility"
+CONTINUATION_HARNESS_SOURCE = "src/adaptive_llm_gateway/evaluation/final_harness.py"
+CONTINUATION_REVIEW_FILES = frozenset({
+    str(CANONICAL_AUTHORIZATION_RELATIVE),
+    CONTINUATION_HARNESS_SOURCE,
+    "tests/test_final_harness.py",
+})
+FROZEN_CANDIDATE_COLLECTIONS = {
+    "0d7bce7c-b0e1-48cc-8460-c176341d5462": {
+        "experiment_identity": "afcaf47af4815ac27f1e50d4e2f4feb6f36f5e0b5f0938f449adfffecb8daa58",
+        "execution_commit": "bd175f36d01964754996a01f16ab01c857943f22",
+        "source_set_sha256": "8564cc5d0351a4a420efb4acfe3aac999225331b7d22a02e126015463b6f4b96",
+    },
+}
 
 
 def _literal_absolute(path: Path) -> Path:
@@ -273,8 +287,10 @@ class FreezeVerification(DomainModel):
     explicit_authorization: bool
     duplicate_completed_run: bool
     git_commit: str | None = None
+    reviewed_implementation_commit: str | None = None
     source_hashes: dict[str, str] = Field(default_factory=dict)
     source_set_sha256: str | None = None
+    candidate_collection_compatibility: dict[str, str] | None = None
     provider_calls_made: int = 0
 
 
@@ -498,6 +514,123 @@ def verify_execution_provenance(
     if reviewed_hashes != actual_hashes:
         raise ValueError("outcome-critical source changed after authorization")
     return execution_commit, actual_hashes, source_set_sha256
+
+
+def _require_commit_ancestor(repository_root: Path, ancestor: str, descendant: str) -> None:
+    result = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", ancestor, descendant],
+        cwd=repository_root, capture_output=True)
+    if result.returncode != 0:
+        raise ValueError("candidate collection commit is not an ancestor of continuation")
+
+
+def _changed_paths(repository_root: Path, ancestor: str, descendant: str) -> set[str]:
+    try:
+        value = _git(
+            repository_root, "diff", "--name-only", "--diff-filter=ACDMRTUXB",
+            f"{ancestor}..{descendant}", "--")
+    except subprocess.CalledProcessError as exc:
+        raise ValueError("candidate collection commit cannot be compared to continuation") from exc
+    return {line for line in value.splitlines() if line}
+
+
+def _historical_source_identity(
+    repository_root: Path,
+    execution_commit: str,
+    recorded_hashes: dict[str, str],
+    recorded_source_set_sha256: str,
+) -> None:
+    if (not execution_commit or not recorded_hashes
+            or _canonical_digest(recorded_hashes) != recorded_source_set_sha256):
+        raise ValueError("historical candidate source binding is malformed")
+    try:
+        historical_sources = _tracked_execution_files(
+            repository_root, revision=execution_commit)
+        if historical_sources != tuple(sorted(recorded_hashes)):
+            raise ValueError("historical candidate source file list changed")
+        committed_hashes = {
+            source: hashlib.sha256(
+                _git_bytes(repository_root, "show", f"{execution_commit}:{source}")).hexdigest()
+            for source in historical_sources
+        }
+    except subprocess.CalledProcessError as exc:
+        raise ValueError("historical candidate source binding cannot be reconstructed") from exc
+    if committed_hashes != recorded_hashes:
+        raise ValueError("historical candidate source binding differs from its execution commit")
+
+
+def validate_candidate_collection_provenance(
+    configuration: dict[str, JsonValue],
+    run_id: UUID,
+    verification: FreezeVerification,
+    *,
+    repository_root: Path = REPOSITORY_ROOT,
+) -> None:
+    """Bind immutable candidate provenance to an authorized continuation harness."""
+    historical_commit = configuration.get("final_execution_git_commit")
+    historical_hashes = configuration.get("final_source_hashes")
+    historical_source_set = configuration.get("final_source_set_sha256")
+    if (not isinstance(historical_commit, str)
+            or not isinstance(historical_hashes, dict)
+            or not all(isinstance(key, str) and isinstance(value, str)
+                       for key, value in historical_hashes.items())
+            or not isinstance(historical_source_set, str)):
+        raise ValueError("historical candidate provenance is missing")
+    frozen_collection = FROZEN_CANDIDATE_COLLECTIONS.get(str(run_id))
+    if frozen_collection is not None and frozen_collection != {
+            "experiment_identity": verification.experiment_identity,
+            "execution_commit": historical_commit,
+            "source_set_sha256": historical_source_set,
+    }:
+        raise ValueError("historical candidate provenance differs from frozen compatibility record")
+    _historical_source_identity(
+        repository_root, historical_commit, historical_hashes,
+        historical_source_set)
+
+    current_commit = verification.git_commit
+    if not isinstance(current_commit, str) or not current_commit:
+        raise ValueError("current continuation provenance is missing")
+    _require_commit_ancestor(repository_root, historical_commit, current_commit)
+
+    if (historical_hashes == verification.source_hashes
+            and historical_source_set == verification.source_set_sha256):
+        changed = _changed_paths(repository_root, historical_commit, current_commit)
+        if changed - {str(CANONICAL_AUTHORIZATION_RELATIVE)}:
+            raise ValueError(
+                "candidate continuation contains changes beyond authorization metadata")
+        return
+
+    compatibility = verification.candidate_collection_compatibility
+    reviewed_commit = verification.reviewed_implementation_commit
+    expected = {
+        "schema_version": "1.0.0",
+        "run_id": str(run_id),
+        "experiment_identity": verification.experiment_identity,
+        "candidate_collection_execution_commit": historical_commit,
+        "candidate_collection_source_set_sha256": historical_source_set,
+        "evaluation_implementation_commit": reviewed_commit,
+    }
+    if compatibility != expected or not isinstance(reviewed_commit, str):
+        raise ValueError(
+            "candidate continuation requires explicit reviewed compatibility authorization")
+    _require_commit_ancestor(repository_root, historical_commit, reviewed_commit)
+    _require_commit_ancestor(repository_root, reviewed_commit, current_commit)
+
+    changed_sources = {
+        source for source in set(historical_hashes) | set(verification.source_hashes)
+        if historical_hashes.get(source) != verification.source_hashes.get(source)
+    }
+    if changed_sources != {CONTINUATION_HARNESS_SOURCE}:
+        raise ValueError(
+            "reviewed continuation changes outcome-critical sources beyond the harness repair")
+    review_changes = _changed_paths(
+        repository_root, historical_commit, reviewed_commit)
+    if review_changes - CONTINUATION_REVIEW_FILES:
+        raise ValueError("reviewed continuation contains unrelated repository changes")
+    later_changes = _changed_paths(repository_root, reviewed_commit, current_commit)
+    if later_changes - {str(CANONICAL_AUTHORIZATION_RELATIVE)}:
+        raise ValueError(
+            "post-review continuation contains changes beyond authorization metadata")
 
 
 def validate_frozen_sandbox(sandbox: DockerPythonSandbox) -> None:
@@ -736,8 +869,15 @@ def verify_final_freeze(
         explicit_authorization=explicit_authorization,
         duplicate_completed_run=duplicate,
         git_commit=git_commit,
+        reviewed_implementation_commit=(
+            authorization.get("implementation", {}).get("git_commit")
+            if isinstance(authorization.get("implementation"), dict) else None),
         source_hashes=source_hashes,
         source_set_sha256=source_set_sha256,
+        candidate_collection_compatibility=(
+            authorization.get(CONTINUATION_COMPATIBILITY_KEY)
+            if isinstance(authorization.get(CONTINUATION_COMPATIBILITY_KEY), dict)
+            else None),
     )
 
 
@@ -746,6 +886,8 @@ def validate_final_run(
     run_id: UUID,
     verification: FreezeVerification,
     paths: FinalPaths,
+    *,
+    repository_root: Path = REPOSITORY_ROOT,
 ) -> BenchmarkRun:
     """Validate the complete persisted candidate matrix before paid judging/replay."""
     directory = root / str(run_id)
@@ -762,14 +904,11 @@ def validate_final_run(
             or run.configuration.get("final_authorization_status")
             != "AUTHORIZED_FOR_FINAL_EXECUTION"
             or run.configuration.get("source_dataset_sha256")
-            != verification.identities["dataset_sha256"]
-            or run.configuration.get("final_execution_git_commit")
-            != verification.git_commit
-            or run.configuration.get("final_source_hashes")
-            != verification.source_hashes
-            or run.configuration.get("final_source_set_sha256")
-            != verification.source_set_sha256):
+            != verification.identities["dataset_sha256"]):
         raise ValueError("FINAL candidate run identity mismatch")
+    validate_candidate_collection_provenance(
+        run.configuration, run_id, verification,
+        repository_root=repository_root)
     feature_snapshots = run.configuration.get("request_features")
     feature_bindings = run.configuration.get("request_feature_bindings")
     if not isinstance(feature_snapshots, dict) or not isinstance(feature_bindings, dict):
@@ -825,6 +964,16 @@ def validate_final_run(
     )
     ledger.initialize(run_id=run_id, task_bindings=feature_bindings,
                       candidate_ids=CANDIDATES)
+    validate_candidate_result_ledger(results, ledger, run_id)
+    return run
+
+
+def validate_candidate_result_ledger(
+    results: tuple[BenchmarkResult, ...],
+    ledger: CandidateAttemptLedger,
+    run_id: UUID,
+) -> None:
+    """Require every persisted candidate artifact to match its durable attempt."""
     counts = ledger.counts()
     if counts["pending"] or counts["started"] or counts["completed"] + counts["failed"] != EXPECTED_CANDIDATE_CALLS:
         raise ValueError("FINAL candidate attempt ledger is incomplete or ambiguous")
@@ -832,7 +981,6 @@ def validate_final_run(
         durable = ledger.reusable(result.task_id, result.model_id, run_id)
         if durable is None or durable.model_dump(mode="json") != result.model_dump(mode="json"):
             raise ValueError("candidate result does not match its durable attempt ledger")
-    return run
 
 
 def _begin_semantic_judge_once(root: Path, run_id: UUID) -> None:

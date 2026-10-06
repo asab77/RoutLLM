@@ -46,6 +46,8 @@ from adaptive_llm_gateway.evaluation.final_harness import (
     require_canonical_authorization_path,
     require_canonical_final_root,
     validate_frozen_sandbox,
+    validate_candidate_collection_provenance,
+    validate_candidate_result_ledger,
     validate_final_evaluation,
     verify_execution_provenance,
     verify_final_freeze,
@@ -839,6 +841,43 @@ def test_candidate_ledger_started_attempt_fails_closed_and_second_run_cannot_byp
     assert ledger.counts()["started"] == 1
 
 
+def _complete_candidate_ledger(path, run_id):
+    bindings = _candidate_bindings()
+    ledger = CandidateAttemptLedger(path, experiment_identity="e" * 64)
+    ledger.initialize(run_id=run_id, task_bindings=bindings, candidate_ids=CANDIDATES)
+    results = []
+    for number, (task_id, candidate) in enumerate(
+            (pair for task_id in bindings for pair in
+             ((task_id, model_id) for model_id in CANDIDATES))):
+        request_id = f"request-{number}"
+        result = _failed_candidate(run_id, task_id, candidate, request_id)
+        ledger.start(task_id, candidate, run_id, request_id)
+        ledger.finish(result)
+        results.append(result)
+    return ledger, tuple(results)
+
+
+def test_continuation_rejects_candidate_artifact_tampering(tmp_path):
+    run_id = UUID(int=120)
+    ledger, results = _complete_candidate_ledger(
+        tmp_path / "candidate-attempts.json", run_id)
+    altered = (results[0].model_copy(update={"latency_ms": 999}), *results[1:])
+    with pytest.raises(ValueError, match="does not match its durable attempt ledger"):
+        validate_candidate_result_ledger(altered, ledger, run_id)
+
+
+def test_continuation_rejects_candidate_ledger_tampering(tmp_path):
+    run_id = UUID(int=121)
+    path = tmp_path / "candidate-attempts.json"
+    ledger, results = _complete_candidate_ledger(path, run_id)
+    value = json.loads(path.read_text())
+    first = next(iter(value["entries"].values()))
+    first["result_sha256"] = "0" * 64
+    write_json(path, value)
+    with pytest.raises(ValueError, match="missing or corrupted"):
+        validate_candidate_result_ledger(results, ledger, run_id)
+
+
 def _semantic_result(run_id, task_id, model_id, number):
     return EvaluationResult(
         benchmark_result_id=UUID(int=1000 + number), run_id=run_id,
@@ -946,6 +985,7 @@ def _initialize_execution_repository(path):
         "src/adaptive_llm_gateway/providers/resolver.py": "VALUE = 'resolver'\n",
         "src/adaptive_llm_gateway/pricing/__init__.py": "VALUE = 'pricing'\n",
         "src/adaptive_llm_gateway/benchmarks/summarization_spec.py": "VALUE = 'semantic'\n",
+        "src/adaptive_llm_gateway/evaluation/final_harness.py": "VALUE = 'harness'\n",
     })
     _initialize_git_repository(path, files)
     hashes = outcome_critical_source_hashes(path)
@@ -1056,6 +1096,211 @@ def test_complete_source_binding_allows_authorization_only_descendant(tmp_path):
     execution, _, _ = verify_execution_provenance(
         authorization, repository_root=tmp_path)
     assert execution != reviewed
+
+
+def _candidate_configuration(authorization, execution_commit):
+    implementation = authorization["implementation"]
+    return {
+        "final_execution_git_commit": execution_commit,
+        "final_source_hashes": implementation["source_hashes"],
+        "final_source_set_sha256": implementation["source_set_sha256"],
+    }
+
+
+def _continuation_verification(path, authorization, *, experiment_identity="e" * 64,
+                               compatibility=None):
+    execution, hashes, source_set = verify_execution_provenance(
+        authorization, repository_root=path)
+    return FreezeVerification(
+        status="READY", experiment_identity=experiment_identity,
+        identities={}, policy_sha256="p" * 64,
+        authorization_status="AUTHORIZED_FOR_FINAL_EXECUTION",
+        explicit_authorization=True, duplicate_completed_run=False,
+        git_commit=execution,
+        reviewed_implementation_commit=authorization["implementation"]["git_commit"],
+        source_hashes=hashes, source_set_sha256=source_set,
+        candidate_collection_compatibility=compatibility,
+    )
+
+
+def _commit_authorization(path, value, message):
+    target = path / CANONICAL_AUTHORIZATION_RELATIVE
+    write_json(target, value)
+    subprocess.run(["git", "add", str(CANONICAL_AUTHORIZATION_RELATIVE)],
+                   cwd=path, check=True)
+    subprocess.run(["git", "commit", "-qm", message], cwd=path, check=True)
+    return subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=path, check=True,
+        capture_output=True, text=True).stdout.strip()
+
+
+def _authorization_descendant_fixture(path, descendants=0):
+    authorization = _initialize_execution_repository(path)
+    historical_commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=path, check=True,
+        capture_output=True, text=True).stdout.strip()
+    configuration = _candidate_configuration(authorization, historical_commit)
+    for index in range(descendants):
+        _commit_authorization(path, {"authorized_on": f"2030-01-{index + 1:02d}"},
+                              f"authorization {index}")
+    return authorization, historical_commit, configuration
+
+
+def _reviewed_compatibility_fixture(path):
+    original = _initialize_execution_repository(path)
+    historical_commit = _commit_authorization(
+        path, {"authorized_on": "2030-01-01"}, "stage one authorization")
+    configuration = _candidate_configuration(original, historical_commit)
+    harness = path / "src/adaptive_llm_gateway/evaluation/final_harness.py"
+    harness.write_text("VALUE = 'continuation repair'\n")
+    test_path = path / "tests/test_final_harness.py"
+    test_path.parent.mkdir(parents=True, exist_ok=True)
+    test_path.write_text("def test_continuation(): pass\n")
+    subprocess.run(["git", "add", str(harness.relative_to(path)),
+                    str(test_path.relative_to(path))], cwd=path, check=True)
+    subprocess.run(["git", "commit", "-qm", "continuation repair"],
+                   cwd=path, check=True)
+    reviewed_commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=path, check=True,
+        capture_output=True, text=True).stdout.strip()
+    hashes = outcome_critical_source_hashes(path)
+    authorization = {"implementation": {
+        "git_commit": reviewed_commit, "source_files": list(hashes),
+        "source_hashes": hashes, "source_set_sha256": _canonical_digest(hashes),
+    }}
+    run_id = UUID(int=91)
+    compatibility = {
+        "schema_version": "1.0.0", "run_id": str(run_id),
+        "experiment_identity": "e" * 64,
+        "candidate_collection_execution_commit": historical_commit,
+        "candidate_collection_source_set_sha256": configuration["final_source_set_sha256"],
+        "evaluation_implementation_commit": reviewed_commit,
+    }
+    _commit_authorization(path, {**authorization,
+        "candidate_collection_compatibility": compatibility},
+        "review repaired continuation")
+    verification = _continuation_verification(
+        path, authorization, compatibility=compatibility)
+    return run_id, configuration, verification, compatibility
+
+
+def test_candidate_provenance_accepts_exact_same_head(tmp_path):
+    authorization, _, configuration = _authorization_descendant_fixture(tmp_path)
+    validate_candidate_collection_provenance(
+        configuration, UUID(int=90),
+        _continuation_verification(tmp_path, authorization),
+        repository_root=tmp_path)
+
+
+def test_candidate_provenance_accepts_one_authorization_only_descendant(tmp_path):
+    authorization, _, configuration = _authorization_descendant_fixture(tmp_path, 1)
+    validate_candidate_collection_provenance(
+        configuration, UUID(int=90),
+        _continuation_verification(tmp_path, authorization),
+        repository_root=tmp_path)
+
+
+def test_candidate_provenance_accepts_multiple_authorization_only_descendants(tmp_path):
+    authorization, _, configuration = _authorization_descendant_fixture(tmp_path, 3)
+    validate_candidate_collection_provenance(
+        configuration, UUID(int=90),
+        _continuation_verification(tmp_path, authorization),
+        repository_root=tmp_path)
+
+
+def test_candidate_provenance_accepts_current_authorization_date_only_change(tmp_path):
+    authorization, _, configuration = _authorization_descendant_fixture(tmp_path)
+    _commit_authorization(tmp_path, {"authorized_on": datetime.now(timezone.utc).date().isoformat()},
+                          "refresh authorization date")
+    validate_candidate_collection_provenance(
+        configuration, UUID(int=90),
+        _continuation_verification(tmp_path, authorization),
+        repository_root=tmp_path)
+
+
+def test_candidate_provenance_rejects_authorization_plus_unrelated_change(tmp_path):
+    authorization, _, configuration = _authorization_descendant_fixture(tmp_path, 1)
+    (tmp_path / "README.md").write_text("unrelated\n")
+    subprocess.run(["git", "add", "README.md"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "unrelated"], cwd=tmp_path, check=True)
+    with pytest.raises(ValueError, match="beyond authorization metadata"):
+        validate_candidate_collection_provenance(
+            configuration, UUID(int=90),
+            _continuation_verification(tmp_path, authorization),
+            repository_root=tmp_path)
+
+
+def test_runtime_change_fails_without_new_reviewed_authorization(tmp_path):
+    authorization, _, _ = _authorization_descendant_fixture(tmp_path)
+    target = tmp_path / "src/adaptive_llm_gateway/bootstrap.py"
+    target.write_text("VALUE = 'changed'\n")
+    subprocess.run(["git", "add", str(target.relative_to(tmp_path))],
+                   cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "runtime change"],
+                   cwd=tmp_path, check=True)
+    with pytest.raises(ValueError, match="differs from authorized"):
+        verify_execution_provenance(authorization, repository_root=tmp_path)
+
+
+def test_reviewed_harness_compatibility_accepts_historical_candidates(tmp_path):
+    run_id, configuration, verified, _ = _reviewed_compatibility_fixture(tmp_path)
+    validate_candidate_collection_provenance(
+        configuration, run_id, verified, repository_root=tmp_path)
+
+
+def test_compatibility_validation_makes_zero_provider_calls(tmp_path, monkeypatch):
+    from adaptive_llm_gateway.evaluation import final_harness
+
+    run_id, configuration, verified, _ = _reviewed_compatibility_fixture(tmp_path)
+    monkeypatch.setattr(final_harness, "VercelGatewayProvider",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("compatibility validation must not construct a provider")))
+    validate_candidate_collection_provenance(
+        configuration, run_id, verified, repository_root=tmp_path)
+
+
+def test_reviewed_harness_requires_explicit_compatibility_authorization(tmp_path):
+    run_id, configuration, verified, _ = _reviewed_compatibility_fixture(tmp_path)
+    with pytest.raises(ValueError, match="explicit reviewed compatibility"):
+        validate_candidate_collection_provenance(
+            configuration, run_id,
+            verified.model_copy(update={"candidate_collection_compatibility": None}),
+            repository_root=tmp_path)
+
+
+def test_compatibility_cannot_rewrite_historical_execution_commit(tmp_path):
+    run_id, configuration, verified, _ = _reviewed_compatibility_fixture(tmp_path)
+    altered = {**configuration, "final_execution_git_commit": verified.git_commit}
+    with pytest.raises(ValueError, match="historical candidate source binding"):
+        validate_candidate_collection_provenance(
+            altered, run_id, verified, repository_root=tmp_path)
+
+
+def test_compatibility_cannot_rewrite_historical_source_digest(tmp_path):
+    run_id, configuration, verified, _ = _reviewed_compatibility_fixture(tmp_path)
+    altered = {**configuration, "final_source_set_sha256": "0" * 64}
+    with pytest.raises(ValueError, match="historical candidate source binding"):
+        validate_candidate_collection_provenance(
+            altered, run_id, verified, repository_root=tmp_path)
+
+
+def test_compatibility_rejects_additional_outcome_critical_source_change(tmp_path):
+    run_id, configuration, verified, compatibility = _reviewed_compatibility_fixture(tmp_path)
+    target = tmp_path / "src/adaptive_llm_gateway/bootstrap.py"
+    target.write_text("VALUE = 'also changed'\n")
+    subprocess.run(["git", "add", str(target.relative_to(tmp_path))],
+                   cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "extra reviewed change"],
+                   cwd=tmp_path, check=True)
+    hashes = outcome_critical_source_hashes(tmp_path)
+    changed = verified.model_copy(update={
+        "git_commit": subprocess.run(["git", "rev-parse", "HEAD"], cwd=tmp_path,
+            check=True, capture_output=True, text=True).stdout.strip(),
+        "source_hashes": hashes, "source_set_sha256": _canonical_digest(hashes),
+        "candidate_collection_compatibility": compatibility})
+    with pytest.raises(ValueError, match="post-review continuation|beyond the harness repair"):
+        validate_candidate_collection_provenance(
+            configuration, run_id, changed, repository_root=tmp_path)
 
 
 def test_task_and_feature_binding_detects_task_and_snapshot_tampering():
