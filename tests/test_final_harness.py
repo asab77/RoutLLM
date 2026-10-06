@@ -20,6 +20,8 @@ from adaptive_llm_gateway.evaluation.final_harness import (
     CANONICAL_AUTHORIZATION_RELATIVE,
     CANDIDATES,
     EXPECTED_CANDIDATE_CALLS,
+    FROZEN_CANDIDATE_COLLECTIONS,
+    FROZEN_FINAL_RUN_ID,
     MAXIMUM_JUDGE_CALLS,
     PRIMARY_BASELINE,
     CandidateObservation,
@@ -49,6 +51,7 @@ from adaptive_llm_gateway.evaluation.final_harness import (
     validate_candidate_collection_provenance,
     validate_candidate_result_ledger,
     validate_final_evaluation,
+    validate_final_run,
     verify_execution_provenance,
     verify_final_freeze,
     write_results,
@@ -808,25 +811,64 @@ def _failed_candidate(run_id, task_id, model_id, request_id):
     )
 
 
-def test_candidate_ledger_resumes_after_57_without_repeating_completed_calls(tmp_path):
+def test_candidate_ledger_resumes_same_run_after_57_without_repeating_completed_calls(tmp_path):
     path = tmp_path / "candidate-attempts.json"
-    run_one, run_two = UUID(int=10), UUID(int=11)
+    run_id = UUID(int=10)
     ledger = CandidateAttemptLedger(path, experiment_identity="e" * 64)
     bindings = _candidate_bindings()
-    ledger.initialize(run_id=run_one, task_bindings=bindings, candidate_ids=CANDIDATES)
+    ledger.initialize(run_id=run_id, task_bindings=bindings, candidate_ids=CANDIDATES)
     pairs = [(task, candidate) for task in bindings for candidate in CANDIDATES]
     for index, (task, candidate) in enumerate(pairs[:57]):
         request_id = f"request-{index}"
-        ledger.start(task, candidate, run_one, request_id)
-        ledger.finish(_failed_candidate(run_one, task, candidate, request_id))
+        ledger.start(task, candidate, run_id, request_id)
+        ledger.finish(_failed_candidate(run_id, task, candidate, request_id))
 
     restarted = CandidateAttemptLedger(path, experiment_identity="e" * 64)
-    restarted.initialize(run_id=run_two, task_bindings=bindings, candidate_ids=CANDIDATES)
+    restarted.initialize(run_id=run_id, task_bindings=bindings, candidate_ids=CANDIDATES)
     assert restarted.counts() == {
         "pending": 111, "started": 0, "completed": 0, "failed": 57}
     for task, candidate in pairs[:57]:
-        assert restarted.reusable(task, candidate, run_two) is not None
-    assert restarted.reusable(*pairs[57], run_two) is None
+        assert restarted.reusable(task, candidate, run_id) is not None
+    assert restarted.reusable(*pairs[57], run_id) is None
+
+
+def test_candidate_ledger_cannot_append_alternate_run_id(tmp_path):
+    path = tmp_path / "candidate-attempts.json"
+    original = UUID(int=10)
+    ledger = CandidateAttemptLedger(path, experiment_identity="e" * 64)
+    bindings = _candidate_bindings()
+    ledger.initialize(run_id=original, task_bindings=bindings, candidate_ids=CANDIDATES)
+    before = path.read_bytes()
+    with pytest.raises(ValueError, match="run identity mismatch"):
+        ledger.initialize(
+            run_id=UUID(int=11), task_bindings=bindings, candidate_ids=CANDIDATES)
+    assert path.read_bytes() == before
+
+
+def test_candidate_ledger_reuse_preserves_persisted_run_id(tmp_path):
+    path = tmp_path / "candidate-attempts.json"
+    run_id = UUID(int=10)
+    ledger = CandidateAttemptLedger(path, experiment_identity="e" * 64)
+    bindings = _candidate_bindings()
+    ledger.initialize(run_id=run_id, task_bindings=bindings, candidate_ids=CANDIDATES)
+    result = _failed_candidate(run_id, "task-0", CANDIDATES[0], "request-0")
+    ledger.start("task-0", CANDIDATES[0], run_id, "request-0")
+    ledger.finish(result)
+    before = path.read_bytes()
+    assert ledger.reusable("task-0", CANDIDATES[0], run_id) == result
+    with pytest.raises(ValueError, match="result identity mismatch"):
+        ledger.reusable("task-0", CANDIDATES[0], UUID(int=11))
+    assert path.read_bytes() == before
+
+
+def test_candidate_ledger_validate_existing_never_creates_missing_ledger(tmp_path):
+    path = tmp_path / "candidate-attempts.json"
+    ledger = CandidateAttemptLedger(path, experiment_identity="e" * 64)
+    with pytest.raises(ValueError, match="ledger is missing"):
+        ledger.validate_existing(
+            run_id=UUID(int=10), task_bindings=_candidate_bindings(),
+            candidate_ids=CANDIDATES)
+    assert not path.exists()
 
 
 def test_candidate_ledger_started_attempt_fails_closed_and_second_run_cannot_bypass(tmp_path):
@@ -835,7 +877,7 @@ def test_candidate_ledger_started_attempt_fails_closed_and_second_run_cannot_byp
     ledger = CandidateAttemptLedger(path, experiment_identity="e" * 64)
     ledger.initialize(run_id=UUID(int=12), task_bindings=bindings, candidate_ids=CANDIDATES)
     ledger.start("task-0", CANDIDATES[0], UUID(int=12), "ambiguous-request")
-    with pytest.raises(ValueError, match="ambiguous started candidate"):
+    with pytest.raises(ValueError, match="run identity mismatch"):
         CandidateAttemptLedger(path, experiment_identity="e" * 64).initialize(
             run_id=UUID(int=13), task_bindings=bindings, candidate_ids=CANDIDATES)
     assert ledger.counts()["started"] == 1
@@ -864,6 +906,53 @@ def test_continuation_rejects_candidate_artifact_tampering(tmp_path):
     altered = (results[0].model_copy(update={"latency_ms": 999}), *results[1:])
     with pytest.raises(ValueError, match="does not match its durable attempt ledger"):
         validate_candidate_result_ledger(altered, ledger, run_id)
+
+
+def test_continuation_rejects_candidate_artifact_run_id_mismatch(tmp_path):
+    run_id = UUID(int=120)
+    ledger, results = _complete_candidate_ledger(
+        tmp_path / "candidate-attempts.json", run_id)
+    altered = (results[0].model_copy(update={"run_id": UUID(int=122)}), *results[1:])
+    with pytest.raises(ValueError, match="does not match its durable attempt ledger"):
+        validate_candidate_result_ledger(altered, ledger, run_id)
+
+
+def test_continuation_rejects_ledger_payload_run_id_disagreement(tmp_path):
+    run_id = UUID(int=121)
+    path = tmp_path / "candidate-attempts.json"
+    ledger, results = _complete_candidate_ledger(path, run_id)
+    value = json.loads(path.read_text())
+    first = next(iter(value["entries"].values()))
+    first["result"]["run_id"] = str(UUID(int=122))
+    first["result_sha256"] = _canonical_digest(first["result"])
+    write_json(path, value)
+    with pytest.raises(ValueError, match="result identity mismatch"):
+        validate_candidate_result_ledger(results, ledger, run_id)
+
+
+def test_continuation_ledger_validation_is_byte_preserving(tmp_path):
+    run_id = UUID(int=123)
+    path = tmp_path / "candidate-attempts.json"
+    ledger, results = _complete_candidate_ledger(path, run_id)
+    before = path.read_bytes()
+    ledger.validate_existing(
+        run_id=run_id, task_bindings=_candidate_bindings(), candidate_ids=CANDIDATES)
+    validate_candidate_result_ledger(results, ledger, run_id)
+    assert path.read_bytes() == before
+
+
+def test_continuation_validation_keeps_candidate_artifacts_byte_identical(tmp_path):
+    run_id = UUID(int=124)
+    ledger, results = _complete_candidate_ledger(
+        tmp_path / "candidate-attempts.json", run_id)
+    artifact_root = tmp_path / "results"
+    artifact_root.mkdir()
+    for result in results:
+        (artifact_root / f"{result.result_id}.json").write_text(result.model_dump_json())
+    before = {path.name: path.read_bytes() for path in artifact_root.iterdir()}
+    validate_candidate_result_ledger(results, ledger, run_id)
+    after = {path.name: path.read_bytes() for path in artifact_root.iterdir()}
+    assert after == before
 
 
 def test_continuation_rejects_candidate_ledger_tampering(tmp_path):
@@ -986,6 +1075,7 @@ def _initialize_execution_repository(path):
         "src/adaptive_llm_gateway/pricing/__init__.py": "VALUE = 'pricing'\n",
         "src/adaptive_llm_gateway/benchmarks/summarization_spec.py": "VALUE = 'semantic'\n",
         "src/adaptive_llm_gateway/evaluation/final_harness.py": "VALUE = 'harness'\n",
+        "src/adaptive_llm_gateway/evaluation/final_ledgers.py": "VALUE = 'ledger'\n",
     })
     _initialize_git_repository(path, files)
     hashes = outcome_critical_source_hashes(path)
@@ -1123,6 +1213,14 @@ def _continuation_verification(path, authorization, *, experiment_identity="e" *
     )
 
 
+def _bind_synthetic_frozen_collection(monkeypatch, configuration, verification):
+    monkeypatch.setitem(FROZEN_CANDIDATE_COLLECTIONS, str(FROZEN_FINAL_RUN_ID), {
+        "experiment_identity": verification.experiment_identity,
+        "execution_commit": configuration["final_execution_git_commit"],
+        "source_set_sha256": configuration["final_source_set_sha256"],
+    })
+
+
 def _commit_authorization(path, value, message):
     target = path / CANONICAL_AUTHORIZATION_RELATIVE
     write_json(target, value)
@@ -1146,17 +1244,19 @@ def _authorization_descendant_fixture(path, descendants=0):
     return authorization, historical_commit, configuration
 
 
-def _reviewed_compatibility_fixture(path):
+def _reviewed_compatibility_fixture(path, monkeypatch):
     original = _initialize_execution_repository(path)
     historical_commit = _commit_authorization(
         path, {"authorized_on": "2030-01-01"}, "stage one authorization")
     configuration = _candidate_configuration(original, historical_commit)
     harness = path / "src/adaptive_llm_gateway/evaluation/final_harness.py"
     harness.write_text("VALUE = 'continuation repair'\n")
+    ledger = path / "src/adaptive_llm_gateway/evaluation/final_ledgers.py"
+    ledger.write_text("VALUE = 'run identity repair'\n")
     test_path = path / "tests/test_final_harness.py"
     test_path.parent.mkdir(parents=True, exist_ok=True)
     test_path.write_text("def test_continuation(): pass\n")
-    subprocess.run(["git", "add", str(harness.relative_to(path)),
+    subprocess.run(["git", "add", str(harness.relative_to(path)), str(ledger.relative_to(path)),
                     str(test_path.relative_to(path))], cwd=path, check=True)
     subprocess.run(["git", "commit", "-qm", "continuation repair"],
                    cwd=path, check=True)
@@ -1168,7 +1268,7 @@ def _reviewed_compatibility_fixture(path):
         "git_commit": reviewed_commit, "source_files": list(hashes),
         "source_hashes": hashes, "source_set_sha256": _canonical_digest(hashes),
     }}
-    run_id = UUID(int=91)
+    run_id = FROZEN_FINAL_RUN_ID
     compatibility = {
         "schema_version": "1.0.0", "run_id": str(run_id),
         "experiment_identity": "e" * 64,
@@ -1181,52 +1281,61 @@ def _reviewed_compatibility_fixture(path):
         "review repaired continuation")
     verification = _continuation_verification(
         path, authorization, compatibility=compatibility)
+    _bind_synthetic_frozen_collection(monkeypatch, configuration, verification)
     return run_id, configuration, verification, compatibility
 
 
-def test_candidate_provenance_accepts_exact_same_head(tmp_path):
+def test_candidate_provenance_accepts_exact_historical_run_id(tmp_path, monkeypatch):
     authorization, _, configuration = _authorization_descendant_fixture(tmp_path)
+    verified = _continuation_verification(tmp_path, authorization)
+    _bind_synthetic_frozen_collection(monkeypatch, configuration, verified)
     validate_candidate_collection_provenance(
-        configuration, UUID(int=90),
-        _continuation_verification(tmp_path, authorization),
+        configuration, FROZEN_FINAL_RUN_ID, verified,
         repository_root=tmp_path)
 
 
-def test_candidate_provenance_accepts_one_authorization_only_descendant(tmp_path):
+def test_candidate_provenance_accepts_one_authorization_only_descendant(tmp_path, monkeypatch):
     authorization, _, configuration = _authorization_descendant_fixture(tmp_path, 1)
+    verified = _continuation_verification(tmp_path, authorization)
+    _bind_synthetic_frozen_collection(monkeypatch, configuration, verified)
     validate_candidate_collection_provenance(
-        configuration, UUID(int=90),
-        _continuation_verification(tmp_path, authorization),
+        configuration, FROZEN_FINAL_RUN_ID, verified,
         repository_root=tmp_path)
 
 
-def test_candidate_provenance_accepts_multiple_authorization_only_descendants(tmp_path):
+def test_candidate_provenance_accepts_multiple_authorization_only_descendants(
+        tmp_path, monkeypatch):
     authorization, _, configuration = _authorization_descendant_fixture(tmp_path, 3)
+    verified = _continuation_verification(tmp_path, authorization)
+    _bind_synthetic_frozen_collection(monkeypatch, configuration, verified)
     validate_candidate_collection_provenance(
-        configuration, UUID(int=90),
-        _continuation_verification(tmp_path, authorization),
+        configuration, FROZEN_FINAL_RUN_ID, verified,
         repository_root=tmp_path)
 
 
-def test_candidate_provenance_accepts_current_authorization_date_only_change(tmp_path):
+def test_candidate_provenance_accepts_current_authorization_date_only_change(
+        tmp_path, monkeypatch):
     authorization, _, configuration = _authorization_descendant_fixture(tmp_path)
     _commit_authorization(tmp_path, {"authorized_on": datetime.now(timezone.utc).date().isoformat()},
                           "refresh authorization date")
+    verified = _continuation_verification(tmp_path, authorization)
+    _bind_synthetic_frozen_collection(monkeypatch, configuration, verified)
     validate_candidate_collection_provenance(
-        configuration, UUID(int=90),
-        _continuation_verification(tmp_path, authorization),
+        configuration, FROZEN_FINAL_RUN_ID, verified,
         repository_root=tmp_path)
 
 
-def test_candidate_provenance_rejects_authorization_plus_unrelated_change(tmp_path):
+def test_candidate_provenance_rejects_authorization_plus_unrelated_change(
+        tmp_path, monkeypatch):
     authorization, _, configuration = _authorization_descendant_fixture(tmp_path, 1)
     (tmp_path / "README.md").write_text("unrelated\n")
     subprocess.run(["git", "add", "README.md"], cwd=tmp_path, check=True)
     subprocess.run(["git", "commit", "-qm", "unrelated"], cwd=tmp_path, check=True)
+    verified = _continuation_verification(tmp_path, authorization)
+    _bind_synthetic_frozen_collection(monkeypatch, configuration, verified)
     with pytest.raises(ValueError, match="beyond authorization metadata"):
         validate_candidate_collection_provenance(
-            configuration, UUID(int=90),
-            _continuation_verification(tmp_path, authorization),
+            configuration, FROZEN_FINAL_RUN_ID, verified,
             repository_root=tmp_path)
 
 
@@ -1242,16 +1351,44 @@ def test_runtime_change_fails_without_new_reviewed_authorization(tmp_path):
         verify_execution_provenance(authorization, repository_root=tmp_path)
 
 
-def test_reviewed_harness_compatibility_accepts_historical_candidates(tmp_path):
-    run_id, configuration, verified, _ = _reviewed_compatibility_fixture(tmp_path)
+def test_reviewed_harness_compatibility_accepts_historical_candidates(tmp_path, monkeypatch):
+    run_id, configuration, verified, _ = _reviewed_compatibility_fixture(
+        tmp_path, monkeypatch)
     validate_candidate_collection_provenance(
         configuration, run_id, verified, repository_root=tmp_path)
+
+
+def test_candidate_provenance_rejects_alternate_random_run_id(tmp_path, monkeypatch):
+    _, configuration, verified, _ = _reviewed_compatibility_fixture(
+        tmp_path, monkeypatch)
+    with pytest.raises(ValueError, match="run ID differs"):
+        validate_candidate_collection_provenance(
+            configuration, UUID(int=92), verified, repository_root=tmp_path)
+
+
+def test_candidate_provenance_rejects_unknown_run_id(tmp_path, monkeypatch):
+    _, configuration, verified, _ = _reviewed_compatibility_fixture(
+        tmp_path, monkeypatch)
+    unknown = UUID("ffffffff-ffff-ffff-ffff-ffffffffffff")
+    with pytest.raises(ValueError, match="run ID differs"):
+        validate_candidate_collection_provenance(
+            configuration, unknown, verified, repository_root=tmp_path)
+
+
+def test_copied_candidate_matrix_under_different_run_directory_fails(
+        tmp_path, monkeypatch):
+    alternate = UUID(int=92)
+    copied = tmp_path / str(alternate)
+    copied.mkdir()
+    with pytest.raises(ValueError, match="run ID differs"):
+        validate_final_run(tmp_path, alternate, verification(), FinalPaths())
 
 
 def test_compatibility_validation_makes_zero_provider_calls(tmp_path, monkeypatch):
     from adaptive_llm_gateway.evaluation import final_harness
 
-    run_id, configuration, verified, _ = _reviewed_compatibility_fixture(tmp_path)
+    run_id, configuration, verified, _ = _reviewed_compatibility_fixture(
+        tmp_path, monkeypatch)
     monkeypatch.setattr(final_harness, "VercelGatewayProvider",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(
             AssertionError("compatibility validation must not construct a provider")))
@@ -1259,8 +1396,42 @@ def test_compatibility_validation_makes_zero_provider_calls(tmp_path, monkeypatc
         configuration, run_id, verified, repository_root=tmp_path)
 
 
-def test_reviewed_harness_requires_explicit_compatibility_authorization(tmp_path):
-    run_id, configuration, verified, _ = _reviewed_compatibility_fixture(tmp_path)
+@pytest.mark.parametrize("field,value", [
+    ("run_id", str(UUID(int=92))),
+    ("candidate_collection_execution_commit", "0" * 40),
+    ("candidate_collection_source_set_sha256", "0" * 64),
+    ("experiment_identity", "0" * 64),
+])
+def test_compatibility_record_rejects_wrong_historical_identity(
+        tmp_path, monkeypatch, field, value):
+    run_id, configuration, verified, compatibility = _reviewed_compatibility_fixture(
+        tmp_path, monkeypatch)
+    altered = verified.model_copy(update={
+        "candidate_collection_compatibility": {**compatibility, field: value}})
+    with pytest.raises(ValueError, match="explicit reviewed compatibility"):
+        validate_candidate_collection_provenance(
+            configuration, run_id, altered, repository_root=tmp_path)
+
+
+def test_compatibility_record_wrong_experiment_cannot_redefine_frozen_identity(
+        tmp_path, monkeypatch):
+    run_id, configuration, verified, compatibility = _reviewed_compatibility_fixture(
+        tmp_path, monkeypatch)
+    wrong_identity = "0" * 64
+    altered = verified.model_copy(update={
+        "experiment_identity": wrong_identity,
+        "candidate_collection_compatibility": {
+            **compatibility, "experiment_identity": wrong_identity},
+    })
+    with pytest.raises(ValueError, match="frozen compatibility record"):
+        validate_candidate_collection_provenance(
+            configuration, run_id, altered, repository_root=tmp_path)
+
+
+def test_reviewed_harness_requires_explicit_compatibility_authorization(
+        tmp_path, monkeypatch):
+    run_id, configuration, verified, _ = _reviewed_compatibility_fixture(
+        tmp_path, monkeypatch)
     with pytest.raises(ValueError, match="explicit reviewed compatibility"):
         validate_candidate_collection_provenance(
             configuration, run_id,
@@ -1268,24 +1439,28 @@ def test_reviewed_harness_requires_explicit_compatibility_authorization(tmp_path
             repository_root=tmp_path)
 
 
-def test_compatibility_cannot_rewrite_historical_execution_commit(tmp_path):
-    run_id, configuration, verified, _ = _reviewed_compatibility_fixture(tmp_path)
+def test_compatibility_cannot_rewrite_historical_execution_commit(tmp_path, monkeypatch):
+    run_id, configuration, verified, _ = _reviewed_compatibility_fixture(
+        tmp_path, monkeypatch)
     altered = {**configuration, "final_execution_git_commit": verified.git_commit}
-    with pytest.raises(ValueError, match="historical candidate source binding"):
+    with pytest.raises(ValueError, match="historical candidate provenance"):
         validate_candidate_collection_provenance(
             altered, run_id, verified, repository_root=tmp_path)
 
 
-def test_compatibility_cannot_rewrite_historical_source_digest(tmp_path):
-    run_id, configuration, verified, _ = _reviewed_compatibility_fixture(tmp_path)
+def test_compatibility_cannot_rewrite_historical_source_digest(tmp_path, monkeypatch):
+    run_id, configuration, verified, _ = _reviewed_compatibility_fixture(
+        tmp_path, monkeypatch)
     altered = {**configuration, "final_source_set_sha256": "0" * 64}
-    with pytest.raises(ValueError, match="historical candidate source binding"):
+    with pytest.raises(ValueError, match="historical candidate provenance"):
         validate_candidate_collection_provenance(
             altered, run_id, verified, repository_root=tmp_path)
 
 
-def test_compatibility_rejects_additional_outcome_critical_source_change(tmp_path):
-    run_id, configuration, verified, compatibility = _reviewed_compatibility_fixture(tmp_path)
+def test_compatibility_rejects_additional_outcome_critical_source_change(
+        tmp_path, monkeypatch):
+    run_id, configuration, verified, compatibility = _reviewed_compatibility_fixture(
+        tmp_path, monkeypatch)
     target = tmp_path / "src/adaptive_llm_gateway/bootstrap.py"
     target.write_text("VALUE = 'also changed'\n")
     subprocess.run(["git", "add", str(target.relative_to(tmp_path))],

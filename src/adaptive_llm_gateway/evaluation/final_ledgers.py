@@ -112,13 +112,7 @@ class CandidateAttemptLedger(_Ledger):
 
     def initialize(self, *, run_id: UUID, task_bindings: dict[str, dict[str, str]],
                    candidate_ids: tuple[str, ...]) -> None:
-        expected = {
-            self.key(task_id, model_id): {
-                "task_id": task_id, "candidate_model_id": model_id,
-                "task_binding_sha256": binding["binding_sha256"],
-            }
-            for task_id, binding in task_bindings.items() for model_id in candidate_ids
-        }
+        expected = self._expected(task_bindings, candidate_ids)
         if len(expected) != self.maximum_calls:
             raise ValueError("candidate attempt ledger does not contain the frozen call matrix")
         with self._locked() as value:
@@ -132,18 +126,55 @@ class CandidateAttemptLedger(_Ledger):
                                 for key, identity in expected.items()},
                 }
                 _atomic_json(self.path, value)
-            else:
-                actual = {key: {name: entry.get(name) for name in (
-                    "task_id", "candidate_model_id", "task_binding_sha256")}
-                    for key, entry in value["entries"].items()}
-                if actual != expected:
-                    raise ValueError("candidate attempt ledger task/model binding mismatch")
-                if str(run_id) not in value["run_ids"]:
-                    value["run_ids"].append(str(run_id))
-                    _atomic_json(self.path, value)
-                ambiguous = self._ambiguous(value)
-                if ambiguous:
-                    raise ValueError("ambiguous started candidate attempt requires independent reconciliation")
+                return
+            self._validate_existing(value, expected, run_id)
+
+    def validate_existing(
+        self,
+        *,
+        run_id: UUID,
+        task_bindings: dict[str, dict[str, str]],
+        candidate_ids: tuple[str, ...],
+    ) -> None:
+        """Validate the immutable existing ledger without creating or rewriting it."""
+        expected = self._expected(task_bindings, candidate_ids)
+        if len(expected) != self.maximum_calls:
+            raise ValueError("candidate attempt ledger does not contain the frozen call matrix")
+        with self._locked() as value:
+            if value is None:
+                raise ValueError("candidate attempt ledger is missing")
+            self._validate_existing(value, expected, run_id)
+
+    @classmethod
+    def _expected(
+        cls,
+        task_bindings: dict[str, dict[str, str]],
+        candidate_ids: tuple[str, ...],
+    ) -> dict[str, dict[str, str]]:
+        return {
+            cls.key(task_id, model_id): {
+                "task_id": task_id, "candidate_model_id": model_id,
+                "task_binding_sha256": binding["binding_sha256"],
+            }
+            for task_id, binding in task_bindings.items() for model_id in candidate_ids
+        }
+
+    def _validate_existing(
+        self,
+        value: dict[str, Any],
+        expected: dict[str, dict[str, str]],
+        run_id: UUID,
+    ) -> None:
+        actual = {key: {name: entry.get(name) for name in (
+            "task_id", "candidate_model_id", "task_binding_sha256")}
+            for key, entry in value["entries"].items()}
+        if actual != expected:
+            raise ValueError("candidate attempt ledger task/model binding mismatch")
+        if value.get("run_ids") != [str(run_id)]:
+            raise ValueError("candidate attempt ledger run identity mismatch")
+        ambiguous = self._ambiguous(value)
+        if ambiguous:
+            raise ValueError("ambiguous started candidate attempt requires independent reconciliation")
 
     def reusable(self, task_id: str, model_id: str, run_id: UUID) -> BenchmarkResult | None:
         with self._locked() as value:
@@ -158,9 +189,10 @@ class CandidateAttemptLedger(_Ledger):
             if not isinstance(payload, dict) or _digest(payload) != entry.get("result_sha256"):
                 raise ValueError("terminal candidate ledger result is missing or corrupted")
             result = BenchmarkResult.model_validate(payload)
-            if result.task_id != task_id or result.model_id != model_id:
+            if (entry.get("run_id") != str(run_id) or result.run_id != run_id
+                    or result.task_id != task_id or result.model_id != model_id):
                 raise ValueError("candidate ledger result identity mismatch")
-            return result.model_copy(update={"run_id": run_id})
+            return result
 
     def start(self, task_id: str, model_id: str, run_id: UUID, request_id: str) -> None:
         with self._locked() as value:

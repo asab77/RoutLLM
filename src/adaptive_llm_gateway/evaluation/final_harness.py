@@ -104,18 +104,30 @@ EXECUTION_SOURCE_PREFIX = "src/adaptive_llm_gateway/"
 SHADOWABLE_EXECUTION_SUFFIXES = frozenset({".py", ".pyi", ".json", ".toml", ".yaml", ".yml"})
 CONTINUATION_COMPATIBILITY_KEY = "candidate_collection_compatibility"
 CONTINUATION_HARNESS_SOURCE = "src/adaptive_llm_gateway/evaluation/final_harness.py"
+CONTINUATION_LEDGER_SOURCE = "src/adaptive_llm_gateway/evaluation/final_ledgers.py"
+CONTINUATION_REPAIR_SOURCES = frozenset({
+    CONTINUATION_HARNESS_SOURCE,
+    CONTINUATION_LEDGER_SOURCE,
+})
+FROZEN_FINAL_RUN_ID = UUID("0d7bce7c-b0e1-48cc-8460-c176341d5462")
 CONTINUATION_REVIEW_FILES = frozenset({
     str(CANONICAL_AUTHORIZATION_RELATIVE),
-    CONTINUATION_HARNESS_SOURCE,
+    *CONTINUATION_REPAIR_SOURCES,
     "tests/test_final_harness.py",
 })
 FROZEN_CANDIDATE_COLLECTIONS = {
-    "0d7bce7c-b0e1-48cc-8460-c176341d5462": {
+    str(FROZEN_FINAL_RUN_ID): {
         "experiment_identity": "afcaf47af4815ac27f1e50d4e2f4feb6f36f5e0b5f0938f449adfffecb8daa58",
         "execution_commit": "bd175f36d01964754996a01f16ab01c857943f22",
         "source_set_sha256": "8564cc5d0351a4a420efb4acfe3aac999225331b7d22a02e126015463b6f4b96",
     },
 }
+
+
+def require_frozen_final_run_id(run_id: UUID) -> None:
+    """Reject aliases for the one immutable FINAL candidate collection."""
+    if run_id != FROZEN_FINAL_RUN_ID:
+        raise ValueError("FINAL continuation run ID differs from the frozen candidate collection")
 
 
 def _literal_absolute(path: Path) -> Path:
@@ -567,6 +579,7 @@ def validate_candidate_collection_provenance(
     repository_root: Path = REPOSITORY_ROOT,
 ) -> None:
     """Bind immutable candidate provenance to an authorized continuation harness."""
+    require_frozen_final_run_id(run_id)
     historical_commit = configuration.get("final_execution_git_commit")
     historical_hashes = configuration.get("final_source_hashes")
     historical_source_set = configuration.get("final_source_set_sha256")
@@ -576,8 +589,8 @@ def validate_candidate_collection_provenance(
                        for key, value in historical_hashes.items())
             or not isinstance(historical_source_set, str)):
         raise ValueError("historical candidate provenance is missing")
-    frozen_collection = FROZEN_CANDIDATE_COLLECTIONS.get(str(run_id))
-    if frozen_collection is not None and frozen_collection != {
+    frozen_collection = FROZEN_CANDIDATE_COLLECTIONS[str(run_id)]
+    if frozen_collection != {
             "experiment_identity": verification.experiment_identity,
             "execution_commit": historical_commit,
             "source_set_sha256": historical_source_set,
@@ -620,7 +633,7 @@ def validate_candidate_collection_provenance(
         source for source in set(historical_hashes) | set(verification.source_hashes)
         if historical_hashes.get(source) != verification.source_hashes.get(source)
     }
-    if changed_sources != {CONTINUATION_HARNESS_SOURCE}:
+    if changed_sources != CONTINUATION_REPAIR_SOURCES:
         raise ValueError(
             "reviewed continuation changes outcome-critical sources beyond the harness repair")
     review_changes = _changed_paths(
@@ -890,6 +903,7 @@ def validate_final_run(
     repository_root: Path = REPOSITORY_ROOT,
 ) -> BenchmarkRun:
     """Validate the complete persisted candidate matrix before paid judging/replay."""
+    require_frozen_final_run_id(run_id)
     directory = root / str(run_id)
     status = _read_object(directory / "status.json")
     run = BenchmarkRun.model_validate_json((directory / "manifest.json").read_bytes())
@@ -962,8 +976,8 @@ def validate_final_run(
         / "candidate-attempts.json",
         experiment_identity=verification.experiment_identity,
     )
-    ledger.initialize(run_id=run_id, task_bindings=feature_bindings,
-                      candidate_ids=CANDIDATES)
+    ledger.validate_existing(run_id=run_id, task_bindings=feature_bindings,
+                             candidate_ids=CANDIDATES)
     validate_candidate_result_ledger(results, ledger, run_id)
     return run
 
