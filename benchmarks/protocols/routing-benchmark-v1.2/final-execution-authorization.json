@@ -1,10 +1,10 @@
 {
   "authorization": {
     "authorized_by": "Aria",
-    "authorized_on": "2026-10-05",
+    "authorized_on": "2026-10-06",
     "final_paid_execution_authorized": true,
     "pricing_reverified_by": "Aria",
-    "pricing_reverified_on": "2026-10-05",
+    "pricing_reverified_on": "2026-10-06",
     "status": "AUTHORIZED_FOR_FINAL_EXECUTION"
   },
   "call_limits": {
