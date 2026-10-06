@@ -7,6 +7,14 @@
     "pricing_reverified_on": "2026-10-06",
     "status": "AUTHORIZED_FOR_FINAL_EXECUTION"
   },
+  "candidate_collection_compatibility": {
+    "candidate_collection_execution_commit": "bd175f36d01964754996a01f16ab01c857943f22",
+    "candidate_collection_source_set_sha256": "8564cc5d0351a4a420efb4acfe3aac999225331b7d22a02e126015463b6f4b96",
+    "evaluation_implementation_commit": "2373bbc1d14e6cf5b61e4fa90747d2528d8e477a",
+    "experiment_identity": "afcaf47af4815ac27f1e50d4e2f4feb6f36f5e0b5f0938f449adfffecb8daa58",
+    "run_id": "0d7bce7c-b0e1-48cc-8460-c176341d5462",
+    "schema_version": "1.0.0"
+  },
   "call_limits": {
     "candidate_calls": 168,
     "candidate_retries": 0,
@@ -33,7 +41,7 @@
     "split_manifest_sha256": "98c639be29da4e11fdf48073d74e83805f16fdfb72b0102b5f5543213ab4960b"
   },
   "implementation": {
-    "git_commit": "b06f7eba4ad0aa11d23cf23fcd7dc3a72d195242",
+    "git_commit": "2373bbc1d14e6cf5b61e4fa90747d2528d8e477a",
     "source_files": [
       "benchmarks/protocols/routing-benchmark-v1.2/evaluator-manifest.json",
       "benchmarks/protocols/routing-benchmark-v1.2/execution-readiness-1.7.json",
@@ -174,8 +182,8 @@
       "src/adaptive_llm_gateway/evaluation/__main__.py": "fc14ed4c0e227b1844ada0939ab2be8846ea012f58f9a00e88f3d74029dc1249",
       "src/adaptive_llm_gateway/evaluation/aggregation.py": "66dccffc75122db5ed1ef743ac339a70989a022c6d17b8de8972aa88197bbfac",
       "src/adaptive_llm_gateway/evaluation/evaluators.py": "c01188543d412eac1bb291a6f982012de1a79f2053089122f24952452d772410",
-      "src/adaptive_llm_gateway/evaluation/final_harness.py": "40c4c3af14702b3307e6fe7f35ea740da2f3d3bd4f5bbaa7e762063844fedc0f",
-      "src/adaptive_llm_gateway/evaluation/final_ledgers.py": "dc3230faecc203c3bf8fb08409d9822acec251d64ae391289f229e9e187ee4c5",
+      "src/adaptive_llm_gateway/evaluation/final_harness.py": "9ae1c516cbdcd17affff33113a351d93032d3e93d03691de9d1408d7d4644741",
+      "src/adaptive_llm_gateway/evaluation/final_ledgers.py": "c660e2ac641c180c0dee95e99e040bd13e562424493c80d7bd5199b3b786abeb",
       "src/adaptive_llm_gateway/evaluation/hybrid_artifacts.py": "693b76556bc5006f4a388edb8669da6eaf3f48458500ae417f78d13c42fac769",
       "src/adaptive_llm_gateway/evaluation/hybrid_costs.py": "78cc55cee0abbeffd50005c0973500591ca7c0c7d90a5e0b630c7eab4c28f4ce",
       "src/adaptive_llm_gateway/evaluation/hybrid_judge.py": "670e9e3eb178088d39338acf093337c57785ac86086555a5e79c24c28f27165d",
@@ -238,12 +246,13 @@
       "src/adaptive_llm_gateway/validation/contracts.py": "617a20253450d47645e305198a7b2a0d9476e3c3336bf55c0a8778335eef248e",
       "src/adaptive_llm_gateway/validation/validator.py": "2b63365e96916e826527ecc632fd66089d6ecd4cbaa6bf0afb66180fb67a5757"
     },
-    "source_set_sha256": "8564cc5d0351a4a420efb4acfe3aac999225331b7d22a02e126015463b6f4b96"
+    "source_set_sha256": "f1ad432bc20f705d4906dab0bb4f084313767734b15594eafba6cc5dd17e4eb1"
   },
   "notes": [
     "This additive record does not alter the frozen Protocol 1.7 scientific identity.",
-    "Project owner Aria approved the one-time paid FINAL execution after same-day pricing reverification on 2026-10-05.",
-    "Authorization is bound to reviewed commit b06f7eba4ad0aa11d23cf23fcd7dc3a72d195242 and the complete outcome-critical source hash set."
+    "Project owner Aria approved continuation of the one-time paid FINAL execution after same-day pricing reverification on 2026-10-06.",
+    "Authorization is bound to reviewed commit 2373bbc1d14e6cf5b61e4fa90747d2528d8e477a and the complete outcome-critical source hash set.",
+    "The 168-call candidate ceiling is already exhausted by the immutable historical Stage 1 matrix; this record authorizes no additional candidate calls."
   ],
   "version": "1.0.0"
 }
